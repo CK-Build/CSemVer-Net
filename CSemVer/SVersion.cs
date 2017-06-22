@@ -277,6 +277,13 @@ namespace CSemVer
             }
         }
 
+        /// <summary>
+        /// Versions are equal if and only if <see cref="IsValidSyntax"/>, <see cref="Major"/>, <see cref="Minor"/>,
+        /// <see cref="Patch"/> and <see cref="Prerelease"/> are equals. <see cref="BuildMetaData"/> is ignored.
+        /// No other members are used for equality and comparison.
+        /// </summary>
+        /// <param name="other">Other version.</param>
+        /// <returns>True if they are the same regardless of <see cref="BuildMetaData"/>.</returns>
         public bool Equals( SVersion other )
         {
             if( other == null ) return false;

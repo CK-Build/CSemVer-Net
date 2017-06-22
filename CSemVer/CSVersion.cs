@@ -91,6 +91,7 @@ namespace CSemVer
         /// </summary>
         public bool IsValidSyntax => PreReleaseNameFromTag != null;
 
+        /// <summary>
         /// Gets whether this <see cref="CSVersion"/> looks like a release tag but is not syntaxically valid: 
         /// see <see cref="ParseErrorMessage"/> for more information.
         /// </summary>

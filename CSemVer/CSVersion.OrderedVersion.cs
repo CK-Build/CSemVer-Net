@@ -212,10 +212,10 @@ namespace CSemVer
         public int OrderedVersionRevision => _orderedVersion.Revision;
 
         /// <summary>
-        /// Versions are equal it their <see cref="OrderedVersion"/> are equals.
+        /// Versions are equal if their <see cref="OrderedVersion"/> are equals.
         /// No other members are used for equality and comparison.
         /// </summary>
-        /// <param name="other">Other release tag.</param>
+        /// <param name="other">Other version.</param>
         /// <returns>True if they have the same OrderedVersion.</returns>
         public bool Equals(CSVersion other)
         {

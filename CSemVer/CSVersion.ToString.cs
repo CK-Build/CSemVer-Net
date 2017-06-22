@@ -149,7 +149,7 @@ namespace CSemVer
         /// <summary>
         /// Gets the standard Informational version string.
         /// If <see cref="IsValidSyntax"/> is false this throws an <see cref="InvalidOperationException"/>: 
-        /// the constant <see cref="InvalidInformationalVersion"/> should be used when IsValid is false.
+        /// the constant <see cref="InformationalVersion.InvalidInformationalVersion"/> should be used when IsValid is false.
         /// </summary>
         /// <param name="commitSha">The SHA1 of the commit (must be 40 hex digits).</param>
         /// <param name="commitDateUtc">The commit date (must be in UTC).</param>
