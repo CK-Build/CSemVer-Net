@@ -181,12 +181,13 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Creates a clone of this tag, except that it is marked with "+invalid".
-        /// This tag must be valid (<see cref="IsValidSyntax"/> is true), otherwise an <see cref="InvalidOperationException"/> is thrown.
+        /// Creates a clone of this version, except that it is marked with "+invalid".
+        /// This version must be valid (<see cref="IsValidSyntax"/> is true), otherwise an <see cref="InvalidOperationException"/> is thrown.
         /// </summary>
         /// <returns>The "+valid" tag.</returns>
         public CSVersion MarkInvalid()
         {
+            if( !IsValidSyntax ) throw new InvalidOperationException( "Version must be IsValidSyntax to be marked with '+invalid'." );
             return IsMarkedInvalid ? this : new CSVersion(null, Major, Minor, Patch, PreReleaseName, PreReleaseNameIdx, PreReleaseNumber, PreReleasePatch, Kind | CSVersionKind.MarkedInvalid);
         }
 

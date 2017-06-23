@@ -62,7 +62,7 @@ namespace CSemVer
         /// True to analyse an invalid string for a more precise error: 
         /// if the tag looks like a release tag, the <see cref="ParseErrorMessage"/> will describe the issue.
         /// </param>
-        /// <returns>Resulting version (can be invalid).</returns>
+        /// <returns>Resulting version (may not be <see cref="IsValidSyntax"/>).</returns>
         public static CSVersion TryParse(string s, bool analyseInvalidTag = false)
         {
             if (string.IsNullOrEmpty(s)) return new CSVersion( s, false, _nullOrEmptyErrorMessage );
@@ -143,7 +143,7 @@ namespace CSemVer
                     }
                 }
             }
-            return "Invalid tag. Valid examples are: '1.0.0', '1.0.0-beta', '1.0.0-beta.5', '1.0.0-rc.5.12', '3.0.12+invalid'";
+            return "Invalid version. Valid examples are: '1.0.0', '1.0.0-beta', '1.0.0-beta.5', '1.0.0-rc.5.12', '3.0.12+invalid'";
         }
 
         /// <summary>

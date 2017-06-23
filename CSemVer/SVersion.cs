@@ -19,10 +19,10 @@ namespace CSemVer
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         /// <summary>
-        /// The invalid version is "0.0.0-0". It is syntaxically valid and 
+        /// The zero version is "0.0.0-0". It is syntaxically valid and 
         /// its precedence is greater than null and lower than any other syntaxically valid <see cref="SVersion"/>.
         /// </summary>
-        static public readonly SVersion Invalid = new SVersion( 0, 0, 0, "0" );
+        static public readonly SVersion ZeroVersion = new SVersion( 0, 0, 0, "0" );
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SVersion" /> class.
@@ -142,6 +142,11 @@ namespace CSemVer
         public bool IsValidSyntax => ParseErrorMessage == null;
 
         /// <summary>
+        /// Gets whether this version is a <see cref="ZeroVersion"/>.
+        /// </summary>
+        public bool IsZeroVersion => Major == 0 && Minor == 0 && Patch == 0 && Prerelease == "0";
+
+        /// <summary>
         /// The text is available even if <see cref="IsValidSyntax"/> is false.
         /// It is null if and only if the original parsed string was null.
         /// </summary>
@@ -152,7 +157,7 @@ namespace CSemVer
         /// may not be <see cref="IsValidSyntax"/>.
         /// </summary>
         /// <param name="s">The string to parse.</param>
-        /// <returns>The SVersion object that may be invalid.</returns>
+        /// <returns>The SVersion object that may not be <see cref="IsValidSyntax"/>.</returns>
         public static SVersion TryParse( string s )
         {
             if( string.IsNullOrEmpty( s ) ) return new SVersion( "Null or empty version string.", s );
@@ -177,7 +182,7 @@ namespace CSemVer
         public static SVersion Parse( string s )
         {
             SVersion v = TryParse( s );
-            if( !v.IsValidSyntax ) throw new ArgumentException( nameof( s ) );
+            if( !v.IsValidSyntax ) throw new ArgumentException( v.ParseErrorMessage, nameof( s ) );
             return v;
         }
 

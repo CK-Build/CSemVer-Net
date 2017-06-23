@@ -97,7 +97,7 @@ namespace CSemVer
         public static readonly CSVersion VeryLastVersion = new CSVersion(string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", MaxMajor, MaxMinor, MaxPatch), MaxMajor, MaxMinor, MaxPatch, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease);
 
         /// <summary>
-        /// Initializes a new tag from an ordered version that must be between 0 (invalid tag) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
+        /// Initializes a new version from an ordered version that must be between 0 (invalid version) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
         /// </summary>
         /// <param name="v">The ordered version.</param>
         public CSVersion( long v )

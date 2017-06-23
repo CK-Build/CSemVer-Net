@@ -20,7 +20,7 @@
 
         /// <summary>
         /// Semantic version format.
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) plus build meata data (+valid, +published or +invalid).
+        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) plus build meata data (+invalid).
         /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
         SemVerWithMarker,
@@ -33,8 +33,7 @@
         FileVersion,
 
         /// <summary>
-        /// NuGet version 2. If the <see cref="CSVersion.IsMarkedInvalid"/> the "+invalid" build meta data is added.
-        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// NuGet version 2. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
         NugetPackageV2,
 
