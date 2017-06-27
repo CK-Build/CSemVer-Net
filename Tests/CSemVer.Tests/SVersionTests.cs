@@ -11,25 +11,25 @@ namespace CSemVer.Tests
     public class SVersionTests
     {
         [Test]
-        public void the_invalid_SVersion_is_syntaxically_valid_and_greater_than_null()
+        public void the_Zero_SVersion_is_syntaxically_valid_and_greater_than_null()
         {
-            Assert.That( SVersion.Invalid.IsValidSyntax );
-            Assert.That( SVersion.Invalid > null );
-            Assert.That( null < SVersion.Invalid );
-            Assert.That( SVersion.Invalid >= null );
-            Assert.That( null <= SVersion.Invalid );
+            Assert.That( SVersion.ZeroVersion.IsValidSyntax );
+            Assert.That( SVersion.ZeroVersion > null );
+            Assert.That( null < SVersion.ZeroVersion );
+            Assert.That( SVersion.ZeroVersion >= null );
+            Assert.That( null <= SVersion.ZeroVersion );
         }
 
         [TestCase( "0.0.0" )]
         [TestCase( "0.0.0--" )]
         [TestCase( "0.0.0-a" )]
         [TestCase( "0.0.0-A" )]
-        public void the_invalid_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion(string version)
+        public void the_Zero_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion(string version)
         {
             var v = SVersion.TryParse( version );
             Assert.That( v.IsValidSyntax );
-            Assert.That( v > SVersion.Invalid );
-            Assert.That( v != SVersion.Invalid );
+            Assert.That( v > SVersion.ZeroVersion );
+            Assert.That( v != SVersion.ZeroVersion );
         }
 
         [Test]
@@ -58,13 +58,13 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0-a..b" )]
         [TestCase( "0.0.0-01" )]
         [TestCase( "0.0.0-$" )]
-        public void Syntaxically_invalid_SVersion_are_greater_than_null_and_lower_than_the_Invalid_one(string invalid)
+        public void Syntaxically_invalid_SVersion_are_greater_than_null_and_lower_than_the_Zero_one(string invalid)
         {
             SVersion notV = SVersion.TryParse( invalid );
             Assert.That( !notV.IsValidSyntax );
-            Assert.That( notV != SVersion.Invalid );
-            Assert.That( SVersion.Invalid > notV );
-            Assert.That( SVersion.Invalid >= notV );
+            Assert.That( notV != SVersion.ZeroVersion );
+            Assert.That( SVersion.ZeroVersion > notV );
+            Assert.That( SVersion.ZeroVersion >= notV );
         }
     }
 }
