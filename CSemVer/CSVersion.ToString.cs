@@ -9,6 +9,7 @@ namespace CSemVer
     {
         /// <summary>
         /// Gets the string version in <see cref="CSVersionFormat.Normalized"/> format ('v' + <see cref="CSVersionFormat.SemVerWithMarker"/>).
+        /// Returns the <see cref="ParseErrorMessage"/> if it is not null.
         /// </summary>
         /// <returns>Formated string (or <see cref="ParseErrorMessage"/> if any).</returns>
         public override string ToString() =>  ToString( CSVersionFormat.Normalized );
@@ -28,6 +29,7 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the string version in the given format.
+        /// Returns the <see cref="ParseErrorMessage"/> if it is not null.
         /// </summary>
         /// <param name="f">Format to use.</param>
         /// <param name="buildInfo">Not null to generate a post-release version.</param>
@@ -165,8 +167,6 @@ namespace CSemVer
             var nugetVer = ToString( CSVersionFormat.NugetPackageV2, buildInfo );
             return InformationalVersion.BuildInformationalVersion( semVer, nugetVer, commitSha, commitDateUtc );
         }
-
-        static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 }
 

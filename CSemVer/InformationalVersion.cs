@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -9,6 +10,9 @@ namespace CSemVer
     /// <summary>
     /// Parses a standard informational version in order to extract the two <see cref="SVersion"/> (the short and long forms), 
     /// the <see cref="CommitSha"/> and the <see cref="CommitDate"/> if possible.
+    /// Syntax check is very strict (the <see cref="Zero"/> string is a sample) and should remain strict. 
+    /// What is missing in the equivalence check between NuGet and SemVer version: this requires a parse
+    /// of the NuGet version and it has yet to be done.
     /// </summary>
     public class InformationalVersion
     {
@@ -72,16 +76,20 @@ namespace CSemVer
                     SemVersion = SVersion.TryParse( RawSemVersion );
                     NuGetVersion = SVersion.TryParse( RawNuGetVersion );
                     DateTime t;
-                    if( DateTime.TryParse( m.Groups[4].Value, out t))
+                    if( DateTime.TryParseExact( m.Groups[4].Value, "u", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal, out t ) )
                     {
-                        IsValidSyntax = SemVersion.IsValidSyntax 
-                            && NuGetVersion.IsValidSyntax
-                            && CommitSha.Length == 40 
-                            && CommitSha.All( IsHexDigit );
                         CommitDate = t;
+                        if( t.Kind != DateTimeKind.Utc ) ParseErrorMessage = $"The CommitDate must be Utc: {m.Groups[4].Value} must be {DateTime.SpecifyKind( t, DateTimeKind.Utc ).ToString("u")}.";
+                        else if( !SemVersion.IsValidSyntax ) ParseErrorMessage = "The SemVersion is invalid: " + SemVersion.ParseErrorMessage;
+                        else if( !NuGetVersion.IsValidSyntax ) ParseErrorMessage = "The NuGetVersion is invalid: " + NuGetVersion.ParseErrorMessage;
+                        else if( CommitSha.Length != 40 || !CommitSha.All( IsHexDigit ) ) ParseErrorMessage = "The CommitSha is invalid (must be 40 hex digit).";
+                        else IsValidSyntax = true;
                     }
+                    else ParseErrorMessage = "The CommitDate is invalid.It must be a UTC DateTime in \"u\" format.";
                 }
+                else ParseErrorMessage = "The String to parse does not match the standard CSemVer informational version pattern.";
             }
+            else ParseErrorMessage = "String to parse is null.";
         }
 
         InformationalVersion()
@@ -100,6 +108,12 @@ namespace CSemVer
         /// the <see cref="CommitSha"/> is a 40 hexadecimal string and <see cref="CommitDate"/> has been successfully parsed.
         /// </summary>
         public bool IsValidSyntax { get; }
+
+        /// <summary>
+        /// Gets an error message whenever <see cref="IsValidSyntax"/> is true.
+        /// Null otherwise.
+        /// </summary>
+        public string ParseErrorMessage { get; }
 
         /// <summary>
         /// Gets the original informational (can be null).
@@ -138,15 +152,29 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the commit date  extracted from the <see cref="InformationalVersion"/>.
-        /// Null if the OriginalInformationalVersion attribute was not standard.
+        /// <see cref="DateTime.MinValue"/> if the OriginalInformationalVersion attribute was not standard.
+        /// This date is required to be in Utc in "u" DateTime format.
         /// </summary>
         public DateTime CommitDate { get; }
 
         /// <summary>
-        /// Overridden to return OriginalInformationalVersion or "[null OriginalInformationalVersion]".
+        /// Overridden to return the <see cref="ParseErrorMessage"/> or the <see cref="OriginalInformationalVersion"/>.
         /// </summary>
-        /// <returns></returns>
-        public override string ToString() => OriginalInformationalVersion ?? "[null OriginalInformationalVersion]";
+        /// <returns>The textual representation.</returns>
+        public override string ToString() => ParseErrorMessage ?? OriginalInformationalVersion;
+
+        /// <summary>
+        /// Parses the given string. Throws an <see cref="ArgumentException"/> if the syntax is invalid.
+        /// </summary>
+        /// <param name="s">The string to parse.</param>
+        /// <returns>A <see cref="IsValidSyntax"/> informational version.</returns>
+        static public InformationalVersion Parse( string s )
+        {
+            var i = new InformationalVersion( s );
+            if( !i.IsValidSyntax ) throw new ArgumentException( i.ParseErrorMessage, nameof( s ) );
+            return i;
+        }
+
 
         /// <summary>
         /// Builds a standard Informational version string.

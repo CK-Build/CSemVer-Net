@@ -7,7 +7,8 @@ namespace CSemVer
 {
     /// <summary>
     /// Semantic version implementation.
-    /// Strictly conforms to http://semver.org/ v2.0.0.
+    /// Strictly conforms to http://semver.org/ v2.0.0 with a capture of the <see cref="ParseErrorMessage"/>
+    /// when <see cref="IsValidSyntax"/> is false.
     /// </summary>
     public sealed class SVersion : IEquatable<SVersion>, IComparable<SVersion>
     {
@@ -187,10 +188,10 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Returns the <see cref="Text"/> of this instance or "[null Text]" if Text is null.
+        /// Overridden to return the <see cref="ParseErrorMessage"/> if not null or the <see cref="Text"/>.
         /// </summary>
-        /// <returns>The string representation.</returns>
-        public override string ToString() => Text ?? "[null Text]";
+        /// <returns>The textual representation.</returns>
+        public override string ToString() => ParseErrorMessage ?? Text;
 
         /// <summary>
         /// Compares this with another <see cref="SVersion"/>.
