@@ -125,7 +125,7 @@ namespace CodeCake
                 .IsDependentOn( "Restore-NuGet-Packages" )
                 .Does( () =>
                  {
-                     Cake.DotNetCoreBuild( solutionFileName,
+                     Cake.DotNetCoreBuild( "CodeCakeBuilder/CoreBuild.proj",
                          new DotNetCoreBuildSettings().AddVersionArguments( gitInfo, s =>
                          {
                              s.Configuration = configuration;
@@ -171,7 +171,6 @@ namespace CodeCake
                      Cake.CreateDirectory( releasesDir );
                      foreach( SolutionProject p in projectsToPublish )
                      {
-                         Cake.Warning( p.Path.GetDirectory().FullPath );
                          var s = new DotNetCorePackSettings();
                          s.ArgumentCustomization = args => args.Append( "--include-symbols" );
                          s.NoBuild = true;
