@@ -18,6 +18,11 @@ namespace CSemVer.Tests
             Assert.That( null < SVersion.ZeroVersion );
             Assert.That( SVersion.ZeroVersion >= null );
             Assert.That( null <= SVersion.ZeroVersion );
+
+            var aZero = new SVersion( 0, 0, 0, "0" );
+            Assert.That( aZero == SVersion.ZeroVersion );
+            Assert.That( aZero >= SVersion.ZeroVersion );
+            Assert.That( aZero <= SVersion.ZeroVersion );
         }
 
         [TestCase( "0.0.0" )]

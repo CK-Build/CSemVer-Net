@@ -235,6 +235,10 @@ namespace CSemVer
                 commonParts = yParts.Length;
                 ultimateResult = 1;
             }
+            else if( yParts.Length == xParts.Length )
+            {
+                ultimateResult = 0;
+            }
             for( int i = 0; i < commonParts; i++ )
             {
                 var xP = xParts[i];
