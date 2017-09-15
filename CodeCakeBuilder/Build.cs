@@ -1,4 +1,4 @@
-﻿using Cake.Common.Build;
+using Cake.Common.Build;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
 using Cake.Common.Solution;
@@ -20,33 +20,6 @@ using System.Linq;
 
 namespace CodeCake
 {
-    public static class DotNetCoreRestoreSettingsExtension
-    {
-        public const string versionWhenInvalid = "0.0.0-AbsolutelyInvalid";
-
-        public static T AddVersionArguments<T>( this T @this, SimpleRepositoryInfo info, Action<T> conf = null ) where T : DotNetCoreSettings
-        {
-            string version = versionWhenInvalid, assemblyVersion = "0.0", fileVersion = "0.0.0.0", informationalVersion = "";
-            if( info.IsValid )
-            {
-                version = info.NuGetVersion;
-                assemblyVersion = info.MajorMinor;
-                fileVersion = info.FileVersion;
-                informationalVersion = $"{info.SemVer} ({info.NuGetVersion}) - SHA1: {info.CommitSha} - CommitDate: {info.CommitDateUtc.ToString( "u" )}";
-            }
-            var prev2 = @this.ArgumentCustomization;
-            @this.ArgumentCustomization = args => (prev2?.Invoke( args ) ?? args)
-                    .Append( $@"/p:CakeBuild=""true""" )
-                    .Append( $@"/p:Version=""{version}""" )
-                    .Append( $@"/p:AssemblyVersion=""{assemblyVersion}.0""" )
-                    .Append( $@"/p:FileVersion=""{fileVersion}""" )
-                    .Append( $@"/p:InformationalVersion=""{informationalVersion}""" );
-
-            conf?.Invoke( @this );
-            return @this;
-        }
-    }
-
     /// <summary>
     /// Standard build "script".
     /// </summary>
@@ -96,7 +69,7 @@ namespace CodeCake
 
                      Cake.Information( "Publishing {0} projects with version={1} and configuration={2}: {3}",
                          projectsToPublish.Count(),
-                         gitInfo.SemVer,
+                         gitInfo.SafeSemVersion,
                          configuration,
                          string.Join( ", ", projectsToPublish.Select( p => p.Name ) ) );
                  } );
@@ -110,19 +83,9 @@ namespace CodeCake
                      Cake.DeleteFiles( "Tests/**/TestResult*.xml" );
                  } );
 
-            Task( "Restore-NuGet-Packages" )
-                .IsDependentOn( "Check-Repository" )
-                .IsDependentOn( "Clean" )
-                .Does( () =>
-                 {
-                    // https://docs.microsoft.com/en-us/nuget/schema/msbuild-targets
-                    Cake.DotNetCoreRestore( new DotNetCoreRestoreSettings().AddVersionArguments( gitInfo ) );
-                 } );
-
             Task( "Build" )
                 .IsDependentOn( "Check-Repository" )
                 .IsDependentOn( "Clean" )
-                .IsDependentOn( "Restore-NuGet-Packages" )
                 .Does( () =>
                  {
                      Cake.DotNetCoreBuild( "CodeCakeBuilder/CoreBuild.proj",
@@ -221,7 +184,7 @@ namespace CodeCake
                      }
                      if( Cake.AppVeyor().IsRunningOnAppVeyor )
                      {
-                         Cake.AppVeyor().UpdateBuildVersion( gitInfo.NuGetVersion );
+                         Cake.AppVeyor().UpdateBuildVersion( gitInfo.SafeNuGetVersion );
                      }
                  } );
 
