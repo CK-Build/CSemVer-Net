@@ -1,4 +1,4 @@
-﻿namespace CSemVer
+namespace CSemVer
 {
     /// <summary>
     /// Format description for <see cref="CSVersion.ToString(CSVersionFormat,CIBuildDescriptor,bool)"/>.
@@ -33,14 +33,19 @@
         FileVersion,
 
         /// <summary>
-        /// NuGet version 2. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// Short form. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
-        NugetPackageV2,
+        ShortForm,
 
         /// <summary>
-        /// NuGet format. Currently <see cref="NugetPackageV2"/>.
+        /// NuGet version 2. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
-        NuGetPackage = NugetPackageV2,
+        NugetPackageV2 = ShortForm,
+
+        /// <summary>
+        /// NuGet format. Currently <see cref="ShortForm"/>.
+        /// </summary>
+        NuGetPackage = ShortForm,
 
         /// <summary>
         /// Default is <see cref="Normalized"/>.

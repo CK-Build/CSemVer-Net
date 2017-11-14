@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,7 +33,7 @@ namespace CSemVer.Tests
             Assert.That( vSemVer < vCISemVer, "{0} < {1}", vSemVer, vCISemVer );
             Assert.That( vCISemVer < vNextSemVer, "{0} < {1}", vCISemVer, vNextSemVer );
 
-            foreach( var vAfter in after.Split( ',' ).Select( s => SVersion.Parse( s.Trim() )) ) 
+            foreach( var vAfter in after.Split( ',' ).Select( s => SVersion.Parse( s.Trim() ) ) )
             {
                 Assert.That( vAfter.CompareTo( vCISemVer ) > 0, "{0} > {1}", vAfter, vCISemVer );
             }
@@ -62,7 +62,7 @@ namespace CSemVer.Tests
             var vPrev = SVersion.Parse( tPrev.ToString( CSVersionFormat.SemVer ) );
             Assert.That( vPrev < v, "{0} < {1}", vPrev, v );
             Assert.That( v < vNext, "{0} < {1}", v, vNext );
-            
+
             var sNuGet = t.ToString( formatV2 );
             var sNuGetPrev = tPrev.ToString( formatV2 );
             var sNuGetNext = tNext.ToString( formatV2 );
@@ -72,7 +72,7 @@ namespace CSemVer.Tests
 
             CIBuildDescriptor ci = new CIBuildDescriptor { BranchName = "dev", BuildIndex = 1 };
 
-            string sCI =  t.ToString( CSVersionFormat.SemVer, ci );
+            string sCI = t.ToString( CSVersionFormat.SemVer, ci );
             SVersion vCi = SVersion.Parse( sCI );
             Assert.That( v < vCi, "{0} < {1}", v, vCi );
             Assert.That( vCi < vNext, "{0} < {1}", vCi, vNext );
@@ -80,7 +80,7 @@ namespace CSemVer.Tests
             var sNuGetCI = t.ToString( formatV2, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGet, sNuGetCI ) < 0, "{0} < {1}", sNuGet, sNuGetCI );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCI, sNuGetNext ) < 0, "{0} < {1}", sNuGetCI, sNuGetNext );
-            
+
             string sCiNext = tNext.ToString( CSVersionFormat.SemVer, ci );
             SVersion vCiNext = SVersion.Parse( sCiNext );
             Assert.That( vCiNext > vCi, "{0} > {1}", vCiNext, vCi );
@@ -98,7 +98,7 @@ namespace CSemVer.Tests
 
             var sNuGetCIPrev = tPrev.ToString( formatV2, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetPrev ) > 0, "{0} > {1}", sNuGetCIPrev, sNuGetPrev );
-            Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev,  sNuGet ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGet );
+            Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGet ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGet );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetCINext ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGetCINext );
         }
 

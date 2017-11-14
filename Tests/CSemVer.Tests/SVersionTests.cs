@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +29,7 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0--" )]
         [TestCase( "0.0.0-a" )]
         [TestCase( "0.0.0-A" )]
-        public void the_Zero_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion(string version)
+        public void the_Zero_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion( string version )
         {
             var v = SVersion.TryParse( version );
             Assert.That( v.IsValidSyntax );
@@ -63,7 +63,7 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0-a..b" )]
         [TestCase( "0.0.0-01" )]
         [TestCase( "0.0.0-$" )]
-        public void Syntaxically_invalid_SVersion_are_greater_than_null_and_lower_than_the_Zero_one(string invalid)
+        public void Syntaxically_invalid_SVersion_are_greater_than_null_and_lower_than_the_Zero_one( string invalid )
         {
             SVersion notV = SVersion.TryParse( invalid );
             Assert.That( !notV.IsValidSyntax );
