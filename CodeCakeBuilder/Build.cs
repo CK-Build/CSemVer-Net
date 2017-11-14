@@ -99,31 +99,13 @@ namespace CodeCake
                 .IsDependentOn( "Build" )
                 .Does( () =>
                  {
-                     Cake.CreateDirectory( releasesDir );
-                     var testDlls = projects.Where( p => p.Name.EndsWith( ".Tests" ) ).Select( p =>
-                             new
-                             {
-                                 ProjectPath = p.Path.GetDirectory(),
-                                 NetCoreApp = p.Path.GetDirectory().CombineWithFilePath( "bin/" + configuration + "/netcoreapp1.1/" + p.Name + ".dll" ),
-                                 Net461 = p.Path.GetDirectory().CombineWithFilePath( "bin/" + configuration + "/net461/" + p.Name + ".dll" ),
-                             } );
+                     var net461Path = "Tests/CSemVer.Tests/bin/" + configuration + "/net461/CSemVer.Tests.dll";
+                     Cake.Information( $"Testing: CSemVer.Tests (net461)" );
+                     Cake.NUnit( net461Path, new NUnitSettings() { Framework = "v4.5" } );
 
-                     foreach( var test in testDlls )
-                     {
-                         if( System.IO.File.Exists( test.Net461.FullPath ) )
-                         {
-                             Cake.Information( "Testing: {0}", test.Net461 );
-                             Cake.NUnit( test.Net461.FullPath, new NUnitSettings()
-                             {
-                                 Framework = "v4.5"
-                             } );
-                         }
-                         if( System.IO.File.Exists( test.NetCoreApp.FullPath ) )
-                         {
-                             Cake.Information( "Testing: {0}", test.NetCoreApp );
-                             Cake.DotNetCoreExecute( test.NetCoreApp );
-                         }
-                     }
+                     var netCorePath = "Tests/CSemVer.NetCore.Tests/bin/" + configuration + "/netcoreapp2.0/CSemVer.NetCore.Tests.dll";
+                     Cake.Information( "Testing: CSemVer.NetCore.Tests (netcoreapp2.0)" );
+                     Cake.DotNetCoreExecute( netCorePath );
                  } );
 
             Task( "Create-NuGet-Packages" )

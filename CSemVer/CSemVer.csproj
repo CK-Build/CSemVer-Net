@@ -8,5 +8,5 @@
     <PackageIconUrl>https://raw.githubusercontent.com/SimpleGitVersion/SGV-Net/master/SimpleGitVersion.png</PackageIconUrl>
     <PackageTags>Versioning, SemVer, NuGet, CSemVer, InformationalVersion</PackageTags>
   </PropertyGroup>
-
+  
 </Project>

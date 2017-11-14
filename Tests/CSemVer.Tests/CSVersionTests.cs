@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -67,6 +67,7 @@ namespace CSemVer.Tests
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( tag ) );
         }
 
+        [TestCase( null, -1 )]
         [TestCase( "", -1 )]
         [TestCase( "alpha", 0 )]
         [TestCase( "beta", 1 )]
@@ -74,11 +75,20 @@ namespace CSemVer.Tests
         [TestCase( "epsilon", 3 )]
         [TestCase( "gamma", 4 )]
         [TestCase( "kappa", 5 )]
+        [TestCase( "a", 0 )]
+        [TestCase( "b", 1 )]
+        [TestCase( "d", 2 )]
+        [TestCase( "e", 3 )]
+        [TestCase( "g", 4 )]
+        [TestCase( "k", 5 )]
+        [TestCase( "p", 6 )]
+        [TestCase( "r", 7 )]
         [TestCase( "A", 6 )]
         [TestCase( "Alpha", 6 )]
         [TestCase( "c", 6 )]
         [TestCase( "mmmmm", 6 )]
         [TestCase( "Rc", 6 )]
+        [TestCase( "prerelease", 6 )]
         [TestCase( "rc", 7 )]
         public void handling_pre_release_name_index( string n, int idx )
         {

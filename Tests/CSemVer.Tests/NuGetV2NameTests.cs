@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -82,7 +82,10 @@ namespace CSemVer.Tests
         [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r99" )]
         public void pre_release_with_standard_names_nugetV2_mappings( string tag, string nuget )
         {
+            CSVersion fromShortForm = CSVersion.Parse( nuget );
             CSVersion t = CSVersion.TryParse( tag );
+            Assert.That( t, Is.EqualTo( fromShortForm ) );
+
             Assert.That( t.IsValidSyntax );
             Assert.That( t.IsPreRelease );
             Assert.That( t.IsPreReleaseNameStandard );
@@ -90,6 +93,7 @@ namespace CSemVer.Tests
             Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
+
         }
 
         [TestCase( "0.0.0-alpha.0.1", "0.0.0-a00-01" )]
@@ -102,7 +106,10 @@ namespace CSemVer.Tests
         [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99" )]
         public void pre_release_with_standard_names_and_fix_number_nugetV2_mappings( string tag, string nuget )
         {
+            CSVersion fromShortForm = CSVersion.Parse( nuget );
             CSVersion t = CSVersion.TryParse( tag );
+            Assert.That( t, Is.EqualTo( fromShortForm ) );
+
             Assert.That( t.IsValidSyntax );
             Assert.That( t.IsPreRelease );
             Assert.That( t.IsPreReleaseNameStandard );
@@ -111,6 +118,7 @@ namespace CSemVer.Tests
             Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NugetPackageV2 ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
+
         }
 
     }
