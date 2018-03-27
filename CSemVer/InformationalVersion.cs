@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CSemVer
@@ -174,7 +172,6 @@ namespace CSemVer
             if( !i.IsValidSyntax ) throw new ArgumentException( i.ParseErrorMessage, nameof( s ) );
             return i;
         }
-
 
         /// <summary>
         /// Builds a standard Informational version string.

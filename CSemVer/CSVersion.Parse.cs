@@ -42,7 +42,8 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Attempts to parse a string like "4.0.0", "1.0-5-alpha.0", "1.0-5-rc.12.87" and returns a <see cref="CSVersion"/>
+        /// Attempts to parse a string like "4.0.0", "1.0.5-alpha.0", "1.0.5-rc.12.87" (long form) or
+        /// "1.0.0-a01", "5.0.2-b01-65" (short form) and returns a <see cref="CSVersion"/>
         /// that may not be <see cref="IsValidSyntax"/>.
         /// Initial 'v' (or 'V') is optional (GitHub convention).
         /// Numbers can not start with a 0 (except if it is 0).
