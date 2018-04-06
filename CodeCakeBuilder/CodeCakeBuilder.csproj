@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="NuGet.CommandLine" Version="4.6.2" />
     <PackageReference Include="Code.Cake" Version="0.25.0" />
     <PackageReference Include="CK.Text" Version="6.2.1" />
     <PackageReference Include="SimpleGitVersion.Cake" Version="0.30.0" />
