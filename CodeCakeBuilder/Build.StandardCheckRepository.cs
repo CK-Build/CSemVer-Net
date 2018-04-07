@@ -277,7 +277,7 @@ namespace CodeCake
             {
                 if( result.ShouldStop )
                 {
-                    appVeyor.UpdateBuildVersion( $"Already-done-{appVeyor.Environment.Build.Id}" );
+                    appVeyor.UpdateBuildVersion( $"Already-done ({appVeyor.Environment.Build.Number})" );
                 }
                 else
                 {
@@ -287,7 +287,7 @@ namespace CodeCake
                     }
                     catch
                     {
-                        appVeyor.UpdateBuildVersion( $"{gitInfo.SafeNuGetVersion} - {appVeyor.Environment.Build.Id}" );
+                        appVeyor.UpdateBuildVersion( $"{gitInfo.SafeNuGetVersion} ({appVeyor.Environment.Build.Number})" );
                     }
                 }
             }
