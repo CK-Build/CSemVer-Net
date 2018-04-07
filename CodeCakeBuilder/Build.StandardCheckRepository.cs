@@ -277,7 +277,7 @@ namespace CodeCake
             {
                 if( result.ShouldStop )
                 {
-                    appVeyor.UpdateBuildVersion( $"Already-done ({appVeyor.Environment.Build.Number})" );
+                    appVeyor.UpdateBuildVersion( $"{gitInfo.SafeNuGetVersion} - Skipped ({appVeyor.Environment.Build.Number})" );
                 }
                 else
                 {
