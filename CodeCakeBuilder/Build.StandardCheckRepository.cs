@@ -271,6 +271,27 @@ namespace CodeCake
                 DispalyFeedPackageResult( result.LocalFeedPath, result.LocalFeedPackagesToCopy, lookup.Count );
             }
             Cake.Information( $"Should actually publish {result.ActualPackagesToPublish.Count()} out of {projectsToPublish.Count()} projects with version={gitInfo.SafeNuGetVersion} and configuration={result.BuildConfiguration}: {result.ActualPackagesToPublish.Select( p => p.Name ).Concatenate()}" );
+
+            var appVeyor = Cake.AppVeyor();
+            if( appVeyor.IsRunningOnAppVeyor )
+            {
+                if( result.ShouldStop )
+                {
+                    appVeyor.UpdateBuildVersion( $"Already-done-{appVeyor.Environment.Build.Id}" );
+                }
+                else
+                {
+                    try
+                    {
+                        appVeyor.UpdateBuildVersion( gitInfo.SafeNuGetVersion );
+                    }
+                    catch
+                    {
+                        appVeyor.UpdateBuildVersion( $"{gitInfo.SafeNuGetVersion} - {appVeyor.Environment.Build.Id}" );
+                    }
+                }
+            }
+            
             return result;
         }
 
