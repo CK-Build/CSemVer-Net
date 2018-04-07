@@ -138,7 +138,9 @@ namespace CodeCake
         }
 
         /// <summary>
-        /// Creates a new <see cref="CheckRepositoryInfo"/>.
+        /// Creates a new <see cref="CheckRepositoryInfo"/>. This selects the feeds (a local and/or e remote one)
+        /// and checks the packages that sould actually be produced for them.
+        /// When running on Appveyor, the build number is set.
         /// </summary>
         /// <param name="projectsToPublish">The projects to publish.</param>
         /// <param name="gitInfo">The git info.</param>
