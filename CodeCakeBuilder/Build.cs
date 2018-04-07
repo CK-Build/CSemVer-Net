@@ -54,7 +54,7 @@ namespace CodeCake
                     globalInfo = StandardCheckRepository( projectsToPublish, gitInfo );
                     if( globalInfo.ShouldStop )
                     {
-                        Cake.TerminateWithSuccess( "All packages from this commit are already available. Cancelling the build." );
+                        Cake.TerminateWithSuccess( "All packages from this commit are already available. Build aborted." );
                     }
                 } );
 
