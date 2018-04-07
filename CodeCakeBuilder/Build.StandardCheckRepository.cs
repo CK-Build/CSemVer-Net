@@ -59,7 +59,7 @@ namespace CodeCake
             public MyGetPublicFeed( string feedName, string apiKeyName )
             {
                 _feedName = feedName;
-                APIKeyName = APIKeyName;
+                APIKeyName = apiKeyName;
                 PushUrl = $"https://www.myget.org/F/{feedName}/api/v2/package";
                 PushSymbolUrl = $"https://www.myget.org/F/{feedName}/symbols/api/v2/package";
             }
@@ -237,7 +237,7 @@ namespace CodeCake
             // in those feeds.
             if( result.RemoteFeed != null )
             {
-                using( var client = new HttpClient() )
+                using( var client = new HttpClient( new HttpClientHandler { AllowAutoRedirect = false }, true ) )
                 {
                     var requests = projectsToPublish
                                     .Select( p => new
