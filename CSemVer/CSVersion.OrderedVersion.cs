@@ -38,7 +38,7 @@ namespace CSemVer
         /// </summary>
         public const int MaxPatch = 9999;
         /// <summary>
-        /// The maximum number of prereleases is also the index of the "rc" entry in <see cref="StandardPreReleaseNames"/>.
+        /// The maximum number of prereleases is also the index of the "rc" entry in <see cref="StandardPrereleaseNames"/>.
         /// </summary>
         public const int MaxPreReleaseNameIdx = 7;
         /// <summary>
@@ -69,12 +69,12 @@ namespace CSemVer
         const long DivMajor = DivMinor * (MaxMinor + 1);
 
         /// <summary>
-        /// Gets the standard <see cref="PreReleaseName"/>.
+        /// Gets the standard <see cref="PrereleaseName"/>.
         /// </summary>
-        public static IReadOnlyList<string> StandardPreReleaseNames => _standardNames;
+        public static IReadOnlyList<string> StandardPrereleaseNames => _standardNames;
 
         /// <summary>
-        /// Gets the short form <see cref="PreReleaseName"/> (the initials).
+        /// Gets the short form <see cref="PrereleaseName"/> (the initials).
         /// </summary>
         public static IReadOnlyList<string> StandardPreReleaseNamesShort => _standardNamesI;
 

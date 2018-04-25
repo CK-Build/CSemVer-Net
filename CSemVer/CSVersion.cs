@@ -21,15 +21,15 @@ namespace CSemVer
         /// <summary>
         /// When <see cref="SVersion.ParsedText"/> is not null, necessarily not null: empty string for a release.
         /// This is the pre release name directly extracted from the text. This field does not participate to equality or comparison: 
-        /// the actual, standardized, prerelease name is <see cref="PreReleaseName"/>.
+        /// the actual, standardized, prerelease name is <see cref="PrereleaseName"/>.
         /// </summary>
         public readonly string ParsedPrereleaseName;
 
         /// <summary>
-        /// Gets the standard pre release name among <see cref="StandardPreReleaseNames"/>.
+        /// Gets the standard pre release name among <see cref="StandardPrereleaseNames"/>.
         /// <see cref="string.Empty"/> when this is not a pre release version.
         /// </summary>
-        public string PreReleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
+        public string PrereleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
 
         /// <summary>
         /// Gets whether this is a pre release.
@@ -143,11 +143,8 @@ namespace CSemVer
                 _alreadyInCheck = true;
                 try
                 {
-                    // Systematically checks that a CSVersion in Long or Short form is a syntaxically valid SemVer version.
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.SemVerWithBuildMetaData ) ).IsValid );
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).IsValid );
                     //// Systematically checks that a valid CSVersion can be parsed back in Long or Short form.
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.SemVerWithBuildMetaData ) ).Equals( v ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.Normalized ) ).Equals( v ) );
                     Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).Equals( v ) );
                 }
                 finally

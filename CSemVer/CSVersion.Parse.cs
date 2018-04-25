@@ -46,7 +46,7 @@ namespace CSemVer
         /// <summary>
         /// Computes the pre release name index ('alpha' is 0, 'rc' is <see cref="MaxPreReleaseNameIdx"/>).
         /// This is -1 if the pre release name is null or empty (no pre release name defines a final release).
-        /// The lookup into <see cref="StandardPreReleaseNames"/> or <see cref="StandardPreReleaseNamesShort"/> is
+        /// The lookup into <see cref="StandardPrereleaseNames"/> or <see cref="StandardPreReleaseNamesShort"/> is
         /// case sensitive.
         /// Any unmatched pre release name is <see cref="MaxPreReleaseNameIdx"/> - 1 ('prerelease', the last one before 'rc').
         /// </summary>

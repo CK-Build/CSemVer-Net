@@ -26,7 +26,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="f">Format to use.</param>
         /// <param name="buildInfo">Not null to generate a post-release version. This is not compatible with <see cref="CSVersionFormat.Normalized"/> format.</param>
-        /// <param name="usePreReleaseNameFromTag">True to use <see cref="ParsedPrereleaseName"/> instead of standardized <see cref="PreReleaseName"/>.</param>
+        /// <param name="usePreReleaseNameFromTag">True to use <see cref="ParsedPrereleaseName"/> instead of standardized <see cref="PrereleaseName"/>.</param>
         /// <returns>Formated string (or <see cref="SVersion.ErrorMessage"/> if any).</returns>
         public string ToString( CSVersionFormat f, CIBuildDescriptor buildInfo = null, bool usePreReleaseNameFromTag = false )
         {
@@ -37,28 +37,27 @@ namespace CSemVer
                 return ToStringFileVersion( buildInfo != null );
             }
 
-            string prName = usePreReleaseNameFromTag ? ParsedPrereleaseName : PreReleaseName;
-            switch( f )
+            if( f == CSVersionFormat.ShortForm || f == CSVersionFormat.ShortFormWithhBuildMetaData )
             {
-                case CSVersionFormat.ShortForm:
-                    {
-                        // For short form, we are obliged to use the initial otherwise the special part for a pre release fix is too long for CI-Build LastReleasedBased.
-                        if( usePreReleaseNameFromTag ) throw new ArgumentException( "CSVersionFormat.ShortForm can not use PreReleaseNameFromTag." );
-                        return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, buildInfo );
-                    }
-                case CSVersionFormat.SemVer:
-                case CSVersionFormat.SemVerWithBuildMetaData:
-                    {
-                        string suffix = f == CSVersionFormat.SemVerWithBuildMetaData && BuildMetaData.Length > 0
-                                                ? "+" + BuildMetaData
-                                                : string.Empty;
-                        return ComputeLongFormVersion( Major, Minor, Patch, prName, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
-                    }
-                default:
-                    {
-                        Debug.Assert( f == CSVersionFormat.Normalized );
-                        return NormalizedText;
-                    }
+                // For short form, we are obliged to use the initial otherwise the special part for a pre release fix is too long for CI-Build LastReleasedBased.
+                if( usePreReleaseNameFromTag ) throw new ArgumentException( "CSVersionFormat.ShortForm can not use PreReleaseNameFromTag." );
+                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
+                                        ? "+" + BuildMetaData
+                                        : string.Empty;
+                return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
+            }
+            else
+            {
+                Debug.Assert( f == CSVersionFormat.Normalized || f == CSVersionFormat.NormalizedWithBuildMetaData );
+                string prName = usePreReleaseNameFromTag && ParsedPrereleaseName != null ? ParsedPrereleaseName : PrereleaseName;
+                if( buildInfo == null && prName == PrereleaseName )
+                {
+                    return f == CSVersionFormat.Normalized ? NormalizedText : NormalizedTextWithBuildMetaData;
+                }
+                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
+                                        ? "+" + BuildMetaData
+                                        : string.Empty;
+                return ComputeLongFormVersion( Major, Minor, Patch, prName, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
             }
         }
 
@@ -79,7 +78,7 @@ namespace CSemVer
             return _standardNames[preReleaseNameIdx];
         }
 
-        static string ComputeLongFormVersion( int major, int minor, int patch, string prereleaseName, int preReleaseNumber, int preReleasePatch, string suffix = null, CIBuildDescriptor buildInfo = null )
+        static string ComputeLongFormVersion( int major, int minor, int patch, string prereleaseName, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
         {
             if( buildInfo != null )
             {
@@ -116,15 +115,13 @@ namespace CSemVer
             return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", major, minor, patch, suffix );
         }
 
-        static string ComputeShortFormVersion( int major, int minor, int patch, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch, CIBuildDescriptor buildInfo = null )
+        static string ComputeShortFormVersion( int major, int minor, int patch, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
         {
-            string suffix = null;
             if( buildInfo != null )
             {
                 if( !buildInfo.IsValidForShortForm ) throw new ArgumentException( "buildInfo must be valid for ShortForm format." );
-                suffix = buildInfo.ToStringForShortForm();
+                suffix = buildInfo.ToStringForShortForm() + suffix;
             }
-
             if( preReleaseNameIdx >= 0 )
             {
                 string prName = _standardNamesI[preReleaseNameIdx];
@@ -172,7 +169,7 @@ namespace CSemVer
         public string GetInformationalVersion( string commitSha, DateTime commitDateUtc, CIBuildDescriptor buildInfo = null )
         {
             if( !IsValid ) throw new InvalidOperationException( "IsValid must be true. Use CSVersion.InvalidInformationalVersion when IsValid is false." );
-            var semVer = ToString( CSVersionFormat.SemVer, buildInfo );
+            var semVer = ToString( CSVersionFormat.Normalized, buildInfo );
             var nugetVer = ToString( CSVersionFormat.ShortForm, buildInfo );
             return InformationalVersion.BuildInformationalVersion( semVer, nugetVer, commitSha, commitDateUtc );
         }

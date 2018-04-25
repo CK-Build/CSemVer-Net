@@ -29,18 +29,18 @@ namespace CSemVer.Tests
             SVersion svB = sv.WithBuildMetaData( "Test" );
             Assert.That( svB, Is.Not.AssignableTo<CSVersion>() );
             Assert.That( svB.AsCSVersion, Is.Null );
-            Assert.That( svB.ToString(), Is.EqualTo( "v1.0.0-not.a.CSemVer.Version+Test" ) );
+            Assert.That( svB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-not.a.CSemVer.Version+Test" ) );
 
             SVersion svcB = svc.WithBuildMetaData( "Test" );
             Assert.That( svcB, Is.AssignableTo<CSVersion>() );
             Assert.That( svcB.AsCSVersion, Is.SameAs( svcB ) );
-            Assert.That( svcB.ToString(), Is.EqualTo( "v1.0.0-alpha+Test" ) );
+            Assert.That( svcB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-alpha+Test" ) );
 
             SVersion svncB = svnc.WithBuildMetaData( "Test" );
             Assert.That( svncB, Is.Not.AssignableTo<CSVersion>() );
             Assert.That( svncB.AsCSVersion, Is.Not.Null );
-            Assert.That( svncB.ToString(), Is.EqualTo( "v1.0.0-prereleaseForCSemVer+Test" ) );
-            Assert.That( svncB.AsCSVersion.ToString(), Is.EqualTo( "v1.0.0-prerelease+Test" ) );
+            Assert.That( svncB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prereleaseForCSemVer+Test" ) );
+            Assert.That( svncB.AsCSVersion.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prerelease+Test" ) );
 
         }
     }

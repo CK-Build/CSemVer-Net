@@ -6,27 +6,18 @@ namespace CSemVer
     public enum CSVersionFormat
     {
         /// <summary>
-        /// Normalized format is the same as <see cref="SVersion.ToString()"/> (with a 'v' prefix and <see cref="SVersion.BuildMetaData"/>).
+        /// Normalized semantic version format.
+        /// It is the same as <see cref="SVersion.ToString()"/> when no <see cref="CIBuildDescriptor"/> is provided (it
+        /// does not include the <see cref="SVersion.BuildMetaData"/>).
         /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name).
-        /// This format does not support <see cref="CIBuildDescriptor"/>.
         /// This is the default.
         /// </summary>
         Normalized,
 
         /// <summary>
-        /// Semantic version format.
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) and there is no build meta data.
-        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// Same as <see cref="Normalized"/> with the trailng +<see cref="SVersion.BuildMetaData"/>.
         /// </summary>
-        SemVer,
-
-        /// <summary>
-        /// Semantic version format.
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) plus <see cref="SVersion.BuildMetaData"/>
-        /// if it exists.
-        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
-        /// </summary>
-        SemVerWithBuildMetaData,
+        NormalizedWithBuildMetaData,
 
         /// <summary>
         /// The file version (see https://msdn.microsoft.com/en-us/library/system.diagnostics.fileversioninfo.fileversion.aspx)
@@ -37,11 +28,16 @@ namespace CSemVer
 
         /// <summary>
         /// Short form. This format is the one to use for package version.
-        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided but not the <see cref="SVersion.BuildMetaData"/>.
         /// It is short, readable even when a CIBuildDescriptor is provided and compatible with any version of NuGet (or
         /// other basic, non conformant, implementation of Semantic Versionning).
         /// </summary>
         ShortForm,
+
+        /// <summary>
+        /// Same as <see cref="ShortForm"/> with the trailng +<see cref="SVersion.BuildMetaData"/>.
+        /// </summary>
+        ShortFormWithhBuildMetaData,
 
         /// <summary>
         /// NuGet format. The <see cref="ShortForm"/> is always used.
