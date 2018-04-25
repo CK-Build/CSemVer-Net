@@ -1,4 +1,4 @@
-﻿using CSemVer;
+using CSemVer;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -20,8 +20,8 @@ namespace CSemVer.Tests
 
         public int Compare( string x, string y )
         {
-            var vX = SVersion.Parse( x );
-            var vY = SVersion.Parse( y );
+            var vX = SVersion.Parse( x, handleCSVersion: false );
+            var vY = SVersion.Parse( y, handleCSVersion: false );
             CheckValid( x );
             CheckValid( y );
             Assert.That( vX.Prerelease.Length <= 20, "{0} => PreRelease must not contain more than 20 characters (lenght is {1}).", x, x.Length );

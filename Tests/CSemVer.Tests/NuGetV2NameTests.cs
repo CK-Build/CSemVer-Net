@@ -26,7 +26,7 @@ namespace CSemVer.Tests
             Console.WriteLine( " -> - found {0} successors for '{1}' (NuGetV2 = {2}, Ordered Version = {3}, File = {4}.{5}.{6}.{7}):",
                                 succ.Count(),
                                 t,
-                                t.ToString( CSVersionFormat.NugetPackageV2 ),
+                                t.ToString( CSVersionFormat.NuGetPackage ),
                                 t.OrderedVersion,
                                 t.OrderedVersionMajor,
                                 t.OrderedVersionMinor,
@@ -51,7 +51,7 @@ namespace CSemVer.Tests
                     var num = t.OrderedVersion + i;
                     if( num > 0m && num <= CSVersion.VeryLastVersion.OrderedVersion )
                     {
-                        CSVersion tD = new CSVersion( num );
+                        CSVersion tD = CSVersion.Create( num );
                         DumpVersionInfo( buildInfo, tD );
                     }
                 }
@@ -60,12 +60,12 @@ namespace CSemVer.Tests
 
         static void DumpVersionInfo( CIBuildDescriptor buildInfo, CSVersion t )
         {
-            var nugetV2Build = t.ToString( CSVersionFormat.NugetPackageV2, buildInfo );
+            var nugetV2Build = t.ToString( CSVersionFormat.NuGetPackage, buildInfo );
             int nugetV2BuildSNLen = SVersion.Parse( nugetV2Build ).Prerelease.Length;
             Console.WriteLine( "{0}, CI = {1}, NuGet = {2}, NuGet CI = {3}, NugetV2Build.SpecialName.Length = {4}",
                                 t,
                                 t.ToString( CSVersionFormat.SemVer, buildInfo ),
-                                t.ToString( CSVersionFormat.NugetPackageV2 ),
+                                t.ToString( CSVersionFormat.NuGetPackage ),
                                 nugetV2Build,
                                 nugetV2BuildSNLen
                                 );
@@ -86,9 +86,9 @@ namespace CSemVer.Tests
             CSVersion t = CSVersion.TryParse( tag );
             Assert.That( t, Is.EqualTo( fromShortForm ) );
 
-            Assert.That( t.IsValidSyntax );
-            Assert.That( t.IsPreRelease );
-            Assert.That( t.IsPreReleaseNameStandard );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsPrerelease );
+            Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch, Is.False );
             Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
@@ -110,13 +110,13 @@ namespace CSemVer.Tests
             CSVersion t = CSVersion.TryParse( tag );
             Assert.That( t, Is.EqualTo( fromShortForm ) );
 
-            Assert.That( t.IsValidSyntax );
-            Assert.That( t.IsPreRelease );
-            Assert.That( t.IsPreReleaseNameStandard );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsPrerelease );
+            Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch );
-            Assert.That( t.PreReleasePatch, Is.GreaterThan( 0 ) );
+            Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
             Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
-            Assert.That( t.ToString( CSVersionFormat.NugetPackageV2 ), Is.EqualTo( nuget ) );
+            Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
 
         }

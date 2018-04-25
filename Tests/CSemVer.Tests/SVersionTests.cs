@@ -13,13 +13,13 @@ namespace CSemVer.Tests
         [Test]
         public void the_Zero_SVersion_is_syntaxically_valid_and_greater_than_null()
         {
-            Assert.That( SVersion.ZeroVersion.IsValidSyntax );
+            Assert.That( SVersion.ZeroVersion.IsValid );
             Assert.That( SVersion.ZeroVersion > null );
             Assert.That( null < SVersion.ZeroVersion );
             Assert.That( SVersion.ZeroVersion >= null );
             Assert.That( null <= SVersion.ZeroVersion );
 
-            var aZero = new SVersion( 0, 0, 0, "0" );
+            var aZero = SVersion.Create( 0, 0, 0, "0" );
             Assert.That( aZero == SVersion.ZeroVersion );
             Assert.That( aZero >= SVersion.ZeroVersion );
             Assert.That( aZero <= SVersion.ZeroVersion );
@@ -32,7 +32,7 @@ namespace CSemVer.Tests
         public void the_Zero_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion( string version )
         {
             var v = SVersion.TryParse( version );
-            Assert.That( v.IsValidSyntax );
+            Assert.That( v.IsValid );
             Assert.That( v > SVersion.ZeroVersion );
             Assert.That( v != SVersion.ZeroVersion );
         }
@@ -40,11 +40,11 @@ namespace CSemVer.Tests
         [Test]
         public void SVersion_can_be_compared_with_operators()
         {
-            Assert.That( new SVersion( 0, 0, 0 ) > new SVersion( 0, 0, 0, "a" ) );
-            Assert.That( new SVersion( 0, 0, 0 ) >= new SVersion( 0, 0, 0, "a" ) );
-            Assert.That( new SVersion( 0, 0, 0, "a" ) < new SVersion( 0, 0, 0 ) );
-            Assert.That( new SVersion( 0, 0, 0, "a" ) <= new SVersion( 0, 0, 0 ) );
-            Assert.That( new SVersion( 0, 0, 0, "a" ) != new SVersion( 0, 0, 0 ) );
+            Assert.That( SVersion.Create( 0, 0, 0 ) > SVersion.Create( 0, 0, 0, "a" ) );
+            Assert.That( SVersion.Create( 0, 0, 0 ) >= SVersion.Create( 0, 0, 0, "a" ) );
+            Assert.That( SVersion.Create( 0, 0, 0, "a" ) < SVersion.Create( 0, 0, 0 ) );
+            Assert.That( SVersion.Create( 0, 0, 0, "a" ) <= SVersion.Create( 0, 0, 0 ) );
+            Assert.That( SVersion.Create( 0, 0, 0, "a" ) != SVersion.Create( 0, 0, 0 ) );
         }
 
         [TestCase( "01.0.0" )]
@@ -66,7 +66,7 @@ namespace CSemVer.Tests
         public void Syntaxically_invalid_SVersion_are_greater_than_null_and_lower_than_the_Zero_one( string invalid )
         {
             SVersion notV = SVersion.TryParse( invalid );
-            Assert.That( !notV.IsValidSyntax );
+            Assert.That( !notV.IsValid );
             Assert.That( notV != SVersion.ZeroVersion );
             Assert.That( SVersion.ZeroVersion > notV );
             Assert.That( SVersion.ZeroVersion >= notV );

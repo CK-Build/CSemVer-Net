@@ -6,50 +6,47 @@ namespace CSemVer
     public enum CSVersionFormat
     {
         /// <summary>
-        /// Normalized format is 'v' + <see cref="SemVerWithMarker"/>.
+        /// Normalized format is the same as <see cref="SVersion.ToString()"/> (with a 'v' prefix and <see cref="SVersion.BuildMetaData"/>).
+        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name).
+        /// This format does not support <see cref="CIBuildDescriptor"/>.
         /// This is the default.
         /// </summary>
         Normalized,
 
         /// <summary>
         /// Semantic version format.
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) and there is no build meata data.
+        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) and there is no build meta data.
         /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
         SemVer,
 
         /// <summary>
         /// Semantic version format.
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) plus build meata data (+invalid).
+        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name) plus <see cref="SVersion.BuildMetaData"/>
+        /// if it exists.
         /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
         /// </summary>
-        SemVerWithMarker,
+        SemVerWithBuildMetaData,
 
         /// <summary>
         /// The file version (see https://msdn.microsoft.com/en-us/library/system.diagnostics.fileversioninfo.fileversion.aspx)
         /// uses the whole 64 bits: it is the <see cref="CSVersion.OrderedVersion"/> left shifted by 1 bit with 
-        /// the less significant bit set to 0 for release and 1 CI builds.
+        /// the less significant bit set to 0 for release and 1 CI builds (when a <see cref="CIBuildDescriptor"/> is provided).
         /// </summary>
         FileVersion,
 
         /// <summary>
-        /// Short form. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// Short form. This format is the one to use for package version.
+        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// It is short, readable even when a CIBuildDescriptor is provided and compatible with any version of NuGet (or
+        /// other basic, non conformant, implementation of Semantic Versionning).
         /// </summary>
         ShortForm,
 
         /// <summary>
-        /// NuGet version 2. This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided.
+        /// NuGet format. The <see cref="ShortForm"/> is always used.
         /// </summary>
-        NugetPackageV2 = ShortForm,
+        NuGetPackage = ShortForm
 
-        /// <summary>
-        /// NuGet format. Currently <see cref="ShortForm"/>.
-        /// </summary>
-        NuGetPackage = ShortForm,
-
-        /// <summary>
-        /// Default is <see cref="Normalized"/>.
-        /// </summary>
-        Default = Normalized
     }
 }
