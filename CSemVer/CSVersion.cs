@@ -12,178 +12,121 @@ namespace CSemVer
     /// This is a semantic version, this is the version associated to a commit in the repository: a CI-Build version
     /// is a SemVer <see cref="SVersion"/> but not a CSemVer version.
     /// </summary>
-    public sealed partial class CSVersion : IEquatable<CSVersion>, IComparable<CSVersion>
+    public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
-        #region Parse part: must be here because of InlineAssertInvariants that parses is called from the cctor.
-        const string _nullOrEmptyErrorMessage = "Null or empty version.";
-        const string _noTagParseErrorMessage = "Not a version.";
-        static Regex _regexStrict = new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(-(?<4>[a-z][a-z]+)(\.(?<5>0|[1-9][0-9]?)(\.(?<6>[1-9][0-9]?))?)?)?(\+(?<7>Invalid)?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
-        static Regex _regexStrictShort = new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(-(?<4>a|b|d|e|g|k|p|r)((?<5>[0-9][0-9])(-(?<6>[0-9][0-9]))?)?)?(\+(?<7>Invalid)?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
-        static Regex _regexApprox = new Regex( @"^(v|V)?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)(\.(?<3>0|[1-9][0-9]*))?(?<4>.*)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
-        #endregion
+        // It has to be here because of static initialization order.
+        static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>[a-z][a-z]+)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
+        static readonly Regex _rPreReleaseShortForm = new Regex( @"^(?<1>a|b|d|e|g|k|p|r)((?<2>[0-9][0-9])(-(?<3>[0-9][0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
 
         /// <summary>
-        /// When <see cref="IsValidSyntax"/> is true, necessarily greater or equal to 0.
-        /// </summary>
-        public readonly int Major;
-
-        /// <summary>
-        /// When <see cref="IsValidSyntax"/> is true, necessarily greater or equal to 0.
-        /// </summary>
-        public readonly int Minor;
-
-        /// <summary>
-        /// When <see cref="IsValidSyntax"/> is true, necessarily greater or equal to 0.
-        /// </summary>
-        public readonly int Patch;
-
-        /// <summary>
-        /// When <see cref="IsValidSyntax"/> is true, necessarily not null: empty string for a release.
+        /// When <see cref="SVersion.ParsedText"/> is not null, necessarily not null: empty string for a release.
         /// This is the pre release name directly extracted from the text. This field does not participate to equality or comparison: 
-        /// the actual, standardized, pre release name field is <see cref="PreReleaseName"/>.
+        /// the actual, standardized, prerelease name is <see cref="PreReleaseName"/>.
         /// </summary>
-        public readonly string PreReleaseNameFromTag;
+        public readonly string ParsedPrereleaseName;
 
         /// <summary>
         /// Gets the standard pre release name among <see cref="StandardPreReleaseNames"/>.
         /// <see cref="string.Empty"/> when this is not a pre release version.
         /// </summary>
-        public string PreReleaseName => IsPreRelease ? _standardNames[PreReleaseNameIdx] : string.Empty;
+        public string PreReleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
 
         /// <summary>
         /// Gets whether this is a pre release.
         /// </summary>
-        public bool IsPreRelease => PreReleaseNameIdx >= 0;
+        public bool IsPrerelease => PrereleaseNameIdx >= 0;
 
         /// <summary>
-        /// When <see cref="IsPreRelease"/> is true, the this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
+        /// When <see cref="IsPrerelease"/> is true, the this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
         /// otherwise this is -1.
         /// </summary>
-        public readonly int PreReleaseNameIdx;
+        public readonly int PrereleaseNameIdx;
 
         /// <summary>
-        /// Gets whether the <see cref="PreReleaseNameFromTag"/> is a standard one (always false when <see cref="IsPreRelease"/> is false).
+        /// Gets whether the <see cref="ParsedPrereleaseName"/> is a standard one (always false when <see cref="IsPrerelease"/> is false).
         /// </summary>
-        public bool IsPreReleaseNameStandard => IsPreRelease && (PreReleaseNameIdx != MaxPreReleaseNameIdx - 1 || StringComparer.OrdinalIgnoreCase.Equals( PreReleaseNameFromTag, _standardNames[MaxPreReleaseNameIdx - 1] ));
+        public bool IsPrereleaseNameStandard => IsPrerelease && (PrereleaseNameIdx != MaxPreReleaseNameIdx - 1 || ParsedPrereleaseName == null || StringComparer.Ordinal.Equals( ParsedPrereleaseName, _standardNames[MaxPreReleaseNameIdx - 1] ));
 
         /// <summary>
-        /// Meaningful only if <see cref="IsPreRelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
+        /// Meaningful only if <see cref="IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
         /// </summary>
-        public readonly int PreReleaseNumber;
+        public readonly int PrereleaseNumber;
 
         /// <summary>
-        /// When <see cref="IsPreReleasePatch"/>, a number between 1 and <see cref="MaxPreReleaseFix"/>, otherwise 0. 
+        /// When <see cref="IsPreReleasePatch"/>, a number between 1 and <see cref="MaxPreReleasePatch"/>, otherwise 0. 
         /// </summary>
-        public readonly int PreReleasePatch;
+        public readonly int PrereleasePatch;
 
         /// <summary>
-        /// Gets whether this is a pre release patch (<see cref="IsPreRelease"/> is necessarily true): <see cref="PreReleasePatch"/> number is greater than 0.
+        /// Gets whether this is a pre release patch (<see cref="IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
         /// </summary>
-        public bool IsPreReleasePatch => PreReleasePatch > 0;
+        public bool IsPreReleasePatch => PrereleasePatch > 0;
 
         /// <summary>
-        /// Gets whether this is a patch: either <see cref="Patch"/> or <see cref="PreReleasePatch"/> are greater than 0.
+        /// Gets whether this is a patch: either <see cref="SVersion.Patch"/> or <see cref="PrereleasePatch"/> are greater than 0.
         /// </summary>
-        public bool IsPatch => PreReleasePatch > 0 || Patch > 0;
+        public bool IsPatch => PrereleasePatch > 0 || Patch > 0;
 
         /// <summary>
-        /// Gets the "+invalid" marker.
-        /// Normalized in lowercase and <see cref="string.Empty"/> when <see cref="IsMarkedInvalid"/> is false.
-        /// </summary>
-        public readonly string Marker;
-
-        /// <summary>
-        /// Gets whether this <see cref="CSVersion"/> is syntaxically valid.
-        /// When false, <see cref="IsMalformed"/> may be true if the <see cref="OriginalParsedText"/> somehow looks 
-        /// like a version.
-        /// </summary>
-        public bool IsValidSyntax => PreReleaseNameFromTag != null;
-
-        /// <summary>
-        /// Gets whether this <see cref="CSVersion"/> looks like a release tag but is not syntaxically valid: 
-        /// see <see cref="ParseErrorMessage"/> for more information.
-        /// </summary>
-        public bool IsMalformed => (Kind & CSVersionKind.Malformed) != 0;
-
-        /// <summary>
-        /// Gets whether this <see cref="CSVersion"/> is marked with +invalid.
+        /// Gets whether this <see cref="CSVersion"/> is marked with 'invalid' <see cref="SVersion.BuildMetaData"/>.
         /// This is the strongest form for a version: a +invalid marked version MUST annihilate any same version
         /// when they both appear on a commit.
         /// </summary>
-        public bool IsMarkedInvalid => Kind.IsMarkedInvalid();
+        public bool IsMarkedInvalid => StringComparer.OrdinalIgnoreCase.Equals( BuildMetaData, "invalid" );
 
         /// <summary>
         /// Gets the strength of this version: an invalid version has a strength of 0. 
         /// For valid version, the same version in terms of <see cref="OrderedVersion"/> can be expressed with: 
-        /// a <see cref="IsPreReleaseNameStandard"/> (stronger than a non standard 'prerelease' one), 
+        /// a <see cref="IsPrereleaseNameStandard"/> (stronger than a non standard 'prerelease' one), 
         /// and ultimately, a <see cref="IsMarkedInvalid"/> wins.
         /// </summary>
         public readonly int DefinitionStrength;
-
-        /// <summary>
-        /// The kind of version. 
-        /// </summary>
-        public readonly CSVersionKind Kind;
-
-        /// <summary>
-        /// An error message that describes the error if <see cref="IsValidSyntax"/> is false. Null otherwise.
-        /// </summary>
-        public readonly string ParseErrorMessage;
-
-        /// <summary>
-        /// The original text.
-        /// Null when this has been not been built from parsing (via <see cref="CSVersion(long)"/> constructor or
-        /// from a successor or a predecessor).
-        /// </summary>
-        public readonly string OriginalParsedText;
 
         /// <summary>
         /// Gets the empty array singleton.
         /// </summary>
         public static readonly CSVersion[] EmptyArray = Array.Empty<CSVersion>();
 
-        /// <summary>
-        /// Private full constructor. Used by <see cref="TryParse(string, bool)"/> and methods like <see cref="GetDirectSuccessors(bool, CSVersion)"/>.
-        /// </summary>
-        /// <param name="s">Original text version. Can be null.</param>
-        /// <param name="major">Major (between 0 and 99999).</param>
-        /// <param name="minor">Minor (between 0 and 99999).</param>
-        /// <param name="patch">Patch (between 0 and 9999).</param>
-        /// <param name="preReleaseName">Not null (empty for release). Can be any string [a-z]*.</param>
-        /// <param name="preReleaseNameIdx">The index in StandardPreReleaseNames.</param>
-        /// <param name="preReleaseNumber">Number between 0 (for release or first prerelease) and 99.</param>
-        /// <param name="preReleaseFix">Number between 0 (not a fix, first actual fix starts at 1) and 99.</param>
-        /// <param name="kind">One of the <see cref="CSVersionKind"/> value. Must be coherent with the other parameters.</param>
-        CSVersion( string s, int major, int minor, int patch, string preReleaseName, int preReleaseNameIdx, int preReleaseNumber, int preReleaseFix, CSVersionKind kind )
+        CSVersion( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData,
+                   string parsedPrereleaseName, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch )
+            : base( parsedText, major, minor, patch, prerelease, buildMetaData, null )
         {
-            Debug.Assert( _standardNames.Length == MaxPreReleaseNameIdx + 1 );
-            Debug.Assert( major >= 0 && major <= MaxMajor );
-            Debug.Assert( minor >= 0 && minor <= MaxMinor );
-            Debug.Assert( patch >= 0 && patch <= MaxPatch );
-            Debug.Assert( preReleaseName != null );
-            Debug.Assert( Regex.IsMatch( preReleaseName, "[a-z]*", RegexOptions.CultureInvariant ) );
-            Debug.Assert( preReleaseNameIdx >= -1 );
-            Debug.Assert( (preReleaseName.Length == 0 && preReleaseNameIdx == -1)
-                            ||
-                          (preReleaseName.Length > 0 && preReleaseNameIdx >= 0 && preReleaseNameIdx <= MaxPreReleaseNameIdx) );
-            Debug.Assert( preReleaseNumber >= 0 && preReleaseNumber <= MaxPreReleaseNumber );
-            Debug.Assert( PreReleasePatch >= 0 && PreReleasePatch <= MaxPreReleaseNumber );
-            Debug.Assert( kind != CSVersionKind.Malformed );
-            Major = major;
-            Minor = minor;
-            Patch = patch;
-            PreReleaseNameFromTag = preReleaseName;
-            PreReleaseNameIdx = preReleaseNameIdx;
-            PreReleaseNumber = preReleaseNumber;
-            PreReleasePatch = preReleaseFix;
-            Kind = kind;
-            Marker = kind.ToStringMarker();
-            OriginalParsedText = s;
-            //
-            Debug.Assert( ((Kind & CSVersionKind.PreRelease) != 0) == IsPreRelease );
-            _orderedVersion = new SOrderedVersion() { Number = ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleaseFix ) };
+            ParsedPrereleaseName = parsedPrereleaseName;
+            PrereleaseNameIdx = preReleaseNameIdx;
+            PrereleaseNumber = preReleaseNumber;
+            PrereleasePatch = preReleasePatch;
+            _orderedVersion = new SOrderedVersion() { Number = ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch ) };
             DefinitionStrength = ComputeDefinitionStrength();
             InlineAssertInvariants( this );
+        }
+
+        CSVersion( int major, int minor, int patch, string buildMetaData,
+                   int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch,
+                   long number = 0 )
+            : base( null, major, minor, patch, ComputeStandardPreRelease( preReleaseNameIdx, preReleaseNumber, preReleasePatch ), buildMetaData, null )
+        {
+            PrereleaseNameIdx = preReleaseNameIdx;
+            PrereleaseNumber = preReleaseNumber;
+            PrereleasePatch = preReleasePatch;
+            _orderedVersion = new SOrderedVersion() {
+                Number = number != 0 ? number : ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch )
+            };
+            DefinitionStrength = ComputeDefinitionStrength();
+            InlineAssertInvariants( this );
+        }
+
+        CSVersion( string error, string parsedText )
+            : base( error, parsedText )
+        {
+            PrereleaseNameIdx = -1;
+        }
+
+        CSVersion( CSVersion other, string buildMetaData )
+            : base( other, buildMetaData, null )
+        {
+            PrereleaseNameIdx = other.PrereleaseNameIdx;
+            PrereleaseNumber = other.PrereleaseNumber;
+            PrereleasePatch = other.PrereleasePatch;
         }
 
 #if DEBUG
@@ -195,17 +138,17 @@ namespace CSemVer
         static void InlineAssertInvariants( CSVersion v )
         {
 #if DEBUG
-            if( !_alreadyInCheck && v.IsValidSyntax )
+            if( !_alreadyInCheck && v.IsValid )
             {
                 _alreadyInCheck = true;
                 try
                 {
                     // Systematically checks that a CSVersion in Long or Short form is a syntaxically valid SemVer version.
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.SemVerWithMarker ) ).IsValidSyntax );
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).IsValidSyntax );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.SemVerWithBuildMetaData ) ).IsValid );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).IsValid );
                     //// Systematically checks that a valid CSVersion can be parsed back in Long or Short form.
-                    Debug.Assert( TryParse( v.ToString( CSVersionFormat.SemVerWithMarker ) ).Equals( v ) );
-                    Debug.Assert( TryParse( v.ToString( CSVersionFormat.ShortForm ) ).Equals( v ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.SemVerWithBuildMetaData ) ).Equals( v ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).Equals( v ) );
                 }
                 finally
                 {
@@ -215,52 +158,56 @@ namespace CSemVer
 #endif
         }
 
+
         /// <summary>
-        /// Creates a clone of this version, except that it is marked with "+invalid".
-        /// This version must be valid (<see cref="IsValidSyntax"/> is true), otherwise an <see cref="InvalidOperationException"/> is thrown.
+        /// Returns a new <see cref="CSVersion"/> with a potentialy new <see cref="SVersion.BuildMetaData"/>.
         /// </summary>
-        /// <returns>The "+valid" tag.</returns>
-        public CSVersion MarkInvalid()
-        {
-            if( !IsValidSyntax ) throw new InvalidOperationException( "Version must be IsValidSyntax to be marked with '+invalid'." );
-            return IsMarkedInvalid ? this : new CSVersion( null, Major, Minor, Patch, PreReleaseName, PreReleaseNameIdx, PreReleaseNumber, PreReleasePatch, Kind | CSVersionKind.MarkedInvalid );
-        }
+        /// <param name="buildMetaData">The build meta data.</param>
+        /// <returns>The version.</returns>
+        public new CSVersion WithBuildMetaData( string buildMetaData ) => (CSVersion)base.WithBuildMetaData( buildMetaData );
+
+        /// <summary>
+        /// Hidden overridable implementation.
+        /// </summary>
+        /// <param name="buildMetaData">The build meta data.</param>
+        /// <returns>The new version.</returns>
+        protected override SVersion DoWithBuildMetaData( string buildMetaData ) => new CSVersion( this, buildMetaData );
 
         /// <summary>
         /// Computes the next possible ordered versions, from the closest one to the biggest possible bump.
-        /// If <see cref="IsValidSyntax"/> is false, the list is empty.
+        /// If <see cref="SVersion.IsValid"/> is false, the list is empty.
         /// </summary>
         /// <param name="patchesOnly">True to obtain only patches to this version. False to generate the full list of valid successors (up to 43 successors).</param>
         /// <returns>Next possible versions.</returns>
         public IEnumerable<CSVersion> GetDirectSuccessors( bool patchesOnly = false )
         {
             Debug.Assert( _standardNames[0] == "alpha" );
-            if( IsValidSyntax )
+            if( IsValid )
             {
-                if( IsPreRelease )
+                if( IsPrerelease )
                 {
-                    int nextFix = PreReleasePatch + 1;
-                    if( nextFix <= CSVersion.MaxPreReleaseFix )
+                    int nextPatch = PrereleasePatch + 1;
+                    if( nextPatch <= MaxPreReleasePatch )
                     {
-                        yield return new CSVersion( null, Major, Minor, Patch, PreReleaseName, PreReleaseNameIdx, PreReleaseNumber, nextFix, CSVersionKind.PreRelease );
+                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, nextPatch );
                     }
                     if( !patchesOnly )
                     {
-                        int nextPrereleaseNumber = PreReleaseNumber + 1;
-                        if( nextPrereleaseNumber <= CSVersion.MaxPreReleaseNumber )
+                        int nextPrereleaseNumber = PrereleaseNumber + 1;
+                        if( nextPrereleaseNumber <= MaxPreReleaseNumber )
                         {
-                            yield return new CSVersion( null, Major, Minor, Patch, PreReleaseName, PreReleaseNameIdx, nextPrereleaseNumber, 0, CSVersionKind.PreRelease );
+                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, nextPrereleaseNumber, 0 );
                         }
-                        int nextPrereleaseNameIdx = PreReleaseNameIdx + 1;
+                        int nextPrereleaseNameIdx = PrereleaseNameIdx + 1;
                         if( nextPrereleaseNameIdx <= CSVersion.MaxPreReleaseNameIdx )
                         {
-                            yield return new CSVersion( null, Major, Minor, Patch, _standardNames[nextPrereleaseNameIdx], nextPrereleaseNameIdx, 0, 0, CSVersionKind.PreRelease );
-                            while( ++nextPrereleaseNameIdx <= CSVersion.MaxPreReleaseNameIdx )
+                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0 );
+                            while( ++nextPrereleaseNameIdx <= MaxPreReleaseNameIdx )
                             {
-                                yield return new CSVersion( null, Major, Minor, Patch, _standardNames[nextPrereleaseNameIdx], nextPrereleaseNameIdx, 0, 0, CSVersionKind.PreRelease );
+                                yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0 );
                             }
                         }
-                        yield return new CSVersion( null, Major, Minor, Patch, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease );
+                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, -1, 0, 0 );
                     }
                 }
                 else
@@ -271,9 +218,9 @@ namespace CSemVer
                     {
                         for( int i = 0; i <= MaxPreReleaseNameIdx; ++i )
                         {
-                            yield return new CSVersion( null, Major, Minor, nextPatch, _standardNames[i], i, 0, 0, CSVersionKind.PreRelease );
+                            yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, i, 0, 0 );
                         }
-                        yield return new CSVersion( null, Major, Minor, nextPatch, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease );
+                        yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, -1, 0, 0 );
                     }
                 }
                 if( !patchesOnly )
@@ -281,28 +228,28 @@ namespace CSemVer
                     int nextMinor = Minor + 1;
                     if( nextMinor <= MaxMinor )
                     {
-                        yield return new CSVersion( null, Major, nextMinor, 0, "alpha", 0, 0, 0, CSVersionKind.PreRelease );
+                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, 0, 0, 0 );
                         if( !patchesOnly )
                         {
                             for( int i = 1; i <= MaxPreReleaseNameIdx; ++i )
                             {
-                                yield return new CSVersion( null, Major, nextMinor, 0, _standardNames[i], i, 0, 0, CSVersionKind.PreRelease );
+                                yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, i, 0, 0 );
                             }
                         }
-                        yield return new CSVersion( null, Major, nextMinor, 0, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease );
+                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, -1, 0, 0 );
                     }
                     int nextMajor = Major + 1;
                     if( nextMajor <= MaxMajor )
                     {
-                        yield return new CSVersion( null, nextMajor, 0, 0, "alpha", 0, 0, 0, CSVersionKind.PreRelease );
+                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, 0, 0, 0 );
                         if( !patchesOnly )
                         {
                             for( int i = 1; i <= MaxPreReleaseNameIdx; ++i )
                             {
-                                yield return new CSVersion( null, nextMajor, 0, 0, _standardNames[i], i, 0, 0, CSVersionKind.PreRelease );
+                                yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, i, 0, 0 );
                             }
                         }
-                        yield return new CSVersion( null, nextMajor, 0, 0, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease );
+                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, -1, 0, 0 );
                     }
                 }
             }
@@ -315,7 +262,7 @@ namespace CSemVer
         /// <returns>True if previous is actually a direct predecessor.</returns>
         public bool IsDirectPredecessor( CSVersion previous )
         {
-            if( !IsValidSyntax ) return false;
+            if( !IsValid ) return false;
             long num = _orderedVersion.Number;
             if( previous == null ) return FirstPossibleVersions.Contains( this );
             if( previous._orderedVersion.Number >= num ) return false;
@@ -326,7 +273,7 @@ namespace CSemVer
             // Major bump of 1: if we are the first major (Major.0.0) or one of its first prerelases (Major.0.0-alpha or Major.0.0-rc), this is fine.
             if( Major != previous.Major )
             {
-                return Minor == 0 && Patch == 0 && PreReleaseNumber == 0 && PreReleasePatch == 0;
+                return Minor == 0 && Patch == 0 && PrereleaseNumber == 0 && PrereleasePatch == 0;
             }
             Debug.Assert( Major == previous.Major );
             // Minor bump greater than 1: previous can not be a direct predecessor.
@@ -334,7 +281,7 @@ namespace CSemVer
             // Minor bump of 1: if we are the first minor (Major.Minor.0) or one of its first prerelases (Major.Minor.0-alpha or Major.Minor.0-rc), this is fine.
             if( Minor != previous.Minor )
             {
-                return Patch == 0 && PreReleaseNumber == 0 && PreReleasePatch == 0;
+                return Patch == 0 && PrereleaseNumber == 0 && PrereleasePatch == 0;
             }
             Debug.Assert( Major == previous.Major && Minor == previous.Minor );
             // Patch bump greater than 1: previous can not be a direct predecessor.
@@ -345,27 +292,27 @@ namespace CSemVer
             //   a 4.3.1 can give bearth to 4.3.2 or 4.3.2-alpha or -rc.
             if( Patch != previous.Patch )
             {
-                if( previous.IsPreRelease ) return false;
-                return PreReleaseNumber == 0 && PreReleasePatch == 0;
+                if( previous.IsPrerelease ) return false;
+                return PrereleaseNumber == 0 && PrereleasePatch == 0;
             }
             Debug.Assert( Major == previous.Major && Minor == previous.Minor && Patch == previous.Patch );
-            Debug.Assert( previous.IsPreRelease, "if previous was not a prerelease, this and previous would be equal." );
+            Debug.Assert( previous.IsPrerelease, "if previous was not a prerelease, this and previous would be equal." );
             // If this is not a prerelease, it is fine: one can always bump from a prerelease version to its release version.
-            if( !IsPreRelease ) return true;
-            Debug.Assert( IsPreRelease && previous.IsPreRelease, "Both are now necessarily pre releases." );
-            Debug.Assert( PreReleaseNameIdx >= previous.PreReleaseNameIdx, "This pre release name is grater or the same as the previous one (otherwise previous would be greater than this: this has been handled at the beginning of this function)." );
+            if( !IsPrerelease ) return true;
+            Debug.Assert( IsPrerelease && previous.IsPrerelease, "Both are now necessarily pre releases." );
+            Debug.Assert( PrereleaseNameIdx >= previous.PrereleaseNameIdx, "This pre release name is grater or the same as the previous one (otherwise previous would be greater than this: this has been handled at the beginning of this function)." );
             // If we are a fix, there is one alternative:
             //  1 - the previous is the one just before us.
             //  2 - the previous is not the one just before us.
             // Case 1 has been handled at the top of this function (oredered version + 1): if this is a fix, previous can not be a direct predecessor here.
-            if( PreReleasePatch > 0 ) return false;
+            if( PrereleasePatch > 0 ) return false;
             // This is not a fix.
             // If this is a numbered prerelease, the previous must have the same PreReleaseName.
-            if( PreReleaseNumber > 0 )
+            if( PrereleaseNumber > 0 )
             {
-                if( previous.PreReleaseNameIdx == PreReleaseNameIdx )
+                if( previous.PrereleaseNameIdx == PrereleaseNameIdx )
                 {
-                    Debug.Assert( PreReleaseNumber > previous.PreReleaseNumber, "Otherwise previous would be greater than this: this has been handled at the beginning of this function." );
+                    Debug.Assert( PrereleaseNumber > previous.PrereleaseNumber, "Otherwise previous would be greater than this: this has been handled at the beginning of this function." );
                     return true;
                 }
                 return false;

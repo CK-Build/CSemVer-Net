@@ -44,15 +44,6 @@ namespace CSemVer.Tests
             Console.WriteLine( "      " + string.Join( ", ", closest ) );
         }
 
-        [TestCase( "v0.0.0-alpha.0.999" )]
-        public void fix_parsing_syntax_error_helper_max_prerelease_fix( string tag )
-        {
-            var error = string.Format( "Fix Number must be between 1 and {0}.", CSVersion.MaxPreReleaseFix );
-
-            CSVersion t = CSVersion.TryParse( tag, true );
-            Assert.That( t.ParseErrorMessage, Contains.Substring( error ) );
-        }
-
         [TestCase( "0.0.0" )]
         [TestCase( "3.0.1" )]
         [TestCase( "3.0.1" )]
@@ -60,8 +51,8 @@ namespace CSemVer.Tests
         public void parsing_valid_release( string tag )
         {
             CSVersion t = CSVersion.TryParse( tag );
-            Assert.That( t.IsValidSyntax );
-            Assert.That( t.IsPreRelease, Is.False );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
             Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( tag ) );
@@ -100,13 +91,13 @@ namespace CSemVer.Tests
         public void to_string_pre_release_with_nonstandard_names_works_for_SemVer_but_throws_for_NuGetV2( string tag )
         {
             CSVersion t = CSVersion.TryParse( tag );
-            Assert.That( t.IsValidSyntax );
-            Assert.That( t.IsPreRelease );
-            Assert.That( !t.IsPreReleaseNameStandard );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsPrerelease );
+            Assert.That( !t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch );
-            Assert.That( t.PreReleasePatch, Is.GreaterThan( 0 ) );
+            Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
             Assert.That( t.ToString( CSVersionFormat.SemVer, null, true ), Is.EqualTo( tag ) );
-            Assert.Throws<ArgumentException>( () => t.ToString( CSVersionFormat.NugetPackageV2, null, true ) );
+            Assert.Throws<ArgumentException>( () => t.ToString( CSVersionFormat.NuGetPackage, null, true ) );
         }
 
 
@@ -118,7 +109,7 @@ namespace CSemVer.Tests
         public void version_ordering_starts_at_1_for_the_very_first_possible_version( string tag, int oMajor, int oMinor, int oBuild, int oRevision )
         {
             var t = CSVersion.TryParse( tag, true );
-            Assert.That( t.IsValidSyntax );
+            Assert.That( t.IsValid );
             Assert.That( t.OrderedVersionMajor, Is.EqualTo( oMajor ) );
             Assert.That( t.OrderedVersionMinor, Is.EqualTo( oMinor ) );
             Assert.That( t.OrderedVersionBuild, Is.EqualTo( oBuild ) );
@@ -131,39 +122,15 @@ namespace CSemVer.Tests
                     Is.EqualTo( string.Format( "{0}.{1}.{2}.{3}", vf >> 48, (vf >> 32) & 0xFFFF, (vf >> 16) & 0xFFFF, vf & 0xFFFF ) ) );
         }
 
-        [TestCase( "0", false )]
-        [TestCase( "1", false )]
-        [TestCase( "not", false )]
-        [TestCase( "not.1", false )]
-        [TestCase( "0.0", true )]
-        [TestCase( "v0.0", true )]
-        [TestCase( "v0.0.0.0", true )]
-        [TestCase( "v0.0.alpha1", true )]
-        [TestCase( "v0.0.alpha", true )]
-        [TestCase( "v0.0.0-alpha.1.1.1", true )]
-        [TestCase( "0.0not", true )]
-        [TestCase( "v0.0.0-alpha.0", true )]
-        [TestCase( "v0.0.0-alpha.5.0", true )]
-        [TestCase( "v0.0.0+nop", true )]
-        [TestCase( "v0.0.0-alpha+nop", true )]
-        public void when_parsing_invalid_versions_can_be_detected_as_malformed_ones( string tag, bool isMalformed )
-        {
-            var t = CSVersion.TryParse( tag, true );
-            Assert.That( !t.IsValidSyntax );
-            Assert.That( t.IsMalformed, Is.EqualTo( isMalformed ) );
-            //Console.WriteLine( t.ParseErrorMessage );
-        }
-
         [TestCase( "0", 0, "Invalid are always 0." )]
-        [TestCase( "0.0", 1, "Malformed are always = 1." )]
-        [TestCase( "0.0.0-nonstandard", 2, "Non standard prerelease name = 2." )]
-        [TestCase( "0.0.0", 3, "Normal = 3" )]
-        [TestCase( "0.0.0-gamma", 3, "Normal = 3" )]
-        [TestCase( "88.88.88-nonstandard+Invalid", 4, "Invalid non standard = 4" )]
-        [TestCase( "88.88.88+Invalid", 5, "Marked Invalid = 5" )]
+        [TestCase( "0.0.0-nonstandard", 1, "Non standard prerelease name = 1." )]
+        [TestCase( "0.0.0", 2, "Normal = 2" )]
+        [TestCase( "0.0.0-gamma", 2, "Normal = 2" )]
+        [TestCase( "88.88.88-nonstandard+Invalid", 3, "Invalid non standard = 3" )]
+        [TestCase( "88.88.88+Invalid", 4, "Marked Invalid = 4" )]
         public void equal_release_tags_can_have_different_definition_strengths( string tag, int level, string message )
         {
-            var t = CSVersion.TryParse( tag, true );
+            var t = CSVersion.TryParse( tag );
             Assert.That( t.DefinitionStrength, Is.EqualTo( level ), message );
         }
 
@@ -206,7 +173,7 @@ namespace CSemVer.Tests
             {
                 Assert.That( t.OrderedVersion - (CSVersion.VeryFirstVersion.OrderedVersion + expectedRank), Is.EqualTo( 0 ) );
             }
-            var t2 = new CSVersion( t.OrderedVersion );
+            var t2 = CSVersion.Create( t.OrderedVersion );
             Assert.That( t2.ToString(), Is.EqualTo( t.ToString() ) );
             Assert.That( t.Equals( t2 ) );
         }
@@ -255,7 +222,7 @@ namespace CSemVer.Tests
                 };
             var releasedTags = orderedTags
                                         .Select( ( tag, idx ) => new { Tag = tag, Index = idx, ReleasedTag = CSVersion.TryParse( tag ) } )
-                                        .Select( s => { Assert.That( s.ReleasedTag.IsValidSyntax, s.Tag ); return s; } );
+                                        .Select( s => { Assert.That( s.ReleasedTag.IsValid, s.Tag ); return s; } );
             var orderedByFileVersion = releasedTags
                                         .OrderBy( s => s.ReleasedTag.OrderedVersion );
             var orderedByFileVersionParts = releasedTags
@@ -312,7 +279,7 @@ namespace CSemVer.Tests
                                     .Where( v => v.Length > 0 )
                                     .ToArray();
             var rStart = CSVersion.TryParse( start );
-            Assert.That( rStart != null && rStart.IsValidSyntax );
+            Assert.That( rStart != null && rStart.IsValid );
             // Checks successors (and that they are ordered).
             var cNext = rStart.GetDirectSuccessors( true ).Select( v => v.ToString() ).ToArray();
             CollectionAssert.AreEqual( next, cNext, start + " => " + string.Join( ", ", cNext ) );
@@ -358,11 +325,11 @@ namespace CSemVer.Tests
         {
             if( v < 0 || v > CSVersion.VeryLastVersion.OrderedVersion )
             {
-                Assert.Throws<ArgumentException>( () => new CSVersion( v ) );
+                Assert.Throws<ArgumentException>( () => CSVersion.Create( v ) );
                 return null;
             }
-            var t = new CSVersion( v );
-            Assert.That( (v == 0) == !t.IsValidSyntax );
+            var t = CSVersion.Create( v );
+            Assert.That( (v == 0) == !t.IsValid );
             Assert.That( t.OrderedVersion, Is.EqualTo( v ) );
             var sSemVer = t.ToString( CSVersionFormat.SemVer );
             var tSemVer = CSVersion.TryParse( sSemVer );

@@ -38,21 +38,27 @@ namespace CSemVer
         /// </summary>
         public const int MaxPatch = 9999;
         /// <summary>
-        /// The maximum number of prereleaseis also the index of the "rc" entry in <see cref="StandardPreReleaseNames"/>.
+        /// The maximum number of prereleases is also the index of the "rc" entry in <see cref="StandardPreReleaseNames"/>.
         /// </summary>
         public const int MaxPreReleaseNameIdx = 7;
         /// <summary>
-        /// The maximum number of pre-releases.
+        /// The maximum number of prereleases.
         /// </summary>
         public const int MaxPreReleaseNumber = 99;
         /// <summary>
         /// The maximum number of fixes to a pre-release.
         /// </summary>
-        public const int MaxPreReleaseFix = 99;
+        public const int MaxPreReleasePatch = 99;
+
+        const long MaxOrderedVersion = (MaxMajor + 1L)
+                                        * (MaxMinor + 1L)
+                                        * (MaxPatch + 1L)
+                                        * (1L + (MaxPreReleaseNameIdx + 1L) * (MaxPreReleaseNumber + 1L) * (MaxPreReleasePatch + 1L));
+
         static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "prerelease", "rc" };
         static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
 
-        const long MulNum = MaxPreReleaseFix + 1;
+        const long MulNum = MaxPreReleasePatch + 1;
         const long MulName = MulNum * (MaxPreReleaseNumber + 1);
         const long MulPatch = MulName * (MaxPreReleaseNameIdx + 1) + 1;
         const long MulMinor = MulPatch * (MaxPatch + 1);
@@ -75,12 +81,18 @@ namespace CSemVer
         /// <summary>
         /// Gets the very first possible version (0.0.0-alpha).
         /// </summary>
-        public static readonly CSVersion VeryFirstVersion = new CSVersion( 1L, true );
+        public static readonly CSVersion VeryFirstVersion = new CSVersion( 0, 0, 0, String.Empty, 0, 0, 0, 1 );
 
         /// <summary>
         /// Gets the very first possible release versions (0.0.0, 0.1.0 or 1.0.0 or any prereleases of them).
         /// </summary>
         public static readonly IReadOnlyList<CSVersion> FirstPossibleVersions = BuildFirstPossibleVersions();
+
+        /// <summary>
+        /// Gets the very last possible version.
+        /// </summary>
+        public static readonly CSVersion VeryLastVersion = new CSVersion( MaxMajor, MaxMinor, MaxPatch, String.Empty, -1, 0, 0, MaxOrderedVersion );
+
 
         static IReadOnlyList<CSVersion> BuildFirstPossibleVersions()
         {
@@ -89,7 +101,7 @@ namespace CSemVer
             int i = 0;
             while( i < 3 * 9 )
             {
-                versions[i++] = new CSVersion( v, true );
+                versions[i++] = Create( v );
                 if( (i % 18) == 0 ) v += MulMajor - MulMinor - MulPatch + 1;
                 else if( (i % 9) == 0 ) v += MulMinor - MulPatch + 1;
                 else v += MulName;
@@ -98,64 +110,41 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Gets the very last possible version.
-        /// </summary>
-        public static readonly CSVersion VeryLastVersion = new CSVersion( string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", MaxMajor, MaxMinor, MaxPatch ), MaxMajor, MaxMinor, MaxPatch, string.Empty, -1, 0, 0, CSVersionKind.OfficialRelease );
-
-        /// <summary>
-        /// Initializes a new version from an ordered version that must be between 0 (invalid version) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
+        /// Creates a new version from an ordered version that must be between 0 (invalid version) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
         /// </summary>
         /// <param name="v">The ordered version.</param>
-        public CSVersion( long v )
-            : this( ValidateCtorArgument( v ), true )
+        /// <returns>The version.</returns>
+        public static CSVersion Create( long v )
         {
-        }
+            if( v < 0 || v > MaxOrderedVersion ) throw new ArgumentException( "Must be between 0 and VeryLastVersion.OrderedVersion." );
+            if( v == 0 ) return new CSVersion( "Invalid CSVersion.", null );
 
-        static long ValidateCtorArgument( long v )
-        {
-            if( v < 0 || v > VeryLastVersion.OrderedVersion ) throw new ArgumentException( "Must be between 0 and VeryLastVersion.OrderedVersion." );
-            return v;
-        }
-
-        CSVersion( long v, bool privateCall )
-        {
-            Debug.Assert( v >= 0 && (VeryLastVersion == null || v <= VeryLastVersion._orderedVersion.Number) );
-            if( v == 0 )
+            long dV = v;
+            int prNameIdx = -1;
+            int prNumber = 0;
+            int prPatch = 0;
+            long preReleasePart = dV % MulPatch;
+            if( preReleasePart != 0 )
             {
-                Kind = CSVersionKind.None;
-                ParseErrorMessage = _noTagParseErrorMessage;
-                PreReleaseNameIdx = -1;
+                preReleasePart = preReleasePart - 1L;
+                prNameIdx = (int)(preReleasePart / MulName);
+                preReleasePart -= (long)prNameIdx * MulName;
+                prNumber = (int)(preReleasePart / MulNum);
+                preReleasePart -= (long)prNumber * MulNum;
+                prPatch = (int)preReleasePart;
             }
             else
             {
-                _orderedVersion.Number = v;
-
-                long preReleasePart = v % MulPatch;
-                if( preReleasePart != 0 )
-                {
-                    preReleasePart = preReleasePart - 1L;
-                    PreReleaseNameIdx = (int)(preReleasePart / MulName);
-                    PreReleaseNameFromTag = _standardNames[PreReleaseNameIdx];
-                    preReleasePart -= (long)PreReleaseNameIdx * MulName;
-                    PreReleaseNumber = (int)(preReleasePart / MulNum);
-                    preReleasePart -= (long)PreReleaseNumber * MulNum;
-                    PreReleasePatch = (int)preReleasePart;
-                    Kind = CSVersionKind.PreRelease;
-                }
-                else
-                {
-                    v -= MulPatch;
-                    PreReleaseNameIdx = -1;
-                    PreReleaseNameFromTag = string.Empty;
-                    Kind = CSVersionKind.OfficialRelease;
-                }
-                Major = (int)(v / MulMajor);
-                v -= Major * MulMajor;
-                Minor = (int)(v / MulMinor);
-                v -= Minor * MulMinor;
-                Patch = (int)(v / MulPatch);
+                dV -= MulPatch;
+                prNameIdx = -1;
             }
-            InlineAssertInvariants( this );
+            int major = (int)(dV / MulMajor);
+            dV -= major * MulMajor;
+            int minor = (int)(dV / MulMinor);
+            dV -= minor * MulMinor;
+            int patch = (int)(dV / MulPatch);
+
+            return new CSVersion( major, minor, patch, String.Empty, prNameIdx, prNumber, prPatch, v );
         }
 
         static long ComputeOrderedVersion( int major, int minor, int patch, int preReleaseNameIdx = -1, int preReleaseNumber = 0, int preReleaseFix = 0 )
@@ -170,7 +159,7 @@ namespace CSemVer
                 v += MulNum * preReleaseNumber;
                 v += preReleaseFix;
             }
-            Debug.Assert( new CSVersion( v, true )._orderedVersion.Number == v );
+            Debug.Assert( Create( v )._orderedVersion.Number == v );
             Debug.Assert( preReleaseNameIdx >= 0 == ((v % MulPatch) != 0) );
             Debug.Assert( major == (int)((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMajor) );
             Debug.Assert( minor == (int)(((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMinor) - major * (MaxMinor + 1L)) );
@@ -183,9 +172,9 @@ namespace CSemVer
 
         int ComputeDefinitionStrength()
         {
-            Debug.Assert( IsValidSyntax );
-            int d = 3;
-            if( IsPreRelease && !IsPreReleaseNameStandard ) d -= 1;
+            Debug.Assert( IsValid );
+            int d = 2;
+            if( IsPrerelease && !IsPrereleaseNameStandard ) d -= 1;
             if( IsMarkedInvalid ) d += 2;
             return d;
         }

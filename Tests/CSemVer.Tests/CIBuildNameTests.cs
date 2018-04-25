@@ -23,7 +23,7 @@ namespace CSemVer.Tests
             var buildInfo = new CIBuildDescriptor() { BranchName = "develop", BuildIndex = 15 };
             CSVersion v = CSVersion.TryParse( version );
             string vCI = v.ToString( CSVersionFormat.SemVer, buildInfo );
-            CSVersion vNext = new CSVersion( v.OrderedVersion + 1 );
+            CSVersion vNext = CSVersion.Create( v.OrderedVersion + 1 );
 
             Console.WriteLine( "Version = {0}, CI = {1}, Next = {2}", v, vCI, vNext );
 
@@ -52,13 +52,13 @@ namespace CSemVer.Tests
         [TestCase( "1.0.9999" )]
         public void CIBuildVersion_LastReleaseBased_are_correctely_ordered( string tag )
         {
-            CSVersionFormat formatV2 = CSVersionFormat.NugetPackageV2;
+            CSVersionFormat formatV2 = CSVersionFormat.NuGetPackage;
 
             var t = CSVersion.TryParse( tag );
             var v = SVersion.Parse( t.ToString( CSVersionFormat.SemVer ) );
-            var tNext = new CSVersion( t.OrderedVersion + 1 );
+            var tNext = CSVersion.Create( t.OrderedVersion + 1 );
             var vNext = SVersion.Parse( tNext.ToString( CSVersionFormat.SemVer ) );
-            var tPrev = new CSVersion( t.OrderedVersion - 1 );
+            var tPrev = CSVersion.Create( t.OrderedVersion - 1 );
             var vPrev = SVersion.Parse( tPrev.ToString( CSVersionFormat.SemVer ) );
             Assert.That( vPrev < v, "{0} < {1}", vPrev, v );
             Assert.That( v < vNext, "{0} < {1}", v, vNext );
