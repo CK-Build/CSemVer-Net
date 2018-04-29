@@ -64,7 +64,7 @@ namespace CSemVer
         /// <returns></returns>
         public override string ToString()
         {
-            return IsValid ? string.Format( "ci-{0}.{1}", BuildIndex, BranchName ) : string.Empty;
+            return IsValid ? string.Format( "ci.{0}.{1}", BuildIndex, BranchName ) : string.Empty;
         }
 
         /// <summary>
