@@ -1,6 +1,7 @@
 using Cake.Common.Build;
 using Cake.Common.Diagnostics;
 using Cake.Common.Solution;
+using Cake.Core;
 using CK.Text;
 using SimpleGitVersion;
 using System;
@@ -45,11 +46,12 @@ namespace CodeCake
             /// <summary>
             /// Checks whether a given package exists in this feed.
             /// </summary>
+            /// <param name="ctx">The cake context (mainly used to log).</param>
             /// <param name="client">The <see cref="HttpClient"/> to use.</param>
             /// <param name="packageId">The package name.</param>
             /// <param name="version">The package version.</param>
             /// <returns>True if the package exists, false otherwise.</returns>
-            public abstract Task<bool> CheckPackageAsync( HttpClient client, string packageId, string version );
+            public abstract Task<bool> CheckPackageAsync( ICakeContext ctx, HttpClient client, string packageId, string version );
 
             /// <summary>
             /// Gets or sets the actual api key that should be obtained from <see cref="APIKeyName"/>.
@@ -69,15 +71,25 @@ namespace CodeCake
                 PushSymbolUrl = $"https://www.myget.org/F/{feedName}/symbols/api/v2/package";
             }
 
-            public override async Task<bool> CheckPackageAsync( HttpClient client, string packageId, string version )
+            public override async Task<bool> CheckPackageAsync( ICakeContext ctx, HttpClient client, string packageId, string version )
             {
                 // My first idea was to challenge the Manual Download url with a Head, unfortunately myget
                 // returns a 501 not implemented. I use the html page for the package.
-                var page = $"https://www.myget.org/feed/{_feedName}/package/nuget/{packageId}/{version}";
-                using( var m = new HttpRequestMessage( HttpMethod.Head, new Uri( page ) ) )
-                using( var r = await client.SendAsync( m ) )
+                // Caution: The HttpClient must not follow the redirect here!
+                try
                 {
-                    return r.StatusCode == System.Net.HttpStatusCode.OK;
+                    var page = $"https://www.myget.org/feed/{_feedName}/package/nuget/{packageId}/{version}";
+                    using( var m = new HttpRequestMessage( HttpMethod.Head, new Uri( page ) ) )
+                    using( var r = await client.SendAsync( m ) )
+                    {
+                        return r.StatusCode == System.Net.HttpStatusCode.OK;
+                    }
+                }
+                catch( Exception ex )
+                {
+                    ctx.Warning( $"Unable to check that package {packageId} exists on MyGet: {ex.Message}" );
+                    ctx.Warning( $"Considering that it does not exist." );
+                    return false;
                 }
             }
         }
@@ -104,6 +116,11 @@ namespace CodeCake
             /// Can be null if no local feed exists or if no push to local feed should be done.
             /// </summary>
             public string LocalFeedPath { get; set; }
+
+            /// <summary>
+            /// Gets whether this is a blank build.
+            /// </summary>
+            public bool IsBlankCIRelease { get; set; }
 
             /// <summary>
             /// Gets a mutable list of SolutionProject for which packages should be created and copied
@@ -207,13 +224,14 @@ namespace CodeCake
                 // gitInfo is valid: it is either ci or a release build. 
                 // Blank releases must not be pushed on any remote and are compied to LocalFeed/Blank
                 // local feed it it exists.
-                bool isBlankCIRelease = gitInfo.Info.FinalSemVersion.Prerelease?.Contains( "ci-blank." ) ?? false;
+                bool isBlankCIRelease = gitInfo.Info.FinalSemVersion.Prerelease.Contains( "ci-blank." );
                 var localFeed = Cake.FindDirectoryAbove( "LocalFeed" );
                 if( localFeed != null && isBlankCIRelease )
                 {
                     localFeed = System.IO.Path.Combine( localFeed, "Blank" );
-                    if( !System.IO.Directory.Exists( localFeed ) ) localFeed = null;
+                    System.IO.Directory.CreateDirectory( localFeed );
                 }
+                result.IsBlankCIRelease = isBlankCIRelease;
                 result.LocalFeedPath = localFeed;
 
                 // Creating the right NuGetRemoteFeed according to the release level.
@@ -251,7 +269,7 @@ namespace CodeCake
                                     .Select( p => new
                                     {
                                         Project = p,
-                                        ExistsAsync = result.RemoteFeed.CheckPackageAsync( client, p.Name, gitInfo.SafeNuGetVersion )
+                                        ExistsAsync = result.RemoteFeed.CheckPackageAsync( Cake, client, p.Name, gitInfo.SafeNuGetVersion )
                                     } )
                                     .ToList();
                     System.Threading.Tasks.Task.WaitAll( requests.Select( r => r.ExistsAsync ).ToArray() );
