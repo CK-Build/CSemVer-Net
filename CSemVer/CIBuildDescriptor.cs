@@ -58,13 +58,13 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Overridden to return "ci-<see cref="BranchName"/>.<see cref="BuildIndex"/>" when <see cref="IsValid"/> is true,
+        /// Overridden to return "ci-<see cref="BuildIndex"/>.<see cref="BranchName"/>" when <see cref="IsValid"/> is true,
         /// the empty string otherwise.
         /// </summary>
         /// <returns></returns>
         public override string ToString()
         {
-            return IsValid ? string.Format( "ci-{0}.{1}", BranchName, BuildIndex ) : string.Empty;
+            return IsValid ? string.Format( "ci.{0}.{1}", BuildIndex, BranchName ) : string.Empty;
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace CSemVer
         public string ToStringForShortForm()
         {
             Debug.Assert( MaxNuGetV2BuildIndex.ToString().Length == 4 );
-            return IsValid ? string.Format( "{0}-{1:0000}", BranchName, BuildIndex ) : string.Empty;
+            return IsValid ? string.Format( "{0:0000}-{1}", BuildIndex, BranchName ) : string.Empty;
         }
 
     }

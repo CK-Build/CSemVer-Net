@@ -64,7 +64,7 @@ namespace CSemVer.Tests
             int nugetV2BuildSNLen = SVersion.Parse( nugetV2Build ).Prerelease.Length;
             Console.WriteLine( "{0}, CI = {1}, NuGet = {2}, NuGet CI = {3}, NugetV2Build.SpecialName.Length = {4}",
                                 t,
-                                t.ToString( CSVersionFormat.SemVer, buildInfo ),
+                                t.ToString( CSVersionFormat.Normalized, buildInfo ),
                                 t.ToString( CSVersionFormat.NuGetPackage ),
                                 nugetV2Build,
                                 nugetV2BuildSNLen
@@ -90,7 +90,7 @@ namespace CSemVer.Tests
             Assert.That( t.IsPrerelease );
             Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch, Is.False );
-            Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
 
@@ -115,7 +115,7 @@ namespace CSemVer.Tests
             Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch );
             Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
-            Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
+            Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
 

@@ -43,22 +43,23 @@ namespace CSemVer
         /// <param name="csVersion">Companion CSVersion.</param>
         protected SVersion( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, CSVersion csVersion )
         {
+            if( buildMetaData == null ) buildMetaData = String.Empty;
+            if( buildMetaData.Length > 0 && buildMetaData[0] == '+' ) throw new ArgumentException( "Must not start with '+'.", nameof( buildMetaData ) );
             _csVersion = csVersion ?? (this as CSVersion);
             Major = major;
             Minor = minor;
             Patch = patch;
             Prerelease = prerelease ?? String.Empty;
-            BuildMetaData = buildMetaData ?? String.Empty;
-            if( BuildMetaData.Length > 0 && BuildMetaData[0] == '+' ) throw new ArgumentException( "Must not start with '+'.", nameof( buildMetaData ) );
+            BuildMetaData = buildMetaData;
             ParsedText = parsedText;
-            NormalizedText = ComputeNormalizedText( major, minor, patch, prerelease, buildMetaData );
+            NormalizedText = ComputeNormalizedText( major, minor, patch, prerelease );
+            NormalizedTextWithBuildMetaData = buildMetaData.Length > 0 ? NormalizedText + '+' + buildMetaData : NormalizedText;
         }
 
-        static string ComputeNormalizedText( int major, int minor, int patch, string prerelease, string buildMetaData )
+        static string ComputeNormalizedText( int major, int minor, int patch, string prerelease )
         {
-            var t = String.Format( CultureInfo.InvariantCulture, "v{0}.{1}.{2}", major, minor, patch );
+            var t = String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", major, minor, patch );
             if( prerelease.Length > 0 ) t += '-' + prerelease;
-            if( buildMetaData.Length > 0 ) t += '+' + buildMetaData;
             return t;
         }
 
@@ -81,19 +82,21 @@ namespace CSemVer
         /// Protected copy constructor with <see cref="BuildMetaData"/>.
         /// </summary>
         /// <param name="other">Origin version.</param>
-        /// <param name="buildMetaData">New BuildMetaData.</param>
+        /// <param name="buildMetaData">New BuildMetaData. Must not be null.</param>
         /// <param name="csVersion">Companion CSVersion.</param>
         protected SVersion( SVersion other, string buildMetaData, CSVersion csVersion )
         {
             if( other == null ) throw new ArgumentNullException( nameof( other ) );
+            if( buildMetaData == null ) throw new ArgumentNullException( nameof(buildMetaData) );
             if( !other.IsValid ) throw new InvalidOperationException( "Version must be valid." );
             _csVersion = csVersion ?? (this as CSVersion);
             Major = other.Major;
             Minor = other.Minor;
             Patch = other.Patch;
             Prerelease = other.Prerelease;
-            BuildMetaData = buildMetaData ?? String.Empty;
-            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, Prerelease, BuildMetaData );
+            BuildMetaData = buildMetaData;
+            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, Prerelease );
+            NormalizedTextWithBuildMetaData = buildMetaData.Length > 0 ? NormalizedText + '+' + buildMetaData : NormalizedText;
         }
 
         /// <summary>
@@ -121,7 +124,7 @@ namespace CSemVer
         public string Prerelease { get; }
 
         /// <summary>
-        /// Gets the build meta data.
+        /// Gets the build meta data (without the leading '+').
         /// Never null, always normalized to the empty string.
         /// </summary>
         public string BuildMetaData { get; }
@@ -142,10 +145,16 @@ namespace CSemVer
         public bool IsZeroVersion => Major == 0 && Minor == 0 && Patch == 0 && Prerelease == "0";
 
         /// <summary>
-        /// Gets the normalized version as a string. When not null, it always starts with the 'v' prefix.
+        /// Gets the normalized version as a string. It does not contain the <see cref="BuildMetaData"/>.
         /// Null if <see cref="IsValid"/> is false.
         /// </summary>
         public string NormalizedText { get; }
+
+        /// <summary>
+        /// Gets the normalized version as a string, including the +<see cref="BuildMetaData"/>.
+        /// Null if <see cref="IsValid"/> is false.
+        /// </summary>
+        public string NormalizedTextWithBuildMetaData { get; }
 
         /// <summary>
         /// Gets the parsed text. Available even if <see cref="IsValid"/> is false.

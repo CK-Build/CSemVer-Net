@@ -54,8 +54,9 @@ namespace CSemVer.Tests
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
-            Assert.That( t.ToString( CSVersionFormat.SemVer ), Is.EqualTo( tag ) );
-            Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString(), Is.EqualTo( tag ) );
+            Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
+            Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
         }
 
         [TestCase( null, -1 )]
@@ -96,7 +97,7 @@ namespace CSemVer.Tests
             Assert.That( !t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch );
             Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
-            Assert.That( t.ToString( CSVersionFormat.SemVer, null, true ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.Normalized, null, true ), Is.EqualTo( tag ) );
             Assert.Throws<ArgumentException>( () => t.ToString( CSVersionFormat.NuGetPackage, null, true ) );
         }
 
@@ -267,11 +268,11 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "v0.0.0-alpha", "v0.0.0-alpha.0.1" )]
-        [TestCase( "v0.0.0-alpha.0.1", "v0.0.0-alpha.0.2" )]
-        [TestCase( "v0.0.0-rc.99", "v0.0.0-rc.99.1" )]
-        [TestCase( "v0.0.0-rc.1.99", "" )]
-        [TestCase( "v0.0.0", "v0.0.1-alpha, v0.0.1-beta, v0.0.1-delta, v0.0.1-epsilon, v0.0.1-gamma, v0.0.1-kappa, v0.0.1-prerelease, v0.0.1-rc, v0.0.1" )]
+        [TestCase( "0.0.0-alpha", "0.0.0-alpha.0.1" )]
+        [TestCase( "0.0.0-alpha.0.1", "0.0.0-alpha.0.2" )]
+        [TestCase( "0.0.0-rc.99", "0.0.0-rc.99.1" )]
+        [TestCase( "0.0.0-rc.1.99", "" )]
+        [TestCase( "0.0.0", "0.0.1-alpha, 0.0.1-beta, 0.0.1-delta, 0.0.1-epsilon, 0.0.1-gamma, 0.0.1-kappa, 0.0.1-prerelease, 0.0.1-rc, 0.0.1" )]
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {
             var next = nextVersions.Split( ',' )
@@ -331,7 +332,7 @@ namespace CSemVer.Tests
             var t = CSVersion.Create( v );
             Assert.That( (v == 0) == !t.IsValid );
             Assert.That( t.OrderedVersion, Is.EqualTo( v ) );
-            var sSemVer = t.ToString( CSVersionFormat.SemVer );
+            var sSemVer = t.NormalizedText;
             var tSemVer = CSVersion.TryParse( sSemVer );
             var tNormalized = CSVersion.TryParse( t.ToString( CSVersionFormat.Normalized ) );
             Assert.That( tSemVer.OrderedVersion, Is.EqualTo( v ) );
@@ -351,7 +352,7 @@ namespace CSemVer.Tests
             {
                 ++count;
                 Assert.That( succ.IsDirectPredecessor( t ) );
-                var vSemVerSucc = SVersion.Parse( succ.ToString( CSVersionFormat.SemVer ) );
+                var vSemVerSucc = SVersion.Parse( succ.NormalizedText );
                 Assert.That( vSemVer < vSemVerSucc, "{0} < {1}", vSemVer, vSemVerSucc );
             }
             //if( count > _greatersuccessorCount )
@@ -370,12 +371,12 @@ namespace CSemVer.Tests
         public void check_first_possible_versions()
         {
             string firstPossibleVersions = @"
-                        v0.0.0-alpha, v0.0.0-beta, v0.0.0-delta, v0.0.0-epsilon, v0.0.0-gamma, v0.0.0-kappa, v0.0.0-prerelease, v0.0.0-rc, 
-                        v0.0.0, 
-                        v0.1.0-alpha, v0.1.0-beta, v0.1.0-delta, v0.1.0-epsilon, v0.1.0-gamma, v0.1.0-kappa, v0.1.0-prerelease, v0.1.0-rc, 
-                        v0.1.0, 
-                        v1.0.0-alpha, v1.0.0-beta, v1.0.0-delta, v1.0.0-epsilon, v1.0.0-gamma, v1.0.0-kappa, v1.0.0-prerelease, v1.0.0-rc, 
-                        v1.0.0";
+                        0.0.0-alpha, 0.0.0-beta, 0.0.0-delta, 0.0.0-epsilon, 0.0.0-gamma, 0.0.0-kappa, 0.0.0-prerelease, 0.0.0-rc, 
+                        0.0.0, 
+                        0.1.0-alpha, 0.1.0-beta, 0.1.0-delta, 0.1.0-epsilon, 0.1.0-gamma, 0.1.0-kappa, 0.1.0-prerelease, 0.1.0-rc, 
+                        0.1.0, 
+                        1.0.0-alpha, 1.0.0-beta, 1.0.0-delta, 1.0.0-epsilon, 1.0.0-gamma, 1.0.0-kappa, 1.0.0-prerelease, 1.0.0-rc, 
+                        1.0.0";
             var next = firstPossibleVersions.Split( ',' )
                                     .Select( v => v.Trim() )
                                     .Where( v => v.Length > 0 )
