@@ -6,165 +6,61 @@ namespace CSemVer
 {
     public sealed partial class CSVersion
     {
-        /// <summary>
-        /// Initializes a new invalid Version from a failed parsing.
-        /// </summary>
-        /// <param name="s">The syntaxically invalid version.</param>
-        /// <param name="isMalformed">True if it looks like a version but is actually not one. False if the text does not look like a version.</param>
-        /// <param name="errorMessage">Required error message.</param>
-        CSVersion( string s, bool isMalformed, string errorMessage )
+        internal static CSVersion FromSVersion( string parsedText, int major, int minor, int patch, string prerelease, string metadata )
         {
-            Debug.Assert( !isMalformed || s != null, "isMalformed => s != null" );
-            Debug.Assert( !string.IsNullOrWhiteSpace( errorMessage ) );
-            OriginalParsedText = s;
-            Kind = CSVersionKind.None;
-            if( isMalformed )
-            {
-                Kind = CSVersionKind.Malformed;
-                DefinitionStrength = 1;
-            }
-            ParseErrorMessage = isMalformed ? $"Version '{s}': {errorMessage}" : errorMessage;
-            PreReleaseNameIdx = -1;
-            PreReleasePatch = 0;
+            Debug.Assert( prerelease != null && metadata != null );
+            if( major > MaxMajor || minor > MaxMinor || patch > MaxPatch ) return null;
+            var error = ParsePreRelease( prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch );
+            if( error != null ) return null;
+            return new CSVersion( parsedText, major, minor, patch, ComputeStandardPreRelease( prNameIdx, prNum, prPatch ), metadata, prName, prNameIdx, prNum, prPatch );
         }
 
-        /// <summary>
-        /// Parses the specified string to a constrained semantic version and throws an <see cref="ArgumentException"/> 
-        /// it the resulting <see cref="SVersion"/> is not <see cref="IsValidSyntax"/>.
-        /// </summary>
-        /// <param name="s">The string to parse.</param>
-        /// <returns>The SVersion object.</returns>
-        public static CSVersion Parse( string s )
+        static string ParsePreRelease( string prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch )
         {
-            CSVersion v = TryParse( s );
-            if( !v.IsValidSyntax ) throw new ArgumentException( nameof( s ) );
-            return v;
-        }
-
-        /// <summary>
-        /// Attempts to parse a string like "4.0.0", "1.0-5-alpha.0", "1.0-5-rc.12.87" and returns a <see cref="CSVersion"/>
-        /// that may not be <see cref="IsValidSyntax"/>.
-        /// Initial 'v' (or 'V') is optional (GitHub convention).
-        /// Numbers can not start with a 0 (except if it is 0).
-        /// The pre release name (alpha, beta, gamma, ..., rc) must be any number of a-z (all lower case, no digit nor underscore).
-        /// The pre release name can be followed by ".0" or a greater number (not greater than <see cref="MaxPreReleaseNumber"/>). 
-        /// Returns a Version where <see cref="CSVersion.IsValidSyntax"/> is false if the string is not valid: <see cref="ParseErrorMessage"/>
-        /// gives more information.
-        /// </summary>
-        /// <param name="s">String to parse.</param>
-        /// <param name="analyseInvalidTag">
-        /// True to analyse an invalid string for a more precise error: 
-        /// if the tag looks like a release tag, the <see cref="ParseErrorMessage"/> will describe the issue.
-        /// </param>
-        /// <returns>Resulting version (may not be <see cref="IsValidSyntax"/>).</returns>
-        public static CSVersion TryParse( string s, bool analyseInvalidTag = false )
-        {
-            if( string.IsNullOrEmpty( s ) ) return new CSVersion( s, false, _nullOrEmptyErrorMessage );
-            bool shortForm = false;
-            Match m = _regexStrict.Match( s );
-            if( !m.Success )
+            Debug.Assert( prerelease != null );
+            prName = String.Empty;
+            prNameIdx = -1;
+            prNum = 0;
+            prPatch = 0;
+            if( prerelease.Length > 0 )
             {
-                m = _regexStrictShort.Match( s );
+                bool shortForm = false;
+                Match m = _rPreReleaseLongForm.Match( prerelease );
                 if( !m.Success )
                 {
-                    if( analyseInvalidTag )
-                    {
-                        m = _regexApprox.Match( s );
-                        if( m.Success ) return new CSVersion( s, true, SyntaxErrorHelper( s, m ) );
-                    }
-                    return new CSVersion( s, false, _noTagParseErrorMessage );
+                    shortForm = true;
+                    m = _rPreReleaseShortForm.Match( prerelease );
+                    if( !m.Success ) return "Not a CSVersion prerelease syntax.";
                 }
-                shortForm = true;
-            }
-            string sMajor = m.Groups[1].Value;
-            string sMinor = m.Groups[2].Value;
-            string sPatch = m.Groups[3].Value;
-
-            int major, minor, patch;
-            if( !Int32.TryParse( sMajor, out major ) || major > MaxMajor ) return new CSVersion( s, true, string.Format( "Incorrect Major version. Must not be greater than {0}.", MaxMajor ) );
-            if( !Int32.TryParse( sMinor, out minor ) || minor > MaxMinor ) return new CSVersion( s, true, string.Format( "Incorrect Minor version. Must not be greater than {0}.", MaxMinor ) );
-            if( !Int32.TryParse( sPatch, out patch ) || patch > MaxPatch ) return new CSVersion( s, true, string.Format( "Incorrect Patch version. Must not be greater than {0}.", MaxPatch ) );
-
-            string sPRName = m.Groups[4].Value;
-            int prNameIdx = GetPreReleaseNameIdx( sPRName, shortForm );
-            string sPRNum = m.Groups[5].Value;
-            string sPRFix = m.Groups[6].Value;
-            string sBuildMetaData = m.Groups[7].Value;
-            
-            int prNum = 0;
-            int prFix = 0;
-            if( prNameIdx >= 0 )
-            {
-                //if( shortForm ) sPRName = _standardNames[prNameIdx];
-                if( sPRFix.Length > 0 ) prFix = Int32.Parse( sPRFix );
+                prName = m.Groups[1].Value;
+                prNameIdx = GetPreReleaseNameIdx( prName, shortForm );
+                string sPRNum = m.Groups[2].Value;
+                string sPRFix = m.Groups[3].Value;
+                if( sPRFix.Length > 0 ) prPatch = Int32.Parse( sPRFix );
                 if( sPRNum.Length > 0 ) prNum = Int32.Parse( sPRNum );
-                if( prFix == 0 && prNum == 0 && sPRNum.Length > 0 ) return new CSVersion( s, true, string.Format( "Incorrect '.0' Release Number version. 0 can appear only to fix the first pre release (ie. '.0.F' where F is between 1 and {0}).", MaxPreReleaseFix ) );
+                if( prPatch == 0 && prNum == 0 && sPRNum.Length > 0 ) return String.Format( "Incorrect '.0' Release Number version. 0 can appear only to fix the first pre release (ie. '.0.F' where F is between 1 and {0}).", MaxPreReleasePatch );
             }
-            CSVersionKind kind = prNameIdx >= 0 ? CSVersionKind.PreRelease : CSVersionKind.OfficialRelease;
-            if( sBuildMetaData.Length > 0 ) kind |= CSVersionKind.MarkedInvalid;
-            return new CSVersion( s, major, minor, patch, sPRName, prNameIdx, prNum, prFix, kind );
-        }
-
-        static Regex _regexApproxSuffix = new Regex( @"^(-(?<1>.*?))?(\+(?<2>.*))?$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
-
-        static string SyntaxErrorHelper( string s, Match mApproximate )
-        {
-            if( mApproximate.Groups[3].Length == 0 ) return "There must be at least 3 numbers (Major.Minor.Patch).";
-            string buildMetaData = mApproximate.Groups[4].Value;
-            if( buildMetaData.Length > 0 )
-            {
-                Match mSuffix = _regexApproxSuffix.Match( buildMetaData );
-                if( !mSuffix.Success ) return "Major.Minor.Patch must be followed by a '-' and a pre release name (ie. 'v1.0.2-alpha') and/or a '+invalid', '+valid' or '+published' build meta data.";
-                string prerelease = mSuffix.Groups[1].Value;
-                string fragment = mSuffix.Groups[2].Value;
-                if( prerelease.Length > 0 )
-                {
-                    string[] dotParts = prerelease.Split( '.' );
-                    if( !Regex.IsMatch( dotParts[0], "^[a-z]+$", RegexOptions.CultureInvariant ) )
-                    {
-                        return "Pre release name must be only alpha (a-z) and should be: " + string.Join( ", ", _standardNames );
-                    }
-                    if( dotParts.Length > 1 )
-                    {
-                        int prNum, prFix;
-                        if( !Int32.TryParse( dotParts[1], out prNum ) || prNum < 0 || prNum > MaxPreReleaseNumber ) return string.Format( "Pre Release Number must be between 1 and {0}.", MaxPreReleaseNumber );
-                        if( dotParts.Length > 2 )
-                        {
-                            if( !Int32.TryParse( dotParts[2], out prFix ) || prFix < 1 || prFix > MaxPreReleaseFix ) return string.Format( "Fix Number must be between 1 and {0}.", MaxPreReleaseFix );
-                        }
-                        else if( prNum == 0 ) return string.Format( "Incorrect '.0' release Number version. 0 can appear only to fix the first pre release (ie. '.0.XX' where XX is between 1 and {0}).", MaxPreReleaseFix );
-                    }
-                    if( dotParts.Length > 3 ) return "Too much parts: there can be at most two trailing numbers like in '-alpha.1.2'.";
-                }
-                if( fragment.Length > 0 )
-                {
-                    if( !fragment.Equals( "invalid", StringComparison.OrdinalIgnoreCase ) )
-                    {
-                        return "Invalid build meta data: can only be '+invalid'.";
-                    }
-                }
-            }
-            return "Invalid version. Valid examples are: '1.0.0', '1.0.0-beta', '1.0.0-beta.5', '1.0.0-rc.5.12', '3.0.12+invalid'";
+            return null;
         }
 
         /// <summary>
         /// Computes the pre release name index ('alpha' is 0, 'rc' is <see cref="MaxPreReleaseNameIdx"/>).
         /// This is -1 if the pre release name is null or empty (no pre release name defines a final release).
-        /// The lookup into <see cref="StandardPreReleaseNames"/> or <see cref="StandardPreReleaseNamesShort"/> is
+        /// The lookup into <see cref="StandardPrereleaseNames"/> or <see cref="StandardPreReleaseNamesShort"/> is
         /// case sensitive.
         /// Any unmatched pre release name is <see cref="MaxPreReleaseNameIdx"/> - 1 ('prerelease', the last one before 'rc').
         /// </summary>
-        /// <param name="preReleaseName">Pre release name.</param>
+        /// <param name="parsedPrereleaseName">Pre release name.</param>
         /// <returns>Index between -1 (release) and MaxPreReleaseNameIdx.</returns>
-        public static int GetPreReleaseNameIdx( string preReleaseName ) => GetPreReleaseNameIdx( preReleaseName, false );
+        public static int GetPreReleaseNameIdx( string parsedPrereleaseName ) => GetPreReleaseNameIdx( parsedPrereleaseName, false );
 
-        static int GetPreReleaseNameIdx( string preReleaseName, bool shortForm )
+        static int GetPreReleaseNameIdx( string parsedPrereleaseName, bool shortForm )
         {
-            if( preReleaseName == null || preReleaseName.Length == 0 ) return -1;
-            int prNameIdx = Array.IndexOf( shortForm ? _standardNamesI : _standardNames, preReleaseName );
+            if( parsedPrereleaseName == null || parsedPrereleaseName.Length == 0 ) return -1;
+            int prNameIdx = Array.IndexOf( shortForm ? _standardNamesI : _standardNames, parsedPrereleaseName );
             if( prNameIdx < 0 )
             {
-                if( !shortForm ) prNameIdx = Array.IndexOf( _standardNamesI, preReleaseName );
+                if( !shortForm ) prNameIdx = Array.IndexOf( _standardNamesI, parsedPrereleaseName );
                 if( prNameIdx < 0 )
                 {
                     prNameIdx = MaxPreReleaseNameIdx - 1;
@@ -174,15 +70,51 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Standard TryParse pattern that returns a boolean rather than the resulting <see cref="CSVersion"/>. See <see cref="TryParse(string,bool)"/>.
+        /// Parses the specified string to a constrained semantic version and returns a <see cref="CSVersion"/> that 
+        /// may not be <see cref="SVersion.IsValid"/>.
+        /// </summary>
+        /// <param name="s">The string to parse.</param>
+        /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="SVersion.BuildMetaData"/> compliance.</param>
+        /// <returns>The CSVersion object that may not be <see cref="SVersion.IsValid"/>.</returns>
+        public static CSVersion TryParse( string s, bool checkBuildMetaDataSyntax = true )
+        {
+            SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
+            if( sv is CSVersion v ) return v;
+            if( !sv.IsValid ) new CSVersion( sv.ErrorMessage, s );
+            return new CSVersion( "Not a CSVersion.", s );
+        }
+
+        /// <summary>
+        /// Standard TryParse pattern that returns a boolean rather than the resulting <see cref="CSVersion"/>.
+        /// See <see cref="TryParse(string,bool)"/>.
         /// </summary>
         /// <param name="s">String to parse.</param>
         /// <param name="v">Resulting version.</param>
+        /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="SVersion.BuildMetaData"/> compliance.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParse( string s, out CSVersion v )
+        public static bool TryParse( string s, out CSVersion v, bool checkBuildMetaDataSyntax = true )
         {
-            v = TryParse( s, analyseInvalidTag: false );
-            return v.IsValidSyntax;
+            v = null;
+            SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
+            if( !sv.IsValid ) return false;
+            v = sv as CSVersion;
+            return v != null;
+        }
+
+        /// <summary>
+        /// Parses the specified string to a constrained semantic version and throws an <see cref="ArgumentException"/> 
+        /// it the resulting <see cref="SVersion"/> is not a <see cref="CSVersion"/> or <see cref="SVersion.IsValid"/> is false.
+        /// </summary>
+        /// <param name="s">The string to parse.</param>
+        /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="SVersion.BuildMetaData"/> compliance.</param>
+        /// <returns>The CSVersion object.</returns>
+        public static CSVersion Parse( string s, bool checkBuildMetaDataSyntax = true )
+        {
+            SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
+            if( !sv.IsValid ) throw new ArgumentException( sv.ErrorMessage, nameof( s ) );
+            CSVersion v = sv as CSVersion;
+            if( v == null ) throw new ArgumentException( "Not a CSVersion.", nameof( s ) );
+            return v;
         }
 
     }

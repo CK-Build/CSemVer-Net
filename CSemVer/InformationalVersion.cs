@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CSemVer
@@ -80,8 +78,8 @@ namespace CSemVer
                     {
                         CommitDate = t;
                         if( t.Kind != DateTimeKind.Utc ) ParseErrorMessage = $"The CommitDate must be Utc: {m.Groups[4].Value} must be {DateTime.SpecifyKind( t, DateTimeKind.Utc ).ToString("u")}.";
-                        else if( !SemVersion.IsValidSyntax ) ParseErrorMessage = "The SemVersion is invalid: " + SemVersion.ParseErrorMessage;
-                        else if( !NuGetVersion.IsValidSyntax ) ParseErrorMessage = "The NuGetVersion is invalid: " + NuGetVersion.ParseErrorMessage;
+                        else if( !SemVersion.IsValid ) ParseErrorMessage = "The SemVersion is invalid: " + SemVersion.ErrorMessage;
+                        else if( !NuGetVersion.IsValid ) ParseErrorMessage = "The NuGetVersion is invalid: " + NuGetVersion.ErrorMessage;
                         else if( CommitSha.Length != 40 || !CommitSha.All( IsHexDigit ) ) ParseErrorMessage = "The CommitSha is invalid (must be 40 hex digit).";
                         else IsValidSyntax = true;
                     }
@@ -96,7 +94,7 @@ namespace CSemVer
         {
             OriginalInformationalVersion = ZeroInformationalVersion;
             NuGetVersion = SemVersion = SVersion.ZeroVersion;
-            RawNuGetVersion = RawSemVersion = SemVersion.Text;
+            RawNuGetVersion = RawSemVersion = SemVersion.NormalizedText;
             CommitSha = ZeroCommitSha;
             CommitDate = ZeroCommitDate;
             IsValidSyntax = true;
@@ -127,7 +125,7 @@ namespace CSemVer
         public string RawSemVersion { get; }
 
         /// <summary>
-        /// Gets the parsed <see cref="RawSemVersion"/> (that may be not <see cref="SVersion.IsValidSyntax"/>) 
+        /// Gets the parsed <see cref="RawSemVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
         /// or null if the OriginalInformationalVersion attribute was not standard.
         /// </summary>
         public SVersion SemVersion { get; }
@@ -139,7 +137,7 @@ namespace CSemVer
         public string RawNuGetVersion { get; }
 
         /// <summary>
-        /// Gets the parsed <see cref="RawNuGetVersion"/> (that may be not <see cref="SVersion.IsValidSyntax"/>) 
+        /// Gets the parsed <see cref="RawNuGetVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
         /// or null if the OriginalInformationalVersion attribute was not standard.
         /// </summary>
         public SVersion NuGetVersion { get; }
@@ -174,7 +172,6 @@ namespace CSemVer
             if( !i.IsValidSyntax ) throw new ArgumentException( i.ParseErrorMessage, nameof( s ) );
             return i;
         }
-
 
         /// <summary>
         /// Builds a standard Informational version string.

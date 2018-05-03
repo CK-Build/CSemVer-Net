@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -7,13 +7,6 @@ namespace CSemVer
 {
     public sealed partial class CSVersion
     {
-        /// <summary>
-        /// Gets the string version in <see cref="CSVersionFormat.Normalized"/> format ('v' + <see cref="CSVersionFormat.SemVerWithMarker"/>).
-        /// Returns the <see cref="ParseErrorMessage"/> if it is not null.
-        /// </summary>
-        /// <returns>Formated string (or <see cref="ParseErrorMessage"/> if any).</returns>
-        public override string ToString() =>  ToString( CSVersionFormat.Normalized );
-
         /// <summary>
         /// Gets this version in a <see cref="CSVersionFormat.FileVersion"/> format.
         /// </summary>
@@ -29,142 +22,155 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the string version in the given format.
-        /// Returns the <see cref="ParseErrorMessage"/> if it is not null.
+        /// Returns the <see cref="SVersion.ErrorMessage"/> if it is not null.
         /// </summary>
         /// <param name="f">Format to use.</param>
-        /// <param name="buildInfo">Not null to generate a post-release version.</param>
-        /// <param name="usePreReleaseNameFromTag">True to use <see cref="PreReleaseNameFromTag"/> instead of standardized <see cref="PreReleaseName"/>.</param>
-        /// <returns>Formated string (or <see cref="ParseErrorMessage"/> if any).</returns>
+        /// <param name="buildInfo">Not null to generate a post-release version. This is not compatible with <see cref="CSVersionFormat.Normalized"/> format.</param>
+        /// <param name="usePreReleaseNameFromTag">True to use <see cref="ParsedPrereleaseName"/> instead of standardized <see cref="PrereleaseName"/>.</param>
+        /// <returns>Formated string (or <see cref="SVersion.ErrorMessage"/> if any).</returns>
         public string ToString( CSVersionFormat f, CIBuildDescriptor buildInfo = null, bool usePreReleaseNameFromTag = false )
         {
-            if( ParseErrorMessage != null ) return ParseErrorMessage;
-            bool isCIBuild = buildInfo != null;
-            if( isCIBuild && !buildInfo.IsValid ) throw new ArgumentException( "buildInfo must be valid." );
+            if( ErrorMessage != null ) return ErrorMessage;
+            if( buildInfo != null && !buildInfo.IsValid ) throw new ArgumentException( "buildInfo must be valid." );
             if( f == CSVersionFormat.FileVersion )
             {
                 return ToStringFileVersion( buildInfo != null );
             }
 
-            string prName = usePreReleaseNameFromTag ? PreReleaseNameFromTag : PreReleaseName;
-            switch( f )
+            if( f == CSVersionFormat.ShortForm || f == CSVersionFormat.ShortFormWithhBuildMetaData )
             {
-                case CSVersionFormat.NugetPackageV2:
-                    {
-                        // For NuGetV2, we are obliged to use the initial otherwise the special part for a pre release fix is too long for CI-Build LastReleasedBased.
-                        if( usePreReleaseNameFromTag ) throw new ArgumentException( "VersionFormat.NugetPackageV2 can not use PreReleaseNameFromTag." );
-                        prName = PreReleaseNameIdx >= 0 ? _standardNames[PreReleaseNameIdx][0].ToString() : String.Empty;
-
-                        string suffix = null;
-                        if( isCIBuild )
-                        {
-                            if( !buildInfo.IsValidForNuGetV2 ) throw new ArgumentException( "buildInfo must be valid for NuGetV2 format." );
-                            suffix = buildInfo.ToStringForNuGetV2() + suffix;
-                        }
-                        if( IsPreRelease )
-                        {
-                            if( IsPreReleasePatch )
-                            {
-                                if( isCIBuild )
-                                {
-                                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}-{6}", Major, Minor, Patch, prName, PreReleaseNumber, PreReleasePatch, suffix );
-                                }
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}{6}", Major, Minor, Patch, prName, PreReleaseNumber, PreReleasePatch, suffix );
-                            }
-                            if( PreReleaseNumber > 0 )
-                            {
-                                if( isCIBuild )
-                                {
-                                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-00-{5}", Major, Minor, Patch, prName, PreReleaseNumber, suffix );
-                                }
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}{5}", Major, Minor, Patch, prName, PreReleaseNumber, suffix );
-                            }
-                            if( isCIBuild )
-                            {
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}00-00-{4}", Major, Minor, Patch, prName, suffix );
-                            }
-                            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4}", Major, Minor, Patch, prName, suffix );
-                        }
-                        if( isCIBuild )
-                        {
-                            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-C{3}", Major, Minor, Patch+1, suffix );
-                        }
-                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", Major, Minor, Patch, suffix );
-                    }
-                case CSVersionFormat.SemVer:
-                case CSVersionFormat.SemVerWithMarker:
-                    {
-                        string suffix = f == CSVersionFormat.SemVerWithMarker ? Marker : string.Empty;
-                        if( isCIBuild )
-                        {
-                            suffix = buildInfo.ToString() + suffix;
-                        }
-                        if( IsPreRelease )
-                        {
-                            if( IsPreReleasePatch )
-                            {
-                                if( isCIBuild )
-                                {
-                                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.{5}.{6}", Major, Minor, Patch, prName, PreReleaseNumber, PreReleasePatch, suffix );
-                                }
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.{5}{6}", Major, Minor, Patch, prName, PreReleaseNumber, PreReleasePatch, suffix );
-                            }
-                            if( PreReleaseNumber > 0 )
-                            {
-                                if( isCIBuild )
-                                {
-                                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.0.{5}", Major, Minor, Patch, prName, PreReleaseNumber, suffix );
-                                }
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}{5}", Major, Minor, Patch, prName, PreReleaseNumber, suffix );
-                            }
-                            if( isCIBuild )
-                            {
-                                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.0.0.{4}", Major, Minor, Patch, prName, suffix );
-                            }
-                            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4}", Major, Minor, Patch, prName, suffix );
-                        }
-                        if( isCIBuild )
-                        {
-                            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}--{3}", Major, Minor, Patch+1, suffix );
-                        }
-                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", Major, Minor, Patch, suffix );
-                    }
-                default:
-                    {
-                        Debug.Assert( f == CSVersionFormat.Normalized );
-                        if( IsPreRelease )
-                        {
-                            if( IsPreReleasePatch )
-                            {
-                                return string.Format( CultureInfo.InvariantCulture, "v{0}.{1}.{2}-{3}.{4}.{5}{6}", Major, Minor, Patch, prName, PreReleaseNumber, PreReleasePatch, Marker );
-                            }
-                            if( PreReleaseNumber > 0 )
-                            {
-                                return string.Format( CultureInfo.InvariantCulture, "v{0}.{1}.{2}-{3}.{4}{5}", Major, Minor, Patch, prName, PreReleaseNumber, Marker );
-                            }
-                            return string.Format( CultureInfo.InvariantCulture, "v{0}.{1}.{2}-{3}{4}", Major, Minor, Patch, prName, Marker );
-                        }
-                        return string.Format( CultureInfo.InvariantCulture, "v{0}.{1}.{2}{3}", Major, Minor, Patch, Marker );
-                    }
+                // For short form, we are obliged to use the initial otherwise the special part for a pre release fix is too long for CI-Build LastReleasedBased.
+                if( usePreReleaseNameFromTag ) throw new ArgumentException( "CSVersionFormat.ShortForm can not use PreReleaseNameFromTag." );
+                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
+                                        ? "+" + BuildMetaData
+                                        : string.Empty;
+                return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
             }
+            else
+            {
+                Debug.Assert( f == CSVersionFormat.Normalized || f == CSVersionFormat.NormalizedWithBuildMetaData );
+                string prName = usePreReleaseNameFromTag && ParsedPrereleaseName != null ? ParsedPrereleaseName : PrereleaseName;
+                if( buildInfo == null && prName == PrereleaseName )
+                {
+                    return f == CSVersionFormat.Normalized ? NormalizedText : NormalizedTextWithBuildMetaData;
+                }
+                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
+                                        ? "+" + BuildMetaData
+                                        : string.Empty;
+                return ComputeLongFormVersion( Major, Minor, Patch, prName, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
+            }
+        }
+
+        static string ComputeStandardPreRelease( int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch )
+        {
+            Debug.Assert( preReleaseNameIdx >= -1 );
+            Debug.Assert( preReleaseNumber >= 0 && preReleaseNumber <= MaxPreReleaseNumber );
+            Debug.Assert( preReleasePatch >= 0 && preReleasePatch <= MaxPreReleaseNumber );
+            if( preReleaseNameIdx == -1 ) return String.Empty;
+            if( preReleasePatch > 0 )
+            {
+                return String.Format( "{0}.{1}.{2}", _standardNames[preReleaseNameIdx], preReleaseNumber, preReleasePatch );
+            }
+            else if( preReleaseNumber > 0 )
+            {
+                return String.Format( "{0}.{1}", _standardNames[preReleaseNameIdx], preReleaseNumber );
+            }
+            return _standardNames[preReleaseNameIdx];
+        }
+
+        static string ComputeLongFormVersion( int major, int minor, int patch, string prereleaseName, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
+        {
+            if( buildInfo != null )
+            {
+                suffix = buildInfo.ToString() + suffix;
+            }
+            if( prereleaseName.Length > 0 )
+            {
+                if( preReleasePatch > 0 )
+                {
+                    if( buildInfo != null )
+                    {
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.{5}.{6}", major, minor, patch, prereleaseName, preReleaseNumber, preReleasePatch, suffix );
+                    }
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.{5}{6}", major, minor, patch, prereleaseName, preReleaseNumber, preReleasePatch, suffix );
+                }
+                if( preReleaseNumber > 0 )
+                {
+                    if( buildInfo != null )
+                    {
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}.0.{5}", major, minor, patch, prereleaseName, preReleaseNumber, suffix );
+                    }
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.{4}{5}", major, minor, patch, prereleaseName, preReleaseNumber, suffix );
+                }
+                if( buildInfo != null )
+                {
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}.0.0.{4}", major, minor, patch, prereleaseName, suffix );
+                }
+                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4}", major, minor, patch, prereleaseName, suffix );
+            }
+            if( buildInfo != null )
+            {
+                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}--{3}", major, minor, patch + 1, suffix );
+            }
+            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", major, minor, patch, suffix );
+        }
+
+        static string ComputeShortFormVersion( int major, int minor, int patch, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
+        {
+            if( buildInfo != null )
+            {
+                if( !buildInfo.IsValidForShortForm ) throw new ArgumentException( "buildInfo must be valid for ShortForm format." );
+                suffix = buildInfo.ToStringForShortForm() + suffix;
+            }
+            if( preReleaseNameIdx >= 0 )
+            {
+                string prName = _standardNamesI[preReleaseNameIdx];
+                if( preReleasePatch > 0 )
+                {
+                    if( buildInfo != null )
+                    {
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}-{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
+                    }
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
+                }
+                if( preReleaseNumber > 0 )
+                {
+                    if( buildInfo != null )
+                    {
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-00-{5}", major, minor, patch, prName, preReleaseNumber, suffix );
+                    }
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}{5}", major, minor, patch, prName, preReleaseNumber, suffix );
+                }
+                if( buildInfo != null )
+                {
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}00-00-{4}", major, minor, patch, prName, suffix );
+                }
+                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4}", major, minor, patch, prName, suffix );
+            }
+            if( buildInfo != null )
+            {
+                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-C{3}", major, minor, patch + 1, suffix );
+            }
+            return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", major, minor, patch, suffix );
         }
 
         /// <summary>
         /// Gets the standard Informational version string.
-        /// If <see cref="IsValidSyntax"/> is false this throws an <see cref="InvalidOperationException"/>: 
+        /// If <see cref="SVersion.IsValid"/> is false this throws an <see cref="InvalidOperationException"/>: 
         /// the constant <see cref="InformationalVersion.ZeroInformationalVersion"/> should be used when IsValid is false.
         /// </summary>
         /// <param name="commitSha">The SHA1 of the commit (must be 40 hex digits).</param>
         /// <param name="commitDateUtc">The commit date (must be in UTC).</param>
         /// <param name="buildInfo">
         /// Not null for post-release version. 
-        /// <see cref="CIBuildDescriptor.IsValid"/> and <see cref="CIBuildDescriptor.IsValidForNuGetV2"/> must be true.
+        /// <see cref="CIBuildDescriptor.IsValid"/> and <see cref="CIBuildDescriptor.IsValidForShortForm"/> must be true.
         /// </param>
         /// <returns>The informational version.</returns>
         public string GetInformationalVersion( string commitSha, DateTime commitDateUtc, CIBuildDescriptor buildInfo = null )
         {
-            if( !IsValidSyntax ) throw new InvalidOperationException( "IsValid must be true. Use CSVersion.InvalidInformationalVersion when IsValid is false." );
-            var semVer = ToString( CSVersionFormat.SemVer, buildInfo );
-            var nugetVer = ToString( CSVersionFormat.NugetPackageV2, buildInfo );
+            if( !IsValid ) throw new InvalidOperationException( "IsValid must be true. Use CSVersion.InvalidInformationalVersion when IsValid is false." );
+            var semVer = ToString( CSVersionFormat.Normalized, buildInfo );
+            var nugetVer = ToString( CSVersionFormat.ShortForm, buildInfo );
             return InformationalVersion.BuildInformationalVersion( semVer, nugetVer, commitSha, commitDateUtc );
         }
     }
