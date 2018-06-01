@@ -7,7 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="[2.6.4]" />
-    <PackageReference Include="FluentAssertions" Version="5.3.0" />
+    <PackageReference Include="FluentAssertions" Version="5.3.2" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
