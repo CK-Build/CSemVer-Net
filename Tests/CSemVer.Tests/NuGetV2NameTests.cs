@@ -72,15 +72,18 @@ namespace CSemVer.Tests
             Assert.That( nugetV2BuildSNLen, Is.LessThanOrEqualTo( 20 ) );
         }
 
-        [TestCase( "0.0.0-alpha", "0.0.0-a" )]
-        [TestCase( "3.0.1-beta.12", "3.0.1-b12" )]
-        [TestCase( "3.0.1-delta.1", "3.0.1-d01" )]
-        [TestCase( "3.0.1-epsilon.18", "3.0.1-e18" )]
-        [TestCase( "3.0.1-gamma.19", "3.0.1-g19" )]
-        [TestCase( "3.0.1-kappa.21", "3.0.1-k21" )]
-        [TestCase( "3.0.1-prerelease.24", "3.0.1-p24" )]
-        [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r99" )]
-        public void pre_release_with_standard_names_nugetV2_mappings( string tag, string nuget )
+        [TestCase( "0.0.0-alpha", "0.0.0-a", false )]
+        [TestCase( "3.0.1-beta.12", "3.0.1-b12", false )]
+        [TestCase( "3.0.1-delta.1", "3.0.1-d01", false )]
+        [TestCase( "3.0.1-epsilon.18", "3.0.1-e18", false )]
+        [TestCase( "3.0.1-epsilon.18.1", "3.0.1-e18-01", true )]
+        [TestCase( "3.0.1-gamma.19", "3.0.1-g19", false )]
+        [TestCase( "3.0.1-kappa.21", "3.0.1-k21", false )]
+        [TestCase( "3.0.1-prerelease.24", "3.0.1-p24", false )]
+        [TestCase( "3.0.1-prerelease.24.99", "3.0.1-p24-99", true )]
+        [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r99", false )]
+        [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99", true )]
+        public void pre_release_with_standard_names_nugetV2_mappings( string tag, string nuget, bool isPrereleasePatch )
         {
             CSVersion fromShortForm = CSVersion.Parse( nuget );
             CSVersion t = CSVersion.TryParse( tag );
@@ -89,7 +92,7 @@ namespace CSemVer.Tests
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease );
             Assert.That( t.IsPrereleaseNameStandard );
-            Assert.That( t.IsPreReleasePatch, Is.False );
+            Assert.That( t.IsPreReleasePatch, Is.EqualTo( isPrereleasePatch ) );
             Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );

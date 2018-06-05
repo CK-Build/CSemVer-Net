@@ -37,7 +37,7 @@ namespace CSemVer
         /// <summary>
         /// Same as <see cref="ShortForm"/> with the trailng +<see cref="SVersion.BuildMetaData"/>.
         /// </summary>
-        ShortFormWithhBuildMetaData,
+        ShortFormWithBuildMetaData,
 
         /// <summary>
         /// NuGet format. The <see cref="ShortForm"/> is always used.

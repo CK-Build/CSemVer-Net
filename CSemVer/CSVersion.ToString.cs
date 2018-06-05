@@ -7,6 +7,8 @@ namespace CSemVer
 {
     public sealed partial class CSVersion
     {
+        string _cacheShortForm;
+
         /// <summary>
         /// Gets this version in a <see cref="CSVersionFormat.FileVersion"/> format.
         /// </summary>
@@ -31,19 +33,28 @@ namespace CSemVer
         public string ToString( CSVersionFormat f, CIBuildDescriptor buildInfo = null, bool usePreReleaseNameFromTag = false )
         {
             if( ErrorMessage != null ) return ErrorMessage;
-            if( buildInfo != null && !buildInfo.IsValid ) throw new ArgumentException( "buildInfo must be valid." );
+            if( buildInfo != null && !buildInfo.IsValid ) throw new ArgumentException( "buildInfo, when not null, must be valid." );
+            // Fast path and cache for NuGetPackage format with no build info.
+            if( buildInfo == null && f == CSVersionFormat.ShortForm && !usePreReleaseNameFromTag )
+            {
+                if( _cacheShortForm == null )
+                {
+                    _cacheShortForm = ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, String.Empty, null );
+                }
+                return _cacheShortForm;
+            }
             if( f == CSVersionFormat.FileVersion )
             {
                 return ToStringFileVersion( buildInfo != null );
             }
 
-            if( f == CSVersionFormat.ShortForm || f == CSVersionFormat.ShortFormWithhBuildMetaData )
+            if( f == CSVersionFormat.ShortForm || f == CSVersionFormat.ShortFormWithBuildMetaData )
             {
                 // For short form, we are obliged to use the initial otherwise the special part for a pre release fix is too long for CI-Build LastReleasedBased.
                 if( usePreReleaseNameFromTag ) throw new ArgumentException( "CSVersionFormat.ShortForm can not use PreReleaseNameFromTag." );
-                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
+                string suffix = f == CSVersionFormat.ShortFormWithBuildMetaData && BuildMetaData.Length > 0
                                         ? "+" + BuildMetaData
-                                        : string.Empty;
+                                        : String.Empty;
                 return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
             }
             else
@@ -56,7 +67,7 @@ namespace CSemVer
                 }
                 string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
                                         ? "+" + BuildMetaData
-                                        : string.Empty;
+                                        : String.Empty;
                 return ComputeLongFormVersion( Major, Minor, Patch, prName, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
             }
         }

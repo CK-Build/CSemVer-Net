@@ -54,6 +54,7 @@ namespace CSemVer.Tests
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
+            Assert.That( t.ToNuGetPackageString(), Is.EqualTo( tag ) );
             Assert.That( t.ToString(), Is.EqualTo( tag ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
             Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );

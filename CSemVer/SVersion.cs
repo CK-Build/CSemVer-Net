@@ -193,7 +193,7 @@ namespace CSemVer
         protected virtual SVersion DoWithBuildMetaData( string buildMetaData )
         {
             Debug.Assert( buildMetaData != null );
-            Debug.Assert( _csVersion != this, "Virtal/override routing did its job." );
+            Debug.Assert( _csVersion != this, "Virtual/override routing did its job." );
             return new SVersion( this, buildMetaData, _csVersion != null ? _csVersion.WithBuildMetaData( buildMetaData ) : null );
         }
 
@@ -345,6 +345,16 @@ namespace CSemVer
         /// </summary>
         /// <returns>The textual representation.</returns>
         public override string ToString() => ErrorMessage ?? NormalizedText;
+
+        /// <summary>
+        /// Returns the <see cref="ErrorMessage"/> if not null or the <see cref="CSVersion.ToString(CSVersionFormat, CIBuildDescriptor, bool)"/>
+        /// with <see cref="CSVersionFormat.NuGetPackage"/> format if <see cref="AsCSVersion"/> is not null
+        /// or the <see cref="NormalizedText"/>.
+        /// </summary>
+        /// <returns>The version to use for NuGet package.</returns>
+        public string ToNuGetPackageString() => ErrorMessage
+                                                ?? _csVersion?.ToString(CSVersionFormat.NuGetPackage)
+                                                ?? NormalizedText;
 
         /// <summary>
         /// Compares this with another <see cref="SVersion"/>.
