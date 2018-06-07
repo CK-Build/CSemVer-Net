@@ -60,49 +60,6 @@ namespace CSemVer.Tests
             Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
         }
 
-        [TestCase( null, -1 )]
-        [TestCase( "", -1 )]
-        [TestCase( "alpha", 0 )]
-        [TestCase( "beta", 1 )]
-        [TestCase( "delta", 2 )]
-        [TestCase( "epsilon", 3 )]
-        [TestCase( "gamma", 4 )]
-        [TestCase( "kappa", 5 )]
-        [TestCase( "a", 0 )]
-        [TestCase( "b", 1 )]
-        [TestCase( "d", 2 )]
-        [TestCase( "e", 3 )]
-        [TestCase( "g", 4 )]
-        [TestCase( "k", 5 )]
-        [TestCase( "p", 6 )]
-        [TestCase( "r", 7 )]
-        [TestCase( "A", 6 )]
-        [TestCase( "Alpha", 6 )]
-        [TestCase( "c", 6 )]
-        [TestCase( "mmmmm", 6 )]
-        [TestCase( "Rc", 6 )]
-        [TestCase( "prerelease", 6 )]
-        [TestCase( "rc", 7 )]
-        public void handling_pre_release_name_index( string n, int idx )
-        {
-            Assert.That( CSVersion.GetPreReleaseNameIdx( n ), Is.EqualTo( idx ), n );
-        }
-
-        [TestCase( "3.0.1-ready.0.1" )]
-        [TestCase( "99999.49999.9999-nonstandard.99.99" )]
-        public void to_string_pre_release_with_nonstandard_names_works_for_SemVer_but_throws_for_NuGetV2( string tag )
-        {
-            CSVersion t = CSVersion.TryParse( tag );
-            Assert.That( t.IsValid );
-            Assert.That( t.IsPrerelease );
-            Assert.That( !t.IsPrereleaseNameStandard );
-            Assert.That( t.IsPreReleasePatch );
-            Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
-            Assert.That( t.ToString( CSVersionFormat.Normalized, null, true ), Is.EqualTo( tag ) );
-            Assert.Throws<ArgumentException>( () => t.ToString( CSVersionFormat.NuGetPackage, null, true ) );
-        }
-
-
         [TestCase( "v0.0.0-alpha", 0, 0, 0, 1 )]
         [TestCase( "v0.0.0-alpha.0.1", 0, 0, 0, 2 )]
         [TestCase( "v0.0.0-alpha.0.2", 0, 0, 0, 3 )]
@@ -125,11 +82,11 @@ namespace CSemVer.Tests
         }
 
         [TestCase( "0", 0, "Invalid are always 0." )]
-        [TestCase( "0.0.0-nonstandard", 1, "Non standard prerelease name = 1." )]
-        [TestCase( "0.0.0", 2, "Normal = 2" )]
-        [TestCase( "0.0.0-gamma", 2, "Normal = 2" )]
-        [TestCase( "88.88.88-nonstandard+Invalid", 3, "Invalid non standard = 3" )]
-        [TestCase( "88.88.88+Invalid", 4, "Marked Invalid = 4" )]
+        [TestCase( "0.0.0-prerelease", 1, "Normal = 1." )]
+        [TestCase( "0.0.0", 1, "Normal = 1" )]
+        [TestCase( "0.0.0-gamma", 1, "Normal = 1" )]
+        [TestCase( "88.88.88-rc+Invalid", 2, "Invalid = 2" )]
+        [TestCase( "88.88.88+Invalid", 2, "Marked Invalid = 2" )]
         public void equal_release_tags_can_have_different_definition_strengths( string tag, int level, string message )
         {
             var t = CSVersion.TryParse( tag );
@@ -198,9 +155,9 @@ namespace CSemVer.Tests
                     "0.0.0-gamma.0.1",
                     "0.0.0-gamma.50",
                     "0.0.0-gamma.50.20",
-                    "0.0.0-thisisnonstandard",
-                    "0.0.0-nonstandard.0.1",
-                    "0.0.0-anothernonstandard.2",
+                    "0.0.0-prerelease",
+                    "0.0.0-prerelease.0.1",
+                    "0.0.0-prerelease.2",
                     "0.0.0-rc",
                     "0.0.0-rc.0.1",
                     "0.0.0-rc.2",

@@ -15,7 +15,7 @@ namespace CSemVer.Tests
         {
             SVersion sv = SVersion.TryParse( "1.0.0-not.a.CSemVer.Version" );
             SVersion svc = SVersion.TryParse( "1.0.0-alpha" );
-            SVersion svnc = SVersion.TryParse( "1.0.0-prereleaseForCSemVer", handleCSVersion: false );
+            SVersion svnc = SVersion.TryParse( "1.0.0-pre", handleCSVersion: false );
 
             Assert.That( sv, Is.Not.AssignableTo<CSVersion>() );
             Assert.That( sv.AsCSVersion, Is.Null );
@@ -39,7 +39,7 @@ namespace CSemVer.Tests
             SVersion svncB = svnc.WithBuildMetaData( "Test" );
             Assert.That( svncB, Is.Not.AssignableTo<CSVersion>() );
             Assert.That( svncB.AsCSVersion, Is.Not.Null );
-            Assert.That( svncB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prereleaseForCSemVer+Test" ) );
+            Assert.That( svncB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-pre+Test" ) );
             Assert.That( svncB.AsCSVersion.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prerelease+Test" ) );
 
         }

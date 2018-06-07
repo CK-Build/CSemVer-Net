@@ -12,7 +12,7 @@ namespace CSemVer
             if( major > MaxMajor || minor > MaxMinor || patch > MaxPatch ) return null;
             var error = ParsePreRelease( prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch );
             if( error != null ) return null;
-            return new CSVersion( parsedText, major, minor, patch, ComputeStandardPreRelease( prNameIdx, prNum, prPatch ), metadata, prName, prNameIdx, prNum, prPatch );
+            return new CSVersion( parsedText, major, minor, patch, ComputeStandardPreRelease( prNameIdx, prNum, prPatch ), metadata, prNameIdx, prNum, prPatch );
         }
 
         static string ParsePreRelease( string prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch )
@@ -30,7 +30,7 @@ namespace CSemVer
                 {
                     shortForm = true;
                     m = _rPreReleaseShortForm.Match( prerelease );
-                    if( !m.Success ) return "Not a CSVersion prerelease syntax.";
+                    if( !m.Success ) return "CSVersion prerelease name must match a|b|d|e|g|k|p|r|alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc.";
                 }
                 prName = m.Groups[1].Value;
                 prNameIdx = GetPreReleaseNameIdx( prName, shortForm );
@@ -43,30 +43,12 @@ namespace CSemVer
             return null;
         }
 
-        /// <summary>
-        /// Computes the pre release name index ('alpha' is 0, 'rc' is <see cref="MaxPreReleaseNameIdx"/>).
-        /// This is -1 if the pre release name is null or empty (no pre release name defines a final release).
-        /// The lookup into <see cref="StandardPrereleaseNames"/> or <see cref="StandardPreReleaseNamesShort"/> is
-        /// case sensitive.
-        /// Any unmatched pre release name is <see cref="MaxPreReleaseNameIdx"/> - 1 ('prerelease', the last one before 'rc').
-        /// </summary>
-        /// <param name="parsedPrereleaseName">Pre release name.</param>
-        /// <returns>Index between -1 (release) and MaxPreReleaseNameIdx.</returns>
-        public static int GetPreReleaseNameIdx( string parsedPrereleaseName ) => GetPreReleaseNameIdx( parsedPrereleaseName, false );
-
         static int GetPreReleaseNameIdx( string parsedPrereleaseName, bool shortForm )
         {
             if( parsedPrereleaseName == null || parsedPrereleaseName.Length == 0 ) return -1;
-            int prNameIdx = Array.IndexOf( shortForm ? _standardNamesI : _standardNames, parsedPrereleaseName );
-            if( prNameIdx < 0 )
-            {
-                if( !shortForm ) prNameIdx = Array.IndexOf( _standardNamesI, parsedPrereleaseName );
-                if( prNameIdx < 0 )
-                {
-                    prNameIdx = MaxPreReleaseNameIdx - 1;
-                }
-            }
-            return prNameIdx;
+            if( shortForm ) return Array.IndexOf( _standardNamesI, parsedPrereleaseName );
+            int idx = Array.IndexOf( _standardNames, parsedPrereleaseName );
+            return idx >= 0 ? idx : (parsedPrereleaseName == "pre" ? _standardNames.Length-2 : -1);
         }
 
         /// <summary>
