@@ -15,15 +15,8 @@ namespace CSemVer
     public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
         // It has to be here because of static initialization order.
-        static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>[a-z][a-z]+)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
+        static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
         static readonly Regex _rPreReleaseShortForm = new Regex( @"^(?<1>a|b|d|e|g|k|p|r)((?<2>[0-9][0-9])(-(?<3>[0-9][0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
-
-        /// <summary>
-        /// When <see cref="SVersion.ParsedText"/> is not null, necessarily not null: empty string for a release.
-        /// This is the pre release name directly extracted from the text. This field does not participate to equality or comparison: 
-        /// the actual, standardized, prerelease name is <see cref="PrereleaseName"/>.
-        /// </summary>
-        public readonly string ParsedPrereleaseName;
 
         /// <summary>
         /// Gets the standard pre release name among <see cref="StandardPrereleaseNames"/>.
@@ -41,11 +34,6 @@ namespace CSemVer
         /// otherwise this is -1.
         /// </summary>
         public readonly int PrereleaseNameIdx;
-
-        /// <summary>
-        /// Gets whether the <see cref="ParsedPrereleaseName"/> is a standard one (always false when <see cref="IsPrerelease"/> is false).
-        /// </summary>
-        public bool IsPrereleaseNameStandard => IsPrerelease && (PrereleaseNameIdx != MaxPreReleaseNameIdx - 1 || ParsedPrereleaseName == null || StringComparer.Ordinal.Equals( ParsedPrereleaseName, _standardNames[MaxPreReleaseNameIdx - 1] ));
 
         /// <summary>
         /// Meaningful only if <see cref="IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
@@ -75,12 +63,10 @@ namespace CSemVer
         public bool IsMarkedInvalid => StringComparer.OrdinalIgnoreCase.Equals( BuildMetaData, "invalid" );
 
         /// <summary>
-        /// Gets the strength of this version: an invalid version has a strength of 0. 
-        /// For valid version, the same version in terms of <see cref="OrderedVersion"/> can be expressed with: 
-        /// a <see cref="IsPrereleaseNameStandard"/> (stronger than a non standard 'prerelease' one), 
-        /// and ultimately, a <see cref="IsMarkedInvalid"/> wins.
+        /// Gets the strength of this version: an invalid version has a strength of 0, valid ones have 1
+        /// and ultimately, a <see cref="IsMarkedInvalid"/> wins with 2.
         /// </summary>
-        public readonly int DefinitionStrength;
+        public int DefinitionStrength => IsValid ? (IsMarkedInvalid ? 2 : 1) : 0;
 
         /// <summary>
         /// Gets the empty array singleton.
@@ -88,15 +74,13 @@ namespace CSemVer
         public static readonly CSVersion[] EmptyArray = Array.Empty<CSVersion>();
 
         CSVersion( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData,
-                   string parsedPrereleaseName, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch )
+                   int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch )
             : base( parsedText, major, minor, patch, prerelease, buildMetaData, null )
         {
-            ParsedPrereleaseName = parsedPrereleaseName;
             PrereleaseNameIdx = preReleaseNameIdx;
             PrereleaseNumber = preReleaseNumber;
             PrereleasePatch = preReleasePatch;
             _orderedVersion = new SOrderedVersion() { Number = ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch ) };
-            DefinitionStrength = ComputeDefinitionStrength();
             InlineAssertInvariants( this );
         }
 
@@ -111,7 +95,6 @@ namespace CSemVer
             _orderedVersion = new SOrderedVersion() {
                 Number = number != 0 ? number : ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch )
             };
-            DefinitionStrength = ComputeDefinitionStrength();
             InlineAssertInvariants( this );
         }
 

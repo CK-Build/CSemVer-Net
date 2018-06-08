@@ -91,7 +91,6 @@ namespace CSemVer.Tests
 
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease );
-            Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch, Is.EqualTo( isPrereleasePatch ) );
             Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
@@ -115,7 +114,6 @@ namespace CSemVer.Tests
 
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease );
-            Assert.That( t.IsPrereleaseNameStandard );
             Assert.That( t.IsPreReleasePatch );
             Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );

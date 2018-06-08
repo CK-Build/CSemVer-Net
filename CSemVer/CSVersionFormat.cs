@@ -1,7 +1,7 @@
 namespace CSemVer
 {
     /// <summary>
-    /// Format description for <see cref="CSVersion.ToString(CSVersionFormat,CIBuildDescriptor,bool)"/>.
+    /// Format description for <see cref="CSVersion.ToString(CSVersionFormat,CIBuildDescriptor)"/>.
     /// </summary>
     public enum CSVersionFormat
     {
