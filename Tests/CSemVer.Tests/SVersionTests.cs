@@ -1,3 +1,4 @@
+using FluentAssertions;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -70,6 +71,41 @@ namespace CSemVer.Tests
             Assert.That( notV != SVersion.ZeroVersion );
             Assert.That( SVersion.ZeroVersion > notV );
             Assert.That( SVersion.ZeroVersion >= notV );
+        }
+
+
+        [TestCase( "0.0.0-alpha", '=', "0.0.0-a" )]
+        [TestCase( null, '=', null )]
+        [TestCase( null, '<', "invalid" )]
+        [TestCase( "0.0.0-0", '>', "invalid" )]
+        [TestCase( "0.0.0-0", '>', null )]
+        [TestCase( "1.2.3-beta.1", '=', "1.2.3-b01" )]
+        [TestCase( "1.2.3-rc.1.0.2", '>', "1.2.3-r01-00-01" )]
+        [TestCase( "1.2.3-pre", '<', "1.2.3-prerelease.0.1" )]
+        // 1.2.3-pre => 1.2.3-prerelease
+        [TestCase( "1.2.3-pre", '>', "1.2.3-prea" )]
+        // 1.2.3-b => 1.2.3-beta
+        [TestCase( "1.2.3-b", '>', "1.2.3-baa" )]
+        public void CSemVerSafeCompare_in_action( string left, char op, string right )
+        {
+            SVersion vL = left != null ? SVersion.TryParse( left ) : null;
+            SVersion vR = right != null ? SVersion.TryParse( right ) : null;
+            switch( op )
+            {
+                case '>':
+                    SVersion.CSemVerSafeCompare( vL, vR ).Should().BePositive();
+                    SVersion.CSemVerSafeCompare( vR, vL ).Should().BeNegative();
+                    break;
+                case '<':
+                    SVersion.CSemVerSafeCompare( vL, vR ).Should().BeNegative();
+                    SVersion.CSemVerSafeCompare( vR, vL ).Should().BePositive();
+                    break;
+                case '=':
+                    SVersion.CSemVerSafeCompare( vL, vR ).Should().Be( 0 );
+                    SVersion.CSemVerSafeCompare( vR, vL ).Should().Be( 0 );
+                    break;
+                default: throw new ArgumentException( nameof( op ) );
+            }
         }
     }
 }

@@ -170,15 +170,6 @@ namespace CSemVer
             return v;
         }
 
-        int ComputeDefinitionStrength()
-        {
-            Debug.Assert( IsValid );
-            int d = 2;
-            if( IsPrerelease && !IsPrereleaseNameStandard ) d -= 1;
-            if( IsMarkedInvalid ) d += 2;
-            return d;
-        }
-
         /// <summary>
         /// Gets the ordered version number.
         /// </summary>
