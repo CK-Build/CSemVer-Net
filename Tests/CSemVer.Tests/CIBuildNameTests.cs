@@ -58,8 +58,25 @@ namespace CSemVer.Tests
             var vNext = SVersion.Parse( tNext.ToString( CSVersionFormat.Normalized ) );
             var tPrev = CSVersion.Create( t.OrderedVersion - 1 );
             var vPrev = SVersion.Parse( tPrev.ToString( CSVersionFormat.Normalized ) );
-            Assert.That( vPrev < v, "{0} < {1}", vPrev, v );
-            Assert.That( v < vNext, "{0} < {1}", v, vNext );
+
+            void CheckLower( SVersion v1, SVersion v2 )
+            {
+                Assert.That( v1 < v2, "{0} < {1}", v1, v2 );
+                Assert.That( v2 > v1, "{0} > {1}", v2, v1 );
+
+                SVersion v1low = SVersion.Parse( v1.ParsedText.ToLowerInvariant() );
+                SVersion v2low = SVersion.Parse( v2.ParsedText.ToLowerInvariant() );
+                Assert.That( v1low < v2low, "{0} < {1} (lowercase)", v1low, v2low );
+                Assert.That( v2low > v1low, "{0} > {1} (lowercase)", v2low, v1low );
+
+                SVersion v1up = SVersion.Parse( v1.ParsedText.ToUpperInvariant() );
+                SVersion v2up = SVersion.Parse( v2.ParsedText.ToUpperInvariant() );
+                Assert.That( v1up < v2up, "{0} < {1} (uppercase)", v1up, v2up );
+                Assert.That( v2up > v1up, "{0} > {1} (uppercase)", v2up, v1up );
+            }
+
+            CheckLower( vPrev, v );
+            CheckLower( v, vNext );
 
             var sNuGet = t.ToString( CSVersionFormat.NuGetPackage );
             var sNuGetPrev = tPrev.ToString( CSVersionFormat.NuGetPackage );
@@ -72,8 +89,8 @@ namespace CSemVer.Tests
 
             string sCI = t.ToString( CSVersionFormat.Normalized, ci );
             SVersion vCi = SVersion.Parse( sCI );
-            Assert.That( v < vCi, "{0} < {1}", v, vCi );
-            Assert.That( vCi < vNext, "{0} < {1}", vCi, vNext );
+            CheckLower( v, vCi );
+            CheckLower( vCi, vNext );
 
             var sNuGetCI = t.ToString( CSVersionFormat.NuGetPackage, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGet, sNuGetCI ) < 0, "{0} < {1}", sNuGet, sNuGetCI );
@@ -81,8 +98,8 @@ namespace CSemVer.Tests
 
             string sCiNext = tNext.ToString( CSVersionFormat.Normalized, ci );
             SVersion vCiNext = SVersion.Parse( sCiNext );
-            Assert.That( vCiNext > vCi, "{0} > {1}", vCiNext, vCi );
-            Assert.That( vCiNext > vNext, "{0} > {1}", vCiNext, vNext );
+            CheckLower( vCi, vCiNext );
+            CheckLower( vNext, vCiNext );
 
             var sNuGetCINext = tNext.ToString( CSVersionFormat.NuGetPackage, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCINext, sNuGetCI ) > 0, "{0} > {1}", sNuGetCINext, sNuGetCI );
@@ -90,9 +107,9 @@ namespace CSemVer.Tests
 
             string sCiPrev = tPrev.ToString( CSVersionFormat.Normalized, ci );
             SVersion vCiPrev = SVersion.Parse( sCiPrev );
-            Assert.That( vCiPrev > vPrev, "{0} > {1}", vCiPrev, vPrev );
-            Assert.That( vCiPrev < v, "{0} < {1}", vCiPrev, v );
-            Assert.That( vCiPrev < vCiNext, "{0} < {1}", vCiPrev, vCiNext );
+            CheckLower( vPrev, vCiPrev );
+            CheckLower( vCiPrev, v );
+            CheckLower( vCiPrev, vCiNext );
 
             var sNuGetCIPrev = tPrev.ToString( CSVersionFormat.NuGetPackage, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetPrev ) > 0, "{0} > {1}", sNuGetCIPrev, sNuGetPrev );

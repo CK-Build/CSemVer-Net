@@ -1,5 +1,6 @@
 using CSemVer;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -7,7 +8,7 @@ namespace CSemVer.Tests
 {
     public class NuGetV2StringComparer : IComparer<string>
     {
-         static Regex _nuGetV2 = new Regex( @"^(?<Version>\d+(\s*\.\s*\d+){0,3})(?<Release>-[a-z][0-9a-z-]*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture );
+         static Regex _nuGetV2 = new Regex( @"^(?<Version>\d+(\s*\.\s*\d+){0,3})(?<Release>-[a-z-][0-9a-z-]*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture );
 
         public static readonly IComparer<string> DefaultComparer = new NuGetV2StringComparer();
 
@@ -35,7 +36,7 @@ namespace CSemVer.Tests
             if( vX.Prerelease.Length == 0 && vY.Prerelease.Length == 0 ) return 0;
             if( vX.Prerelease.Length == 0 ) return 1;
             if( vY.Prerelease.Length == 0 ) return -1;
-            return string.CompareOrdinal( vX.Prerelease, vY.Prerelease );
+            return StringComparer.InvariantCultureIgnoreCase.Compare( vX.Prerelease, vY.Prerelease );
         }
     }
 }
