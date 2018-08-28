@@ -152,7 +152,7 @@ namespace CSemVer
             }
             if( buildInfo != null )
             {
-                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-C{3}", major, minor, patch + 1, suffix );
+                return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}--{3}", major, minor, patch + 1, suffix );
             }
             return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", major, minor, patch, suffix );
         }
