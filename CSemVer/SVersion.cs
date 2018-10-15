@@ -119,7 +119,7 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the pre-release version.
-        /// Normalized to the empty string when this is an Official release or when <see cref="IsValid"/> is false.
+        /// Normalized to the empty string when this is a Stable release or when <see cref="IsValid"/> is false.
         /// </summary>
         public string Prerelease { get; }
 
@@ -140,7 +140,41 @@ namespace CSemVer
         public bool IsValid => ErrorMessage == null;
 
         /// <summary>
-        /// Gets whether this version is a <see cref="ZeroVersion"/>.
+        /// Gets whether this is a Stable version: <see cref="IsValid"/> is true, this is a
+        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and <see cref="Prerelease"/> is empty.
+        /// </summary>
+        public bool IsStableLabel => IsValid && AsCSVersion != null && Prerelease.Length == 0;
+
+        /// <summary>
+        /// Gets whether this is a Latest version: <see cref="IsValid"/> is true, this is a
+        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and <see cref="Prerelease"/> is
+        /// either empty (ie. it is a <see cref="IsStableLabel"/>) or is a "rc" or a "prerelease".
+        /// This version can have a <see cref="CSVersion.PrereleaseNumber"/> and/or
+        /// a <see cref="CSVersion.PrereleasePatch"/> greater than 0.
+        /// </summary>
+        public bool IsLatestLabel => IsValid && AsCSVersion != null &&
+                                     (Prerelease.Length == 0 || _csVersion.PrereleaseNameIdx >= CSVersion.MaxPreReleaseNameIdx - 1);
+
+        /// <summary>
+        /// Gets whether this is a Preview version: <see cref="IsValid"/> is true, this is a
+        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and it is a "alpha", "beta", "delta",
+        /// "epsilon", "gamma", "kappa".
+        /// This version can have a <see cref="CSVersion.PrereleaseNumber"/> and/or
+        /// a <see cref="CSVersion.PrereleasePatch"/> greater than 0.
+        /// </summary>
+        public bool IsPreviewLabel => IsValid && AsCSVersion != null && Prerelease.Length > 0
+                                      && _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1;
+
+        /// <summary>
+        /// Gets whether this is a potential CI version: this is not a <see cref="CSVersion"/> and
+        /// there is a non empty <see cref="Prerelease"/>.
+        /// To ensure that this is an actual CSemVer-CI version and to knwow its exact kind, it should be parsed
+        /// and parsing CI version schemes is not currently implemented.
+        /// </summary>
+        public bool MayBeCILabel => IsValid && AsCSVersion == null && Prerelease.Length > 0;
+
+        /// <summary>
+        /// Gets whether this version is the <see cref="ZeroVersion"/> (0.0.0-0).
         /// </summary>
         public bool IsZeroVersion => Major == 0 && Minor == 0 && Patch == 0 && Prerelease == "0";
 
@@ -302,7 +336,7 @@ namespace CSemVer
             CSVersion c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
             if( handleCSVersion  && c != null ) return c;
             // If it is not a CSVersion, validate the prerelease.
-            // An OfficialVersion is not necessarily a CSVersion (too big Major/Minor/Patch).
+            // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
             if( c == null && prerelease.Length > 0 )
             {
                 var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
