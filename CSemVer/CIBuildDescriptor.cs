@@ -17,13 +17,13 @@ namespace CSemVer
         /// Defines the maximal build index.
         /// This is required to be able to pad it with a constant number of '0'.
         /// </summary>
-        public const int MaxNuGetV2BuildIndex = 9999;
+        public const int MaxShortFormIndex = 9999;
 
         int _buildIndex;
 
         /// <summary>
         /// Gets or sets the build index. Must be greater or equal to 0.
-        /// To be valid for NuGetV2, it must not exceed <see cref="MaxNuGetV2BuildIndex"/>.
+        /// To be valid for NuGetV2, it must not exceed <see cref="MaxShortFormIndex"/>.
         /// </summary>
         public int BuildIndex 
         {
@@ -54,7 +54,7 @@ namespace CSemVer
         /// </summary>
         public bool IsValidForShortForm
         {
-            get { return IsValid && _buildIndex <= MaxNuGetV2BuildIndex && BranchName.Length <= 8; }
+            get { return IsValid && _buildIndex <= MaxShortFormIndex && BranchName.Length <= 8; }
         }
 
         /// <summary>
@@ -74,9 +74,68 @@ namespace CSemVer
         /// <returns></returns>
         public string ToStringForShortForm()
         {
-            Debug.Assert( MaxNuGetV2BuildIndex.ToString().Length == 4 );
+            Debug.Assert( MaxShortFormIndex.ToString().Length == 4 );
             return IsValid ? string.Format( "{0:0000}-{1}", BuildIndex, BranchName ) : string.Empty;
         }
 
+        /// <summary>
+        /// Creates the ZeroTimed short form version string. It uses a base 36 alphabet (case insensitive) and consider the nunber
+        /// of seconds from 1st of january 2015: this fits into 7 characters.
+        /// </summary>
+        /// <param name="ciBuildName">The BuildName string (typically "develop"). Must not be null, empty or longer than 8 characters.</param>
+        /// <param name="timeRelease">The utc date time of the release.</param>
+        /// <returns>A NuGetV2 O.O.O-- version string.</returns>
+        public static string CreateShortFormZeroTimed( string ciBuildName, DateTime timeRelease )
+        {
+            CheckCIBuildName( ciBuildName, true );
+            DateTime baseTime = new DateTime( 2015, 1, 1, 0, 0, 0, DateTimeKind.Utc );
+            if( timeRelease < baseTime ) throw new ArgumentException( $"Must be at least {baseTime}.", nameof( timeRelease ) );
+            string ciBuildVersionNuGet;
+            TimeSpan delta200 = timeRelease - baseTime;
+            Debug.Assert( Math.Log( 1000 * 366 * 24 * 60 * (long)60, 36 ) < 7, "Using Base36: 1000 years in seconds on 7 chars!" );
+            long second = (long)delta200.TotalSeconds;
+            string b36 = ToBase36( second );
+            string ver = new string( '0', 7 - b36.Length ) + b36;
+            ciBuildVersionNuGet = string.Format( "0.0.0--{0}-{1}", ciBuildName, ver );
+            return ciBuildVersionNuGet;
+        }
+
+        /// <summary>
+        /// Creates the ZeroTimed SemVer version string. The <paramref name="actualBaseTag"/>, if not null, is appended 
+        /// as a suffix (Build metadata).
+        /// </summary>
+        /// <param name="ciBuildName">The BuildName string (typically "develop").</param>
+        /// <param name="timeRelease">The utc date time of the release.</param>
+        /// <param name="actualBaseTag">An optional base release that will be added as build metadata.</param>
+        /// <returns>A SemVer O.O.O--ci version string.</returns>
+        public static string CreateSemVerZeroTimed( string ciBuildName, DateTime timeRelease, string actualBaseTag = null )
+        {
+            CheckCIBuildName( ciBuildName, false );
+            var name = string.Format( "0.0.0--ci-{0}.{1:yyyy-MM-ddTHH-mm-ss-ff}", ciBuildName, timeRelease );
+            return name + (actualBaseTag != null ? "+v" + actualBaseTag : null);
+        }
+
+        static void CheckCIBuildName( string ciBuildName, bool shortForm )
+        {
+            if( string.IsNullOrWhiteSpace( ciBuildName ) ) throw new ArgumentException( "Must not be null, empty or whitespace.", nameof( ciBuildName ) );
+            if( shortForm && ciBuildName.Length > 8 ) throw new ArgumentException( "Must not be longer than 8 characters", nameof( ciBuildName ) );
+        }
+
+        static string ToBase36( long number )
+        {
+            // Naïve implementation that does the job.
+            var alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
+            Debug.Assert( alphabet.Length == 36 );
+            var n = number;
+            long basis = 36;
+            var ret = "";
+            while( n > 0 )
+            {
+                long temp = n % basis;
+                ret = alphabet[(int)temp] + ret;
+                n = (n / basis);
+            }
+            return ret;
+        }
     }
 }
