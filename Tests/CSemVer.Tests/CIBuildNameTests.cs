@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using FluentAssertions;
 using System.IO;
 using CSemVer;
 
@@ -117,5 +118,27 @@ namespace CSemVer.Tests
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetCINext ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGetCINext );
         }
 
+        [Test]
+        public void testing_cibuild_timebased()
+        {
+            var now = DateTime.UtcNow;
+            var more = now.AddSeconds( 1 );
+            {
+                var sV = CIBuildDescriptor.CreateSemVerZeroTimed( "develop", now );
+                var v = SVersion.Parse( sV );
+                v.AsCSVersion.Should().BeNull();
+
+                var vMore = SVersion.Parse( CIBuildDescriptor.CreateSemVerZeroTimed( "develop", more ) );
+                vMore.Should().BeGreaterThan( v );
+            }
+            {
+                var sV = CIBuildDescriptor.CreateShortFormZeroTimed( "develop", now );
+                var v = SVersion.Parse( sV );
+                v.AsCSVersion.Should().BeNull();
+
+                var vMore = SVersion.Parse( CIBuildDescriptor.CreateShortFormZeroTimed( "develop", more ) );
+                vMore.Should().BeGreaterThan( v );
+            }
+        }
     }
 }
