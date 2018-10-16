@@ -96,7 +96,7 @@ namespace CSemVer
             long second = (long)delta200.TotalSeconds;
             string b36 = ToBase36( second );
             string ver = new string( '0', 7 - b36.Length ) + b36;
-            ciBuildVersionNuGet = string.Format( "0.0.0--{0}-{1}", ciBuildName, ver );
+            ciBuildVersionNuGet = string.Format( "0.0.0--{0}-{1}", ver, ciBuildName );
             return ciBuildVersionNuGet;
         }
 
@@ -111,7 +111,7 @@ namespace CSemVer
         public static string CreateSemVerZeroTimed( string ciBuildName, DateTime timeRelease, string actualBaseTag = null )
         {
             CheckCIBuildName( ciBuildName, false );
-            var name = string.Format( "0.0.0--ci-{0}.{1:yyyy-MM-ddTHH-mm-ss-ff}", ciBuildName, timeRelease );
+            var name = string.Format( "0.0.0--ci.{1:yyyy-MM-ddTHH-mm-ss-ff}.{0}", timeRelease, ciBuildName );
             return name + (actualBaseTag != null ? "+v" + actualBaseTag : null);
         }
 
