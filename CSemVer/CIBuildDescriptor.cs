@@ -58,20 +58,20 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Overridden to return "ci-<see cref="BuildIndex"/>.<see cref="BranchName"/>" when <see cref="IsValid"/> is true,
+        /// Overridden to return "ci.<see cref="BuildIndex"/>.<see cref="BranchName"/>" when <see cref="IsValid"/> is true,
         /// the empty string otherwise.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The long form like "ci.16.develop".</returns>
         public override string ToString()
         {
             return IsValid ? string.Format( "ci.{0}.{1}", BuildIndex, BranchName ) : string.Empty;
         }
 
         /// <summary>
-        /// When <see cref="IsValidForShortForm"/> is true, returns "<see cref="BranchName"/>-<see cref="BuildIndex"/>" where 
+        /// When <see cref="IsValidForShortForm"/> is true, returns "<see cref="BuildIndex"/>-<see cref="BranchName"/>" where 
         /// the index is padded with 0, the empty string otherwise.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The short form like "0016-develop".</returns>
         public string ToStringForShortForm()
         {
             Debug.Assert( MaxShortFormIndex.ToString().Length == 4 );
@@ -84,35 +84,32 @@ namespace CSemVer
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop"). Must not be null, empty or longer than 8 characters.</param>
         /// <param name="timeRelease">The utc date time of the release.</param>
-        /// <returns>A NuGetV2 O.O.O-- version string.</returns>
+        /// <returns>A Short form version string like "O.O.O--009iJKg-develop".</returns>
         public static string CreateShortFormZeroTimed( string ciBuildName, DateTime timeRelease )
         {
             CheckCIBuildName( ciBuildName, true );
             DateTime baseTime = new DateTime( 2015, 1, 1, 0, 0, 0, DateTimeKind.Utc );
             if( timeRelease < baseTime ) throw new ArgumentException( $"Must be at least {baseTime}.", nameof( timeRelease ) );
-            string ciBuildVersionNuGet;
+
             TimeSpan delta200 = timeRelease - baseTime;
             Debug.Assert( Math.Log( 1000 * 366 * 24 * 60 * (long)60, 36 ) < 7, "Using Base36: 1000 years in seconds on 7 chars!" );
             long second = (long)delta200.TotalSeconds;
             string b36 = ToBase36( second );
             string ver = new string( '0', 7 - b36.Length ) + b36;
-            ciBuildVersionNuGet = string.Format( "0.0.0--{0}-{1}", ver, ciBuildName );
-            return ciBuildVersionNuGet;
+            return string.Format( "0.0.0--{0}-{1}", ver, ciBuildName );
         }
 
         /// <summary>
-        /// Creates the ZeroTimed SemVer version string. The <paramref name="actualBaseTag"/>, if not null, is appended 
+        /// Creates the ZeroTimed SemVer version string. The <paramref name="baseVersion"/>, if not null, is appended 
         /// as a suffix (Build metadata).
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop").</param>
         /// <param name="timeRelease">The utc date time of the release.</param>
-        /// <param name="actualBaseTag">An optional base release that will be added as build metadata.</param>
-        /// <returns>A SemVer O.O.O--ci version string.</returns>
-        public static string CreateSemVerZeroTimed( string ciBuildName, DateTime timeRelease, string actualBaseTag = null )
+        /// <returns>A SemVer version string like "O.O.O--ci.2018-07-27T09-45-28-34.develop".</returns>
+        public static string CreateSemVerZeroTimed( string ciBuildName, DateTime timeRelease )
         {
             CheckCIBuildName( ciBuildName, false );
-            var name = string.Format( "0.0.0--ci.{1:yyyy-MM-ddTHH-mm-ss-ff}.{0}", timeRelease, ciBuildName );
-            return name + (actualBaseTag != null ? "+v" + actualBaseTag : null);
+            return string.Format( "0.0.0--ci.{0:yyyy-MM-ddTHH-mm-ss-ff}.{1}", timeRelease, ciBuildName );
         }
 
         static void CheckCIBuildName( string ciBuildName, bool shortForm )
