@@ -100,8 +100,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Creates the ZeroTimed SemVer version string. The <paramref name="baseVersion"/>, if not null, is appended 
-        /// as a suffix (Build metadata).
+        /// Creates the ZeroTimed SemVer version string.
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop").</param>
         /// <param name="timeRelease">The utc date time of the release.</param>
