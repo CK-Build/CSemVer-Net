@@ -140,38 +140,26 @@ namespace CSemVer
         public bool IsValid => ErrorMessage == null;
 
         /// <summary>
-        /// Gets whether this is a Stable version: <see cref="IsValid"/> is true, this is a
-        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and <see cref="Prerelease"/> is empty.
+        /// Gets the <see cref="PackageQuality"/> associated to this version.
         /// </summary>
-        public bool IsStableLabel => IsValid && AsCSVersion != null && Prerelease.Length == 0;
-
-        /// <summary>
-        /// Gets whether this is a Latest version: <see cref="IsValid"/> is true, this is a
-        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and <see cref="Prerelease"/> is
-        /// either empty (ie. it is a <see cref="IsStableLabel"/>) or is a "rc" or a "prerelease".
-        /// This version can have a <see cref="CSVersion.PrereleaseNumber"/> and/or
-        /// a <see cref="CSVersion.PrereleasePatch"/> greater than 0.
-        /// </summary>
-        public bool IsLatestLabel => IsValid && AsCSVersion != null &&
-                                     (Prerelease.Length == 0 || _csVersion.PrereleaseNameIdx >= CSVersion.MaxPreReleaseNameIdx - 1);
-
-        /// <summary>
-        /// Gets whether this is a Preview version: <see cref="IsValid"/> is true, this is a
-        /// CSemVer version (<see cref="AsCSVersion"/> is not null) and it is a "alpha", "beta", "delta",
-        /// "epsilon", "gamma", "kappa".
-        /// This version can have a <see cref="CSVersion.PrereleaseNumber"/> and/or
-        /// a <see cref="CSVersion.PrereleasePatch"/> greater than 0.
-        /// </summary>
-        public bool IsPreviewLabel => IsValid && AsCSVersion != null && Prerelease.Length > 0
-                                      && _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1;
-
-        /// <summary>
-        /// Gets whether this is a potential CI version: this is not a <see cref="CSVersion"/> and
-        /// there is a non empty <see cref="Prerelease"/>.
-        /// To ensure that this is an actual CSemVer-CI version and to knwow its exact kind, it should be parsed
-        /// and parsing CI version schemes is not currently implemented.
-        /// </summary>
-        public bool MayBeCILabel => IsValid && AsCSVersion == null && Prerelease.Length > 0;
+        public PackageQuality PackageQuality
+        {
+            get
+            {
+                if( !IsValid ) return PackageQuality.None;
+                if( AsCSVersion == null )
+                {
+                    return Prerelease.Length > 0 ? PackageQuality.CI : PackageQuality.None;
+                }
+                if( Prerelease.Length > 0 )
+                {
+                    return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
+                            ? PackageQuality.Preview
+                            : PackageQuality.ReleaseCandidate;
+                }
+                return PackageQuality.Release;
+            }
+        }
 
         /// <summary>
         /// Gets whether this version is the <see cref="ZeroVersion"/> (0.0.0-0).
