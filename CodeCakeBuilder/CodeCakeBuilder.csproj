@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -15,7 +15,7 @@
   <ItemGroup>
     <PackageReference Include="NuGet.CommandLine" Version="4.6.2" />
     <PackageReference Include="Code.Cake" Version="0.28.1--0023-develop" />
-    <PackageReference Include="CK.Text" Version="0.0.0-0" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="0.0.0-0" />
+    <PackageReference Include="CK.Text" Version="7.1.1--0033-develop" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="0.36.1--0053-develop" />
   </ItemGroup>
 </Project>
