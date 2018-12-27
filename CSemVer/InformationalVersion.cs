@@ -1,16 +1,25 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace CSemVer
 {
     /// <summary>
-    /// Parses a standard informational version in order to extract the two <see cref="SVersion"/> (the short and long forms), 
-    /// the <see cref="CommitSha"/> and the <see cref="CommitDate"/> if possible.
+    /// Defines standard informational version (usually stored in the <see cref="FileVersionInfo.ProductVersion"/>):
+    /// the two <see cref="SVersion"/> (the short and long forms), the <see cref="CommitSha"/> and the <see cref="CommitDate"/>.
+    /// <para>
+    /// The constructor can be used directly on any string, or <see cref="Parse"/> can be called (and throws an
+    /// <see cref="ArgumentException"/> if the result is not <see cref="IsValidSyntax"/>), or the informational version
+    /// can be extracted directly from a file thanks to <see cref="ReadFromFile"/>.
+    /// </para>
+    /// <para>
     /// Syntax check is very strict (the <see cref="Zero"/> string is a sample) and should remain strict. 
     /// What is missing in the equivalence check between NuGet and SemVer version: this requires a parse
     /// of the NuGet version and it has yet to be done.
+    /// </para>
     /// </summary>
     public class InformationalVersion
     {
@@ -59,6 +68,8 @@ namespace CSemVer
 
         /// <summary>
         /// Initializes a new <see cref="InformationalVersion"/> by parsing a string.
+        /// This never throws: <see cref="IsValidSyntax"/> may be false and <see cref="ParseErrorMessage"/> exposes
+        /// the error message.
         /// </summary>
         /// <param name="informationalVersion">Informational version. Can be null.</param>
         public InformationalVersion( string informationalVersion )
@@ -88,6 +99,11 @@ namespace CSemVer
                 else ParseErrorMessage = "The String to parse does not match the standard CSemVer informational version pattern.";
             }
             else ParseErrorMessage = "String to parse is null.";
+        }
+
+        InformationalVersion( string parseErrorMessage, bool forPrivateError )
+        {
+            ParseErrorMessage = parseErrorMessage;
         }
 
         InformationalVersion()
@@ -163,6 +179,7 @@ namespace CSemVer
 
         /// <summary>
         /// Parses the given string. Throws an <see cref="ArgumentException"/> if the syntax is invalid.
+        /// To avoid exception, simply use the <see cref="InformationalVersion"/> constructor.
         /// </summary>
         /// <param name="s">The string to parse.</param>
         /// <returns>A <see cref="IsValidSyntax"/> informational version.</returns>
@@ -171,6 +188,36 @@ namespace CSemVer
             var i = new InformationalVersion( s );
             if( !i.IsValidSyntax ) throw new ArgumentException( i.ParseErrorMessage, nameof( s ) );
             return i;
+        }
+
+        /// <summary>
+        /// Reads the <see cref="InformationalVersion"/> from a file, using <see cref="FileVersionInfo.GetVersionInfo"/>.
+        /// This does not throw, instead the returned <see cref="IsValidSyntax"/> is false and <see cref="ParseErrorMessage"/>
+        /// contains the error description.
+        /// </summary>
+        /// <param name="filePath">The path to the file. Must not be null or empty.</param>
+        /// <returns>The informational version that may be invalid.</returns>
+        static public InformationalVersion ReadFromFile( string filePath )
+        {
+            if( String.IsNullOrWhiteSpace( filePath ) )
+            {
+                throw new ArgumentNullException( nameof( filePath ) );
+            }
+            if( !File.Exists( filePath ) )
+            {
+                return new InformationalVersion( "File not found.", true );
+            }
+            try
+            {
+                var p = FileVersionInfo.GetVersionInfo( filePath )?.ProductVersion;
+                return p != null
+                        ? Parse( p )
+                        : new InformationalVersion( "The file has no FileVersionInfo.", true );
+            }
+            catch( Exception ex )
+            {
+                return new InformationalVersion( "Exception:" + ex.Message, true );
+            }
         }
 
         /// <summary>
