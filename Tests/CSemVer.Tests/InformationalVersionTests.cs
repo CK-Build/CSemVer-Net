@@ -41,7 +41,7 @@ namespace CSemVer.Tests
         [Test]
         public void this_assembly_has_a_valid_FileVersionInfo_ProductVersion()
         {
-            var path = System.IO.Path.Combine( AppContext.BaseDirectory, "CSemVer.Tests.dll" );
+            var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var info = InformationalVersion.ReadFromFile( path );
             info.IsValidSyntax.Should().BeTrue();
             info.ParseErrorMessage.Should().BeNull();
