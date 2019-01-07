@@ -14,8 +14,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NuGet.CommandLine" Version="4.6.2" />
-    <PackageReference Include="Code.Cake" Version="0.28.1--0029-develop" />
-    <PackageReference Include="CK.Text" Version="7.1.1--0050-develop" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="0.36.1--0067-develop" />
+    <PackageReference Include="Code.Cake" Version="0.28.1--0031-develop" />
+    <PackageReference Include="CK.Text" Version="7.1.1--0054-develop" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="0.36.1--0070-develop" />
   </ItemGroup>
 </Project>
