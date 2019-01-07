@@ -37,5 +37,36 @@ namespace CSemVer.Tests
             i.ParseErrorMessage.Should().BeNull();
             InformationalVersion.Parse( v );
         }
+
+        [Test]
+        public void this_assembly_has_a_valid_FileVersionInfo_ProductVersion()
+        {
+            var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var info = InformationalVersion.ReadFromFile( path );
+            info.IsValidSyntax.Should().BeTrue();
+            info.ParseErrorMessage.Should().BeNull();
+        }
+
+        [Test]
+        public void InformationalVersion_ReadFromFile_only_throws_if_path_is_null_or_empty()
+        {
+            Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( null ) );
+            Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( "" ) );
+            Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( " \t " ) );
+            {
+                var info = InformationalVersion.ReadFromFile( "no way this can be a file." );
+                info.IsValidSyntax.Should().BeFalse();
+                info.ParseErrorMessage.Should().NotBeNull();
+            }
+            {
+                string path = System.IO.Path.GetTempFileName();
+                System.IO.File.WriteAllText( path, "Just a text." );
+                var info = InformationalVersion.ReadFromFile( path );
+                info.IsValidSyntax.Should().BeFalse();
+                info.ParseErrorMessage.Should().NotBeNull();
+                System.IO.File.Delete( path );
+            }
+        }
+
     }
 }
