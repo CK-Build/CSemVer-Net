@@ -119,7 +119,7 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the pre-release version.
-        /// Normalized to the empty string when this is an Official release or when <see cref="IsValid"/> is false.
+        /// Normalized to the empty string when this is a Stable release or when <see cref="IsValid"/> is false.
         /// </summary>
         public string Prerelease { get; }
 
@@ -140,7 +140,29 @@ namespace CSemVer
         public bool IsValid => ErrorMessage == null;
 
         /// <summary>
-        /// Gets whether this version is a <see cref="ZeroVersion"/>.
+        /// Gets the <see cref="PackageQuality"/> associated to this version.
+        /// </summary>
+        public PackageQuality PackageQuality
+        {
+            get
+            {
+                if( !IsValid ) return PackageQuality.None;
+                if( AsCSVersion == null )
+                {
+                    return Prerelease.Length > 0 ? PackageQuality.CI : PackageQuality.None;
+                }
+                if( Prerelease.Length > 0 )
+                {
+                    return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
+                            ? PackageQuality.Preview
+                            : PackageQuality.ReleaseCandidate;
+                }
+                return PackageQuality.Release;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this version is the <see cref="ZeroVersion"/> (0.0.0-0).
         /// </summary>
         public bool IsZeroVersion => Major == 0 && Minor == 0 && Patch == 0 && Prerelease == "0";
 
@@ -302,7 +324,7 @@ namespace CSemVer
             CSVersion c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
             if( handleCSVersion  && c != null ) return c;
             // If it is not a CSVersion, validate the prerelease.
-            // An OfficialVersion is not necessarily a CSVersion (too big Major/Minor/Patch).
+            // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
             if( c == null && prerelease.Length > 0 )
             {
                 var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
