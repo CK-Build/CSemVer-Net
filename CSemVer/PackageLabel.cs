@@ -26,6 +26,11 @@ namespace CSemVer
         Preview,
 
         /// <summary>
+        /// Exploratory packages are <see cref="Preview"/> but also <see cref="PackageQuality.Exploratory"/> packages.
+        /// </summary>
+        Exploratory,
+
+        /// <summary>
         /// CI packages are all the packages except <see cref="PackageQuality.None"/>.
         /// </summary>
         CI

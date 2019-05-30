@@ -10,9 +10,10 @@ namespace CSemVer
             {
                 Array.Empty<PackageLabel>(),
                 new PackageLabel[]{ PackageLabel.CI },
-                new PackageLabel[]{ PackageLabel.Preview, PackageLabel.CI },
-                new PackageLabel[]{ PackageLabel.Latest, PackageLabel.Preview, PackageLabel.CI },
-                new PackageLabel[]{ PackageLabel.Stable, PackageLabel.Latest, PackageLabel.Preview, PackageLabel.CI }
+                new PackageLabel[]{ PackageLabel.Exploratory, PackageLabel.CI },
+                new PackageLabel[]{ PackageLabel.Preview, PackageLabel.Exploratory, PackageLabel.CI },
+                new PackageLabel[]{ PackageLabel.Latest, PackageLabel.Preview, PackageLabel.Exploratory, PackageLabel.CI },
+                new PackageLabel[]{ PackageLabel.Stable, PackageLabel.Latest, PackageLabel.Preview, PackageLabel.Exploratory, PackageLabel.CI }
             };
 
         /// <summary>

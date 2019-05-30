@@ -149,12 +149,14 @@ namespace CSemVer
                 if( !IsValid ) return PackageQuality.None;
                 if( AsCSVersion == null )
                 {
-                    return Prerelease.Length > 0 ? PackageQuality.CI : PackageQuality.None;
+                    return PackageQuality.CI;
                 }
                 if( Prerelease.Length > 0 )
                 {
                     return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
-                            ? PackageQuality.Preview
+                            ? (_csVersion.PrereleaseNameIdx < 3
+                                ? PackageQuality.Exploratory
+                                : PackageQuality.Preview)
                             : PackageQuality.ReleaseCandidate;
                 }
                 return PackageQuality.Release;
