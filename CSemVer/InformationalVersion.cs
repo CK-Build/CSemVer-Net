@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace CSemVer
@@ -211,7 +212,7 @@ namespace CSemVer
             {
                 var p = FileVersionInfo.GetVersionInfo( filePath )?.ProductVersion;
                 return p != null
-                        ? Parse( p )
+                        ? new InformationalVersion( p )
                         : new InformationalVersion( "The file has no FileVersionInfo.", true );
             }
             catch( Exception ex )
@@ -219,6 +220,29 @@ namespace CSemVer
                 return new InformationalVersion( "Exception:" + ex.Message, true );
             }
         }
+
+        /// <summary>
+        /// reads the <see cref="InformationalVersion"/> from a loaded assembly: its <see cref="AssemblyInformationalVersionAttribute"/>
+        /// is used.
+        /// </summary>
+        /// <param name="a">The assemblmy. Must not be null.</param>
+        /// <returns>The informational version that may be invalid.</returns>
+        static public InformationalVersion ReadFromAssembly( Assembly a )
+        {
+            if( a == null ) throw new ArgumentNullException( nameof( a ) );
+            try
+            {
+                var attr = (AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute( a, typeof( AssemblyInformationalVersionAttribute ) );
+                return attr != null
+                        ? new InformationalVersion( attr.InformationalVersion )
+                        : new InformationalVersion( "Unable to find AssemblyInformationalVersionAttribute.", true );
+            }
+            catch( Exception ex )
+            {
+                return new InformationalVersion( "Exception:" + ex.Message, true );
+            }
+        }
+
 
         /// <summary>
         /// Builds a standard Informational version string.
