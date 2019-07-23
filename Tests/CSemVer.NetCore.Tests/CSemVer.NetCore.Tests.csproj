@@ -1,12 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
   <Import Project="..\..\Common\Shared.props" />
-  
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <LangVersion>7.3</LangVersion>
     <OutputType>Exe</OutputType>
     <OriginProjectName>CSemVer.Tests</OriginProjectName>
+    <IsPackable>False</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CSemVer\CSemVer.csproj" />
