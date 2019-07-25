@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29020.237
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9CD47A9D-B076-4579-95D5-E69419EF1F2A}"
 EndProject
@@ -19,9 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSemVer", "CSemVer\CSemVer.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSemVer.Tests", "Tests\CSemVer.Tests\CSemVer.Tests.csproj", "{5E66ECDC-4F5E-4C50-BBC3-F2E7F1C30114}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{FD4817B6-3CD7-4E74-AA10-7CA95FDFCF2D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSemVer.NetCore.Tests", "Tests\CSemVer.NetCore.Tests\CSemVer.NetCore.Tests.csproj", "{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{FD4817B6-3CD7-4E74-AA10-7CA95FDFCF2D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,17 +39,12 @@ Global
 		{FD4817B6-3CD7-4E74-AA10-7CA95FDFCF2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD4817B6-3CD7-4E74-AA10-7CA95FDFCF2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD4817B6-3CD7-4E74-AA10-7CA95FDFCF2D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5E66ECDC-4F5E-4C50-BBC3-F2E7F1C30114} = {9CD47A9D-B076-4579-95D5-E69419EF1F2A}
-		{4A82DBE8-4FC5-4E86-AB52-9B44AABB4DE1} = {9CD47A9D-B076-4579-95D5-E69419EF1F2A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA2AD2F5-5513-4001-9AD4-92D31B55DEE2}
