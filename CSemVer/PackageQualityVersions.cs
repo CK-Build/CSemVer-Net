@@ -35,7 +35,7 @@ namespace CSemVer
 
         /// <summary>
         /// Initializes a new <see cref="PackageQualityVersions"/> with known best versions.
-        /// (this is a low level constructor that does not test anything).
+        /// (this is a low level constructor that does not test/ensure anything).
         /// </summary>
         /// <param name="ci">The current best CI version.</param>
         /// <param name="exp">The current best Exploratory version.</param>

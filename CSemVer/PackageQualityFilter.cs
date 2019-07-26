@@ -3,11 +3,11 @@ using System;
 namespace CSemVer
 {
     /// <summary>
-    /// Defines a min/max filter of <see cref="PackageQuality"/>.
+    /// Defines a "Min-Max" (this is the string representation) filter of <see cref="PackageQuality"/>.
     /// By default, this filter accepts everything (<see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.CI"/> for <see cref="Min"/>
-    /// and <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.Release"/> for <see cref="Max"/>).
+    /// and the same as <see cref="PackageQuality.Release"/> for <see cref="Max"/>).
     /// </summary>
-    public readonly struct PackageQualityFilter
+    public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
     {
         /// <summary>
         /// Gets the minimal package quality. <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.CI"/>.
@@ -40,14 +40,22 @@ namespace CSemVer
                                                     && (!HasMax || q <= Max);
 
         /// <summary>
-        /// Initializes a new filter.
+        /// Initializes a new filter (min and max are reordered if needed).
         /// </summary>
         /// <param name="min">The minimal quality.</param>
         /// <param name="max">The maximal quality.</param>
         public PackageQualityFilter( PackageQuality min, PackageQuality max )
         {
-            Min = min;
-            Max = max;
+            if( min > max )
+            {
+                Min = max;
+                Max = min;
+            }
+            else
+            {
+                Min = min;
+                Max = max;
+            }
         }
 
         /// <summary>
@@ -96,15 +104,15 @@ namespace CSemVer
                     q = new PackageQualityFilter();
                     return true;
                 }
-                if( TryParse( only, out PackageQuality both ) )
+                if( TryParse( only, out PackageQuality both, PackageQuality.None ) )
                 {
                     q = new PackageQualityFilter( both, both );
                     return true;
                 }
             }
             else if( minMax.Length == 2
-                && TryParse( minMax[0], out PackageQuality min )
-                && TryParse( minMax[1], out PackageQuality max ) )
+                && TryParse( minMax[0], out PackageQuality min, PackageQuality.CI )
+                && TryParse( minMax[1], out PackageQuality max, PackageQuality.Release ) )
             {
                 q = new PackageQualityFilter( min, max );
                 return true;
@@ -113,11 +121,33 @@ namespace CSemVer
             return false;
         }
 
-        static bool TryParse( string s, out PackageQuality q )
+        static bool TryParse( string s, out PackageQuality q, PackageQuality def )
         {
-            q = PackageQuality.None;
+            q = def;
             if( s.Length == 0 ) return true;
-            return Enum.TryParse<PackageQuality>( s, out q );
+            return Enum.TryParse( s, out q );
         }
+
+        /// <summary>
+        /// Implements equality operator.
+        /// </summary>
+        /// <param name="other">Other filter.</param>
+        /// <returns>True on success, false if other is different than this one.</returns>
+        public bool Equals( PackageQualityFilter other ) => ((!HasMin && !other.HasMin) || Min == other.Min)
+                                                            &&
+                                                            ((!HasMax && !other.HasMax) || Max == other.Max);
+
+        /// <summary>
+        /// Overridden to call <see cref="Equals(PackageQualityFilter)"/>.
+        /// </summary>
+        /// <param name="obj">The other object.</param>
+        /// <returns>True on success, false if other is not a filter or is different than this one.</returns>
+        public override bool Equals( object obj ) => obj is PackageQualityFilter f && Equals( f );
+
+        /// <summary>
+        /// Overriden to match <see cref="Equals(PackageQualityFilter)"/>.
+        /// </summary>
+        /// <returns>The hsh code.</returns>
+        public override int GetHashCode() => (HasMin ? ((int)Min << 8) : 0) | (HasMax ? (int)Max : 0);
     }
 }

@@ -48,6 +48,20 @@ namespace CSemVer.Tests
         }
 
 
+        [TestCase( "Release", "Release-Release" )]
+        [TestCase( "Release-", "Release-Release" )]
+        [TestCase( "-Release", "CI-Release" )]
+        [TestCase( "-CI", "CI-CI" )]
+        [TestCase( "-ReleaseCandidate", "CI-ReleaseCandidate" )]
+        [TestCase( "Preview-Exploratory", "Exploratory-Preview" )]
+        [TestCase( "-", "None-None" )]
+        [TestCase( "", "None-None" )]
+        public void PackageQualityFilter_tests( string form1, string form2 )
+        {
+            PackageQualityFilter.TryParse( form1, out var f1 ).Should().BeTrue();
+            PackageQualityFilter.TryParse( form2, out var f2 ).Should().BeTrue();
+            f1.Should().Be( f2 );
+        }
 
 
     }
