@@ -30,6 +30,7 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0--" )]
         [TestCase( "0.0.0-a" )]
         [TestCase( "0.0.0-A" )]
+        [TestCase( "1.0.0-beta2-19367-01" )]
         public void the_Zero_SVersion_is_lower_than_any_other_syntaxically_valid_SVersion( string version )
         {
             var v = SVersion.TryParse( version );
