@@ -39,6 +39,22 @@ namespace CSemVer.Tests
         }
 
         [Test]
+        public void this_assembly_has_a_valid_AssemblyInformationalVersionAttribute()
+        {
+            var info = InformationalVersion.ReadFromAssembly( System.Reflection.Assembly.GetExecutingAssembly() );
+            info.IsValidSyntax.Should().BeTrue();
+            info.ParseErrorMessage.Should().BeNull();
+        }
+        [Test]
+        public void InformationalVersion_ReadFromAssembly_only_throws_if_assembly_is_null()
+        {
+            Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromAssembly( null ) );
+            var info = InformationalVersion.ReadFromAssembly( typeof(string).Assembly );
+            info.IsValidSyntax.Should().BeFalse();
+            info.ParseErrorMessage.Should().NotBeNull();
+        }
+
+        [Test]
         public void this_assembly_has_a_valid_FileVersionInfo_ProductVersion()
         {
             var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
@@ -46,6 +62,7 @@ namespace CSemVer.Tests
             info.IsValidSyntax.Should().BeTrue();
             info.ParseErrorMessage.Should().BeNull();
         }
+
 
         [Test]
         public void InformationalVersion_ReadFromFile_only_throws_if_path_is_null_or_empty()
