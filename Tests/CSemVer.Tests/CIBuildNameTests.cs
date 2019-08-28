@@ -79,9 +79,9 @@ namespace CSemVer.Tests
             CheckLower( vPrev, v );
             CheckLower( v, vNext );
 
-            var sNuGet = t.ToString( CSVersionFormat.NuGetPackage );
-            var sNuGetPrev = tPrev.ToString( CSVersionFormat.NuGetPackage );
-            var sNuGetNext = tNext.ToString( CSVersionFormat.NuGetPackage );
+            var sNuGet = t.ToString( CSVersionFormat.Normalized );
+            var sNuGetPrev = tPrev.ToString( CSVersionFormat.Normalized );
+            var sNuGetNext = tNext.ToString( CSVersionFormat.Normalized );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetPrev, sNuGet ) < 0, "{0} < {1}", sNuGetPrev, sNuGet );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGet, sNuGetNext ) < 0, "{0} < {1}", sNuGet, sNuGetNext );
 
@@ -93,7 +93,7 @@ namespace CSemVer.Tests
             CheckLower( v, vCi );
             CheckLower( vCi, vNext );
 
-            var sNuGetCI = t.ToString( CSVersionFormat.NuGetPackage, ci );
+            var sNuGetCI = t.ToString( CSVersionFormat.Normalized, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGet, sNuGetCI ) < 0, "{0} < {1}", sNuGet, sNuGetCI );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCI, sNuGetNext ) < 0, "{0} < {1}", sNuGetCI, sNuGetNext );
 
@@ -102,7 +102,7 @@ namespace CSemVer.Tests
             CheckLower( vCi, vCiNext );
             CheckLower( vNext, vCiNext );
 
-            var sNuGetCINext = tNext.ToString( CSVersionFormat.NuGetPackage, ci );
+            var sNuGetCINext = tNext.ToString( CSVersionFormat.Normalized, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCINext, sNuGetCI ) > 0, "{0} > {1}", sNuGetCINext, sNuGetCI );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCINext, sNuGetNext ) > 0, "{0} > {1}", sNuGetCINext, sNuGetNext );
 
@@ -112,7 +112,7 @@ namespace CSemVer.Tests
             CheckLower( vCiPrev, v );
             CheckLower( vCiPrev, vCiNext );
 
-            var sNuGetCIPrev = tPrev.ToString( CSVersionFormat.NuGetPackage, ci );
+            var sNuGetCIPrev = tPrev.ToString( CSVersionFormat.Normalized, ci );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetPrev ) > 0, "{0} > {1}", sNuGetCIPrev, sNuGetPrev );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGet ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGet );
             Assert.That( NuGetV2StringComparer.DefaultComparer.Compare( sNuGetCIPrev, sNuGetCINext ) < 0, "{0} < {1}", sNuGetCIPrev, sNuGetCINext );

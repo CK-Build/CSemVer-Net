@@ -30,6 +30,7 @@ namespace CSemVer.Tests
 
         [TestCase( "1.2.3-prerelease (1.2.3-a) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
         [TestCase( "99.0.2 (1.0.0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
+        [TestCase( "99.0.2-a+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z (1.0.0)" )]
         public void NuGet_and_SemVer_versions_equivalence_are_not_checked( string v )
         {
             var i = new InformationalVersion( v );

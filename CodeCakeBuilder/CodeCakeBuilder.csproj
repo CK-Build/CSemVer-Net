@@ -6,8 +6,8 @@
     <IsPackable>False</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Protocol" Version="5.1.0" />
-    <PackageReference Include="NuGet.Credentials" Version="5.1.0" />
+    <PackageReference Include="NuGet.Protocol" Version="5.2.0" />
+    <PackageReference Include="NuGet.Credentials" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CK.Text" Version="8.0.3--0025-develop" />

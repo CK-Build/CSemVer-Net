@@ -54,7 +54,8 @@ namespace CSemVer.Tests
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
-            Assert.That( t.ToNuGetPackageString(), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.LongFormWithBuildMetaData ), Is.EqualTo( tag ) );
             Assert.That( t.ToString(), Is.EqualTo( tag ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
             Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
@@ -226,11 +227,11 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "0.0.0-alpha", "0.0.0-alpha.0.1" )]
-        [TestCase( "0.0.0-alpha.0.1", "0.0.0-alpha.0.2" )]
-        [TestCase( "0.0.0-rc.99", "0.0.0-rc.99.1" )]
+        [TestCase( "0.0.0-alpha", "0.0.0-a00-01" )]
+        [TestCase( "0.0.0-alpha.0.1", "0.0.0-a00-02" )]
+        [TestCase( "0.0.0-rc.99", "0.0.0-r99-01" )]
         [TestCase( "0.0.0-rc.1.99", "" )]
-        [TestCase( "0.0.0", "0.0.1-alpha, 0.0.1-beta, 0.0.1-delta, 0.0.1-epsilon, 0.0.1-gamma, 0.0.1-kappa, 0.0.1-prerelease, 0.0.1-rc, 0.0.1" )]
+        [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {
             var next = nextVersions.Split( ',' )
@@ -329,11 +330,11 @@ namespace CSemVer.Tests
         public void check_first_possible_versions()
         {
             string firstPossibleVersions = @"
-                        0.0.0-alpha, 0.0.0-beta, 0.0.0-delta, 0.0.0-epsilon, 0.0.0-gamma, 0.0.0-kappa, 0.0.0-prerelease, 0.0.0-rc, 
+                        0.0.0-a, 0.0.0-b, 0.0.0-d, 0.0.0-e, 0.0.0-g, 0.0.0-k, 0.0.0-p, 0.0.0-r, 
                         0.0.0, 
-                        0.1.0-alpha, 0.1.0-beta, 0.1.0-delta, 0.1.0-epsilon, 0.1.0-gamma, 0.1.0-kappa, 0.1.0-prerelease, 0.1.0-rc, 
+                        0.1.0-a, 0.1.0-b, 0.1.0-d, 0.1.0-e, 0.1.0-g, 0.1.0-k, 0.1.0-p, 0.1.0-r, 
                         0.1.0, 
-                        1.0.0-alpha, 1.0.0-beta, 1.0.0-delta, 1.0.0-epsilon, 1.0.0-gamma, 1.0.0-kappa, 1.0.0-prerelease, 1.0.0-rc, 
+                        1.0.0-a, 1.0.0-b, 1.0.0-d, 1.0.0-e, 1.0.0-g, 1.0.0-k, 1.0.0-p, 1.0.0-r, 
                         1.0.0";
             var next = firstPossibleVersions.Split( ',' )
                                     .Select( v => v.Trim() )

@@ -24,7 +24,8 @@ namespace CSemVer
     /// </summary>
     public class InformationalVersion
     {
-        static Regex _r = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
+        static Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
+        static Regex _rNew = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)\s*\((?<1>.*?)\)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
 
         /// <summary>
         /// The zero <see cref="InformationalVersion"/>.
@@ -53,18 +54,18 @@ namespace CSemVer
         static public readonly DateTime ZeroCommitDate = DateTime.SpecifyKind( DateTime.MinValue, DateTimeKind.Utc );
 
         /// <summary>
-        /// The Zero standard informational version is "0.0.0-0 (0.0.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z".
+        /// The Zero standard informational version is "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)".
         /// <para>
         /// These default values may be set in a csproj:
         /// <code>
         ///     &lt;Version&gt;0.0.0-0&lt;/Version&gt;
         ///     &lt;AssemblyVersion&gt;0.0.0&lt;/AssemblyVersion&gt;
         ///     &lt;FileVersion&gt;0.0.0.0&lt;/FileVersion&gt;
-        ///     &lt;InformationalVersion&gt;0.0.0-0 (0.0.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z&lt;/InformationalVersion&gt;
+        ///     &lt;InformationalVersion&gt;0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)&lt;/InformationalVersion&gt;
         /// </code>
         /// </para>
         /// </summary>
-        static public readonly string ZeroInformationalVersion = "0.0.0-0 (0.0.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z";
+        static public readonly string ZeroInformationalVersion = "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)";
 
 
         /// <summary>
@@ -77,7 +78,8 @@ namespace CSemVer
         {
             if( (OriginalInformationalVersion = informationalVersion) != null )
             {
-                Match m = _r.Match( informationalVersion );
+                Match m = _rNew.Match( informationalVersion );
+                if( !m.Success ) m = _rOld.Match( informationalVersion );
                 if( m.Success )
                 {
                     RawSemVersion = m.Groups[1].Value;
@@ -258,7 +260,7 @@ namespace CSemVer
             if( string.IsNullOrWhiteSpace( nugetVer ) ) throw new ArgumentException( nameof( nugetVer ) );
             if( commitSha == null || commitSha.Length != 40 || !commitSha.All( IsHexDigit ) ) throw new ArgumentException( "Must be a 40 hex digits string.", nameof( commitSha ) );
             if( commitDateUtc.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Must be a UTC date.", nameof( commitDateUtc ) );
-            return $"{semVer} ({nugetVer}) - SHA1: {commitSha} - CommitDate: {commitDateUtc.ToString( "u" )}";
+            return $"{nugetVer}+{commitSha}/{commitDateUtc.ToString( "u" )} ({semVer})";
         }
 
         static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');

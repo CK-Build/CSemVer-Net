@@ -371,16 +371,6 @@ namespace CSemVer
         public override string ToString() => ErrorMessage ?? NormalizedText;
 
         /// <summary>
-        /// Returns the <see cref="ErrorMessage"/> if not null or the <see cref="CSVersion.ToString(CSVersionFormat, CIBuildDescriptor)"/>
-        /// with <see cref="CSVersionFormat.NuGetPackage"/> format if <see cref="AsCSVersion"/> is not null
-        /// or the <see cref="NormalizedText"/>.
-        /// </summary>
-        /// <returns>The version to use for NuGet package.</returns>
-        public string ToNuGetPackageString() => ErrorMessage
-                                                ?? _csVersion?.ToString(CSVersionFormat.NuGetPackage)
-                                                ?? NormalizedText;
-
-        /// <summary>
         /// Compares this with another <see cref="SVersion"/>.
         /// Null is lower than any version. An invalid version is lower than any valid version.
         /// This (and the overloaded comparison operators) compares Semantic Version form (the <see cref="NormalizedText"/>)
@@ -425,12 +415,12 @@ namespace CSemVer
         /// by default.
         /// </summary>
         /// <param name="other">The other version to compare to (that may be a <see cref="CSVersion"/>).</param>
-        /// <param name="useLongForm">
+        /// <param name="useShortForm">
         /// By default, long form is considered when an actual CSVersion must be compared to a
-        /// mere SVersion. Use true to consider the short form instead.
+        /// mere SVersion. Use false to consider the long form instead.
         /// </param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        public int CSemVerCompareTo( SVersion other, bool useLongForm = true )
+        public int CSemVerCompareTo( SVersion other, bool useShortForm = true )
         {
             if( ReferenceEquals( other, null ) ) return 1;
             if( IsValid )
@@ -444,16 +434,16 @@ namespace CSemVer
                 {
                     return AsCSVersion.OrderedVersion.CompareTo( other.AsCSVersion.OrderedVersion );
                 }
-                if( !useLongForm )
+                if( !useShortForm )
                 {
-                    var vShort = Parse( AsCSVersion.ToString( CSVersionFormat.ShortForm ), handleCSVersion: false );
-                    return vShort.CompareValid( other );
+                    var vLong = Parse( AsCSVersion.ToString( CSVersionFormat.Normalized ), handleCSVersion: false );
+                    return vLong.CompareValid( other );
                 }
             }
-            else if( other.AsCSVersion != null && !useLongForm )
+            else if( other.AsCSVersion != null && !useShortForm )
             {
-                var vShort = Parse( other.AsCSVersion.ToString( CSVersionFormat.ShortForm ), handleCSVersion: false );
-                return -vShort.CompareValid( other );
+                var vLong = Parse( other.AsCSVersion.ToString( CSVersionFormat.Normalized ), handleCSVersion: false );
+                return -vLong.CompareValid( other );
             }
             return CompareValid( other );
         }
@@ -482,18 +472,18 @@ namespace CSemVer
         /// </summary>
         /// <param name="x">The left version to compare. Can be null.</param>
         /// <param name="y">The right version to compare. Can be null.</param>
-        /// <param name="useLongForm">
-        /// By default, long form is considered when an actual CSVersion must be compared to a
-        /// mere SVersion. Use true to consider the short form instead.
+        /// <param name="useShortForm">
+        /// By default, short form is considered when an actual CSVersion must be compared to a
+        /// mere SVersion. Use false to consider the long form instead.
         /// </param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        static public int CSemVerSafeCompare( SVersion x, SVersion y, bool useLongForm = true )
+        static public int CSemVerSafeCompare( SVersion x, SVersion y, bool useShortForm = true )
         {
             if( ReferenceEquals( x, null ) )
             {
                 return ReferenceEquals( y, null ) ? 0 : -1;
             }
-            return x.CSemVerCompareTo( y, useLongForm );
+            return x.CSemVerCompareTo( y, useShortForm );
         }
 
         static int ComparePreRelease( string x, string y )
@@ -540,7 +530,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Equality ignore ths <see cref="BuildMetaData"/>.
+        /// Equality ignore this <see cref="BuildMetaData"/>.
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if the specified object is equal to this instance; otherwise, false.</returns>

@@ -24,12 +24,12 @@ namespace CSemVer
             prPatch = 0;
             if( prerelease.Length > 0 )
             {
-                bool shortForm = false;
-                Match m = _rPreReleaseLongForm.Match( prerelease );
+                bool shortForm = true;
+                Match m = _rPreReleaseShortForm.Match( prerelease );
                 if( !m.Success )
                 {
-                    shortForm = true;
-                    m = _rPreReleaseShortForm.Match( prerelease );
+                    shortForm = false;
+                    m = _rPreReleaseLongForm.Match( prerelease );
                     if( !m.Success ) return "CSVersion prerelease name must match a|b|d|e|g|k|p|r|alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc.";
                 }
                 prName = m.Groups[1].Value;

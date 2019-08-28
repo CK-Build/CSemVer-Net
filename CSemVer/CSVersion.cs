@@ -126,9 +126,10 @@ namespace CSemVer
                 _alreadyInCheck = true;
                 try
                 {
+                    Debug.Assert( v.NormalizedText == ComputeShortFormVersion( v.Major, v.Minor, v.Patch, v.PrereleaseNameIdx, v.PrereleaseNumber, v.PrereleasePatch, String.Empty ) );
                     //// Systematically checks that a valid CSVersion can be parsed back in Long or Short form.
                     Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.Normalized ) ).Equals( v ) );
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.ShortForm ) ).Equals( v ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.LongForm ) ).Equals( v ) );
                 }
                 finally
                 {
