@@ -149,21 +149,23 @@ namespace CSemVer
 
         /// <summary>
         /// Returns either this versions or the same version but expressed in long form.
+        /// Note that when <see cref="SVersion.IsValid"/> is false, this is returned unchanged.
         /// </summary>
         /// <returns>This version expressed in long form.</returns>
         public CSVersion ToLongForm()
         {
-            if( IsLongForm ) return this;
+            if( IsLongForm || !IsValid ) return this;
             return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, true, OrderedVersion );
         }
 
         /// <summary>
         /// Returns either this versions or the same version but expressed in short form (that is the default, normalized, form).
+        /// Note that when <see cref="SVersion.IsValid"/> is false, this is returned unchanged.
         /// </summary>
         /// <returns>This version expressed in short form.</returns>
         public CSVersion ToNormalizedForm()
         {
-            if( IsLongForm ) return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, false, OrderedVersion );
+            if( IsLongForm && IsValid ) return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, false, OrderedVersion );
             return this;
         }
 
