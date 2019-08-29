@@ -50,8 +50,9 @@ namespace CSemVer.Tests
         [TestCase( "99999.49999.9999" )]
         public void parsing_valid_release( string tag )
         {
-            CSVersion t = CSVersion.TryParse( tag );
+            CSVersion t = CSVersion.Parse( tag );
             Assert.That( t.IsValid );
+            Assert.That( t.IsLongForm, Is.False );
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
             Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
@@ -68,7 +69,7 @@ namespace CSemVer.Tests
         [TestCase( "v0.0.0-beta", 0, 0, 0, 100 * 99 + 101 )]
         public void version_ordering_starts_at_1_for_the_very_first_possible_version( string tag, int oMajor, int oMinor, int oBuild, int oRevision )
         {
-            var t = CSVersion.TryParse( tag, true );
+            var t = CSVersion.TryParse( tag );
             Assert.That( t.IsValid );
             Assert.That( t.OrderedVersionMajor, Is.EqualTo( oMajor ) );
             Assert.That( t.OrderedVersionMinor, Is.EqualTo( oMinor ) );

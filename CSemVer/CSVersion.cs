@@ -48,7 +48,8 @@ namespace CSemVer
 
         /// <summary>
         /// Long form uses <see cref="StandardPrereleaseNames"/> and dotted numbers instead of <see cref="StandardPreReleaseNamesShort"/>
-        /// and dashed separated 0 padded numbers. 
+        /// and dashed separated 0 padded numbers.
+        /// Long form eventually appeared to be less readable than the short (historically NuGet V2 compatible) form: the default is now the short form. 
         /// </summary>
         public readonly bool IsLongForm;
 

@@ -187,7 +187,7 @@ namespace CSemVer
         public string ParsedText { get; }
 
         /// <summary>
-        /// Gets this <see cref="SVersion"/> as a <see cref="CSVersion"/> if the version happens to
+        /// Gets this <see cref="SVersion"/> as a <see cref="CSVersion"/> if this version happens to
         /// be a valid CSemVer compliant version. Null otherwise.
         /// </summary>
         /// <remarks>
@@ -196,6 +196,17 @@ namespace CSemVer
         /// parse methods sets to false).
         /// </remarks>
         public CSVersion AsCSVersion => _csVersion;
+
+        /// <summary>
+        /// Manages to return the normalized form of this version, whathever it is:
+        /// first, on error, returns the <see cref="ErrorMessage"/>, then if <see cref="AsCSVersion"/> is not null
+        /// the <see cref="CSVersion.ToString(CSVersionFormat, CIBuildDescriptor)"/> with <see cref="CSVersionFormat.Normalized"/> format 
+        /// or fallbacks to the <see cref="NormalizedText"/>.
+        /// </summary>
+        /// <returns>The version to use for NuGet package.</returns>
+        public string ToNormalizedString() => ErrorMessage
+                                                ?? _csVersion?.ToString( CSVersionFormat.Normalized )
+                                                ?? NormalizedText;
 
         /// <summary>
         /// Returns a new <see cref="SVersion"/> with a potentially new <see cref="BuildMetaData"/>.
