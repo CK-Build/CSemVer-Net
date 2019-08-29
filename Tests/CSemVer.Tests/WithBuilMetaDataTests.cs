@@ -34,13 +34,14 @@ namespace CSemVer.Tests
             SVersion svcB = svc.WithBuildMetaData( "Test" );
             Assert.That( svcB, Is.AssignableTo<CSVersion>() );
             Assert.That( svcB.AsCSVersion, Is.SameAs( svcB ) );
-            Assert.That( svcB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-a+Test" ) );
+            Assert.That( svcB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-alpha+Test" ) );
 
             SVersion svncB = svnc.WithBuildMetaData( "Test" );
             Assert.That( svncB, Is.Not.AssignableTo<CSVersion>() );
             Assert.That( svncB.AsCSVersion, Is.Not.Null );
             Assert.That( svncB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-pre+Test" ) );
-            Assert.That( svncB.AsCSVersion.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-p+Test" ) );
+            Assert.That( svncB.AsCSVersion.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prerelease+Test" ) );
+            Assert.That( svncB.AsCSVersion.ToNormalizedForm().NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-p+Test" ) );
 
         }
     }

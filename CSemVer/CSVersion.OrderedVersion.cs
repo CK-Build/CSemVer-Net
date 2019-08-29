@@ -57,6 +57,7 @@ namespace CSemVer
 
         static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "prerelease", "rc" };
         static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
+        static readonly char[] _standardNamesC = new[] { 'a', 'b', 'd', 'e', 'g', 'k', 'p', 'r' };
 
         const long MulNum = MaxPreReleasePatch + 1;
         const long MulName = MulNum * (MaxPreReleaseNumber + 1);
@@ -79,9 +80,9 @@ namespace CSemVer
         public static IReadOnlyList<string> StandardPreReleaseNamesShort => _standardNamesI;
 
         /// <summary>
-        /// Gets the very first possible version (0.0.0-alpha).
+        /// Gets the very first possible version (0.0.0-a).
         /// </summary>
-        public static readonly CSVersion VeryFirstVersion = new CSVersion( 0, 0, 0, String.Empty, 0, 0, 0, 1 );
+        public static readonly CSVersion VeryFirstVersion = new CSVersion( 0, 0, 0, String.Empty, 0, 0, 0, false, 1 );
 
         /// <summary>
         /// Gets the very first possible release versions (0.0.0, 0.1.0 or 1.0.0 or any prereleases of them).
@@ -91,7 +92,7 @@ namespace CSemVer
         /// <summary>
         /// Gets the very last possible version.
         /// </summary>
-        public static readonly CSVersion VeryLastVersion = new CSVersion( MaxMajor, MaxMinor, MaxPatch, String.Empty, -1, 0, 0, MaxOrderedVersion );
+        public static readonly CSVersion VeryLastVersion = new CSVersion( MaxMajor, MaxMinor, MaxPatch, String.Empty, -1, 0, 0, false, MaxOrderedVersion );
 
 
         static IReadOnlyList<CSVersion> BuildFirstPossibleVersions()
@@ -113,8 +114,9 @@ namespace CSemVer
         /// Creates a new version from an ordered version that must be between 0 (invalid version) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
         /// </summary>
         /// <param name="v">The ordered version.</param>
+        /// <param name="longForm">True to create a <see cref="CSVersion.IsLongForm"/> version.</param>
         /// <returns>The version.</returns>
-        public static CSVersion Create( long v )
+        public static CSVersion Create( long v, bool longForm = false )
         {
             if( v < 0 || v > MaxOrderedVersion ) throw new ArgumentException( "Must be between 0 and VeryLastVersion.OrderedVersion." );
             if( v == 0 ) return new CSVersion( "Invalid CSVersion.", null );
@@ -144,7 +146,7 @@ namespace CSemVer
             dV -= minor * MulMinor;
             int patch = (int)(dV / MulPatch);
 
-            return new CSVersion( major, minor, patch, String.Empty, prNameIdx, prNumber, prPatch, v );
+            return new CSVersion( major, minor, patch, String.Empty, prNameIdx, prNumber, prPatch, longForm, v );
         }
 
         static long ComputeOrderedVersion( int major, int minor, int patch, int preReleaseNameIdx = -1, int preReleaseNumber = 0, int preReleaseFix = 0 )

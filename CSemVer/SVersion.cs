@@ -522,7 +522,7 @@ namespace CSemVer
                 else
                 {
                     if( int.TryParse( yP, out yN ) ) return 1;
-                    r = String.CompareOrdinal( xP, yP );
+                    r = StringComparer.OrdinalIgnoreCase.Compare( xP, yP );
                     if( r != 0 ) return r;
                 }
             }

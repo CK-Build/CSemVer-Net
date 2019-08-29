@@ -124,18 +124,24 @@ namespace CSemVer.Tests
         [TestCase( "99999.49999.9999", true, 0 )]
         public void checking_extreme_version_ordering( string tag, bool atEnd, int expectedRank )
         {
-            var t = CSVersion.TryParse( tag );
-            if( atEnd )
+            var tOrigin = CSVersion.TryParse( tag );
+            Check( tOrigin );
+            Check( tOrigin.IsLongForm ? tOrigin.ToNormalizedForm() : tOrigin.ToLongForm() );
+
+            void Check( CSVersion t )
             {
-                Assert.That( t.OrderedVersion - (CSVersion.VeryLastVersion.OrderedVersion - expectedRank), Is.EqualTo( 0 ) );
+                if( atEnd )
+                {
+                    Assert.That( t.OrderedVersion - (CSVersion.VeryLastVersion.OrderedVersion - expectedRank), Is.EqualTo( 0 ) );
+                }
+                else
+                {
+                    Assert.That( t.OrderedVersion - (CSVersion.VeryFirstVersion.OrderedVersion + expectedRank), Is.EqualTo( 0 ) );
+                }
+                var t2 = CSVersion.Create( t.OrderedVersion, t.IsLongForm );
+                Assert.That( t2.ToString(), Is.EqualTo( t.ToString() ) );
+                Assert.That( t.Equals( t2 ) );
             }
-            else
-            {
-                Assert.That( t.OrderedVersion - (CSVersion.VeryFirstVersion.OrderedVersion + expectedRank), Is.EqualTo( 0 ) );
-            }
-            var t2 = CSVersion.Create( t.OrderedVersion );
-            Assert.That( t2.ToString(), Is.EqualTo( t.ToString() ) );
-            Assert.That( t.Equals( t2 ) );
         }
 
 
@@ -227,10 +233,10 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "0.0.0-alpha", "0.0.0-a00-01" )]
-        [TestCase( "0.0.0-alpha.0.1", "0.0.0-a00-02" )]
-        [TestCase( "0.0.0-rc.99", "0.0.0-r99-01" )]
-        [TestCase( "0.0.0-rc.1.99", "" )]
+        [TestCase( "0.0.0-a", "0.0.0-a00-01" )]
+        [TestCase( "0.0.0-a-00-01", "0.0.0-a00-02" )]
+        [TestCase( "0.0.0-r99", "0.0.0-r99-01" )]
+        [TestCase( "0.0.0-r01-99", "" )]
         [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {

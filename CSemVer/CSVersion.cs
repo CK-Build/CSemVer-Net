@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace CSemVer
 {
     /// <summary>
-    /// CSemVer version follows [v|V]Major.Minor.Patch[-PreReleaseName[.PreReleaseNumber[.PreReleaseFix]]] pattern
+    /// CSemVer version follows [v|V]Major.Minor.Patch[-PreReleaseName[.PreReleaseNumber[.PreReleaseFix]]] pattern (see <see cref="IsLongForm"/>)
     /// or [v|V]Major.Minor.Patch[-PreReleaseNameShort[PreReleaseNumber[-PreReleaseFix]]] (short form).
     /// This is a semantic version, this is the version associated to a commit in the repository: a CI-Build version
     /// is a SemVer <see cref="SVersion"/> but not a CSemVer version.
@@ -15,8 +15,9 @@ namespace CSemVer
     public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
         // It has to be here because of static initialization order.
-        static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
-        static readonly Regex _rPreReleaseShortForm = new Regex( @"^(?<1>a|b|d|e|g|k|p|r)((?<2>[0-9][0-9])(-(?<3>[0-9][0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
+        //static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
+        //static readonly Regex _rPreReleaseShortForm = new Regex( @"^(?<1>a|b|d|e|g|k|p|r)((?<2>[0-9][0-9])(-(?<3>[0-9][0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
+        static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
         /// Gets the standard pre release name among <see cref="StandardPrereleaseNames"/>.
@@ -46,6 +47,12 @@ namespace CSemVer
         public readonly int PrereleasePatch;
 
         /// <summary>
+        /// Long form uses <see cref="StandardPrereleaseNames"/> and dotted numbers instead of <see cref="StandardPreReleaseNamesShort"/>
+        /// and dashed separated 0 padded numbers. 
+        /// </summary>
+        public readonly bool IsLongForm;
+
+        /// <summary>
         /// Gets whether this is a pre release patch (<see cref="IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
         /// </summary>
         public bool IsPreReleasePatch => PrereleasePatch > 0;
@@ -73,25 +80,15 @@ namespace CSemVer
         /// </summary>
         public static readonly CSVersion[] EmptyArray = Array.Empty<CSVersion>();
 
-        CSVersion( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData,
-                   int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch )
-            : base( parsedText, major, minor, patch, prerelease, buildMetaData, null )
-        {
-            PrereleaseNameIdx = preReleaseNameIdx;
-            PrereleaseNumber = preReleaseNumber;
-            PrereleasePatch = preReleasePatch;
-            _orderedVersion = new SOrderedVersion() { Number = ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch ) };
-            InlineAssertInvariants( this );
-        }
-
         CSVersion( int major, int minor, int patch, string buildMetaData,
                    int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch,
-                   long number = 0 )
-            : base( null, major, minor, patch, ComputeStandardPreRelease( preReleaseNameIdx, preReleaseNumber, preReleasePatch ), buildMetaData, null )
+                   bool longForm, long number = 0, string parsedText = null )
+            : base( parsedText, major, minor, patch, ComputeStandardPreRelease( preReleaseNameIdx, preReleaseNumber, preReleasePatch, longForm ), buildMetaData, null )
         {
             PrereleaseNameIdx = preReleaseNameIdx;
             PrereleaseNumber = preReleaseNumber;
             PrereleasePatch = preReleasePatch;
+            IsLongForm = longForm;
             _orderedVersion = new SOrderedVersion() {
                 Number = number != 0 ? number : ComputeOrderedVersion( major, minor, patch, preReleaseNameIdx, preReleaseNumber, preReleasePatch )
             };
@@ -110,6 +107,9 @@ namespace CSemVer
             PrereleaseNameIdx = other.PrereleaseNameIdx;
             PrereleaseNumber = other.PrereleaseNumber;
             PrereleasePatch = other.PrereleasePatch;
+            _orderedVersion = other._orderedVersion;
+            IsLongForm = other.IsLongForm;
+            InlineAssertInvariants( this );
         }
 
 #if DEBUG
@@ -126,10 +126,17 @@ namespace CSemVer
                 _alreadyInCheck = true;
                 try
                 {
-                    Debug.Assert( v.NormalizedText == ComputeShortFormVersion( v.Major, v.Minor, v.Patch, v.PrereleaseNameIdx, v.PrereleaseNumber, v.PrereleasePatch, String.Empty ) );
+                    if( v.IsLongForm )
+                    {
+                        Debug.Assert( v.NormalizedText == ComputeLongFormVersion( v.Major, v.Minor, v.Patch, v.PrereleaseNameIdx, v.PrereleaseNumber, v.PrereleasePatch, String.Empty ) );
+                    }
+                    else
+                    {
+                        Debug.Assert( v.NormalizedText == ComputeShortFormVersion( v.Major, v.Minor, v.Patch, v.PrereleaseNameIdx, v.PrereleaseNumber, v.PrereleasePatch, String.Empty ) );
+                    }
                     //// Systematically checks that a valid CSVersion can be parsed back in Long or Short form.
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.Normalized ) ).Equals( v ) );
-                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.LongForm ) ).Equals( v ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.Normalized ) ).Equals( v.ToNormalizedForm() ) );
+                    Debug.Assert( SVersion.TryParse( v.ToString( CSVersionFormat.LongForm ) ).Equals( v.ToLongForm() ) );
                 }
                 finally
                 {
@@ -139,6 +146,25 @@ namespace CSemVer
 #endif
         }
 
+        /// <summary>
+        /// Returns either this versions or the same version but expressed in long form.
+        /// </summary>
+        /// <returns>This version expressed in long form.</returns>
+        public CSVersion ToLongForm()
+        {
+            if( IsLongForm ) return this;
+            return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, true, OrderedVersion );
+        }
+
+        /// <summary>
+        /// Returns either this versions or the same version but expressed in short form (that is the default, normalized, form).
+        /// </summary>
+        /// <returns>This version expressed in short form.</returns>
+        public CSVersion ToNormalizedForm()
+        {
+            if( IsLongForm ) return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, false, OrderedVersion );
+            return this;
+        }
 
         /// <summary>
         /// Returns a new <see cref="CSVersion"/> with a potentialy new <see cref="SVersion.BuildMetaData"/>.
@@ -170,25 +196,25 @@ namespace CSemVer
                     int nextPatch = PrereleasePatch + 1;
                     if( nextPatch <= MaxPreReleasePatch )
                     {
-                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, nextPatch );
+                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, nextPatch, IsLongForm );
                     }
                     if( !patchesOnly )
                     {
                         int nextPrereleaseNumber = PrereleaseNumber + 1;
                         if( nextPrereleaseNumber <= MaxPreReleaseNumber )
                         {
-                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, nextPrereleaseNumber, 0 );
+                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, nextPrereleaseNumber, 0, IsLongForm );
                         }
                         int nextPrereleaseNameIdx = PrereleaseNameIdx + 1;
                         if( nextPrereleaseNameIdx <= CSVersion.MaxPreReleaseNameIdx )
                         {
-                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0 );
+                            yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0, IsLongForm );
                             while( ++nextPrereleaseNameIdx <= MaxPreReleaseNameIdx )
                             {
-                                yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0 );
+                                yield return new CSVersion( Major, Minor, Patch, BuildMetaData, nextPrereleaseNameIdx, 0, 0, IsLongForm );
                             }
                         }
-                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, -1, 0, 0 );
+                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
                 }
                 else
@@ -199,9 +225,9 @@ namespace CSemVer
                     {
                         for( int i = 0; i <= MaxPreReleaseNameIdx; ++i )
                         {
-                            yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, i, 0, 0 );
+                            yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, i, 0, 0, IsLongForm );
                         }
-                        yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, -1, 0, 0 );
+                        yield return new CSVersion( Major, Minor, nextPatch, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
                 }
                 if( !patchesOnly )
@@ -209,28 +235,28 @@ namespace CSemVer
                     int nextMinor = Minor + 1;
                     if( nextMinor <= MaxMinor )
                     {
-                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, 0, 0, 0 );
+                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, 0, 0, 0, IsLongForm );
                         if( !patchesOnly )
                         {
                             for( int i = 1; i <= MaxPreReleaseNameIdx; ++i )
                             {
-                                yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, i, 0, 0 );
+                                yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, i, 0, 0, IsLongForm );
                             }
                         }
-                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, -1, 0, 0 );
+                        yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
                     int nextMajor = Major + 1;
                     if( nextMajor <= MaxMajor )
                     {
-                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, 0, 0, 0 );
+                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, 0, 0, 0, IsLongForm );
                         if( !patchesOnly )
                         {
                             for( int i = 1; i <= MaxPreReleaseNameIdx; ++i )
                             {
-                                yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, i, 0, 0 );
+                                yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, i, 0, 0, IsLongForm );
                             }
                         }
-                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, -1, 0, 0 );
+                        yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
                 }
             }

@@ -83,12 +83,10 @@ namespace CSemVer.Tests
         [TestCase( "1.2.3-beta.1", '=', "1.2.3-b01" )]
         [TestCase( "1.2.3-rc.1.0.2", '>', "1.2.3-r01-00-01" )]
         [TestCase( "1.2.3-pre", '<', "1.2.3-prerelease.0.1" )]
-        // 1.2.3-prerelease => 1.2.3-p ((useShortForm = true)
-        [TestCase( "1.2.3-prerelease", '<', "1.2.3-prea" )]
+        [TestCase( "1.2.3-prerelease", '>', "1.2.3-prea" )]
         [TestCase( "1.2.3-prerelease", '=', "1.2.3-pre" )]
         [TestCase( "1.2.3-prerelease", '=', "1.2.3-p" )]
-        // 1.2.3-beta => 1.2.3-b (useShortForm = true)
-        [TestCase( "1.2.3-beta", '<', "1.2.3-baa" )]
+        [TestCase( "1.2.3-beta", '>', "1.2.3-baa" )]
         public void CSemVerSafeCompare_in_action( string left, char op, string right )
         {
             SVersion vL = left != null ? SVersion.TryParse( left ) : null;
