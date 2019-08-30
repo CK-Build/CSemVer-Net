@@ -11,7 +11,7 @@ environment:
 build_script:
   - dotnet run --project CodeCakeBuilder -nointeraction
 test: off
-clone_folder: C:\CKli-World\SimpleGitVersion\CSemVer-Net
+clone_folder: C:\CKli-World\CK-Build\CSemVer-Net
 install:
   - ps: ./CodeCakeBuilder/InstallCredentialProvider.ps1
 artifacts:
