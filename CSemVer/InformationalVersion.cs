@@ -119,8 +119,8 @@ namespace CSemVer
 
         /// <summary>
         /// Gets whether <see cref="OriginalInformationalVersion"/> has been sucessfully parsed:
-        /// both <see cref="SemVersion"/> and <see cref="NuGetVersion"/> are syntaxically valid <see cref="SVersion"/>,
-        /// the <see cref="CommitSha"/> is a 40 hexadecimal string and <see cref="CommitDate"/> has been successfully parsed.
+        /// <see cref="Version"/> is syntaxically valid, the <see cref="CommitSha"/> is a 40 hexadecimal string
+        /// and <see cref="CommitDate"/> has been successfully parsed.
         /// </summary>
         public bool IsValidSyntax { get; }
 

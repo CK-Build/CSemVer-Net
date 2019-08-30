@@ -15,8 +15,6 @@ namespace CSemVer
     public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
         // It has to be here because of static initialization order.
-        //static readonly Regex _rPreReleaseLongForm = new Regex( @"^(?<1>alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc)(\.(?<2>0|[1-9][0-9]?)(\.(?<3>[1-9][0-9]?))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
-        //static readonly Regex _rPreReleaseShortForm = new Regex( @"^(?<1>a|b|d|e|g|k|p|r)((?<2>[0-9][0-9])(-(?<3>[0-9][0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture );
         static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
@@ -248,6 +246,7 @@ namespace CSemVer
                         }
                         yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
+
                     int nextMajor = Major + 1;
                     if( nextMajor <= MaxMajor )
                     {
@@ -266,7 +265,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Computes whether the given version belongs to the set or predecessors.
+        /// Computes whether the given version belongs to the set of predecessors.
         /// </summary>
         /// <param name="previous">Previous version. Can be null.</param>
         /// <returns>True if previous is actually a direct predecessor.</returns>
@@ -280,9 +279,10 @@ namespace CSemVer
 
             // Major bump greater than 1: previous can not be a direct predecessor.
             if( Major > previous.Major + 1 ) return false;
-            // Major bump of 1: if we are the first major (Major.0.0) or one of its first prerelases (Major.0.0-alpha or Major.0.0-rc), this is fine.
+            // Major bump of 1: if we are the first major (Major.0.0) or one of its first prerelases (Major.0.0-alpha to Major.0.0-rc), this is fine.
             if( Major != previous.Major )
             {
+                Debug.Assert( Major == previous.Major + 1 );
                 return Minor == 0 && Patch == 0 && PrereleaseNumber == 0 && PrereleasePatch == 0;
             }
             Debug.Assert( Major == previous.Major );

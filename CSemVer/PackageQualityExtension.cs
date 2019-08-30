@@ -4,6 +4,9 @@ using System.Text;
 
 namespace CSemVer
 {
+    /// <summary>
+    /// Provides extension methods to <see cref="PackageQuality"/>.
+    /// </summary>
     public static class PackageQualityExtension
     {
         static readonly PackageLabel[][] _map = new PackageLabel[][]

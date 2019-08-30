@@ -36,7 +36,7 @@ namespace CSemVer
         LongForm,
 
         /// <summary>
-        /// Same as <see cref="ShortForm"/> with the trailng +<see cref="SVersion.BuildMetaData"/>.
+        /// Same as <see cref="LongForm"/> with the trailing +<see cref="SVersion.BuildMetaData"/>.
         /// Since version 6.0.0 this long form is no more the default one.
         /// </summary>
         LongFormWithBuildMetaData
