@@ -25,7 +25,7 @@ namespace CSemVer
     public class InformationalVersion
     {
         static Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
-        static Regex _rNew = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)\s*\((?<1>.*?)\)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
+        static Regex _rNew = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
 
         /// <summary>
         /// The zero <see cref="InformationalVersion"/>.
@@ -54,18 +54,18 @@ namespace CSemVer
         static public readonly DateTime ZeroCommitDate = DateTime.SpecifyKind( DateTime.MinValue, DateTimeKind.Utc );
 
         /// <summary>
-        /// The Zero standard informational version is "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)".
+        /// The Zero standard informational version is "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z".
         /// <para>
         /// These default values may be set in a csproj:
         /// <code>
         ///     &lt;Version&gt;0.0.0-0&lt;/Version&gt;
         ///     &lt;AssemblyVersion&gt;0.0.0&lt;/AssemblyVersion&gt;
         ///     &lt;FileVersion&gt;0.0.0.0&lt;/FileVersion&gt;
-        ///     &lt;InformationalVersion&gt;0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)&lt;/InformationalVersion&gt;
+        ///     &lt;InformationalVersion&gt;0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z&lt;/InformationalVersion&gt;
         /// </code>
         /// </para>
         /// </summary>
-        static public readonly string ZeroInformationalVersion = "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z (0.0.0-0)";
+        static public readonly string ZeroInformationalVersion = "0.0.0-0+0000000000000000000000000000000000000000/0001-01-01 00:00:00Z";
 
 
         /// <summary>
@@ -82,18 +82,16 @@ namespace CSemVer
                 if( !m.Success ) m = _rOld.Match( informationalVersion );
                 if( m.Success )
                 {
-                    RawSemVersion = m.Groups[1].Value;
-                    RawNuGetVersion = m.Groups[2].Value;
+                    RawVersion = m.Groups[2].Value;
                     CommitSha = m.Groups[3].Value;
-                    SemVersion = SVersion.TryParse( RawSemVersion );
-                    NuGetVersion = SVersion.TryParse( RawNuGetVersion );
+                    var v = SVersion.TryParse( RawVersion );
+                    Version = v.AsCSVersion != null ? v.AsCSVersion.ToNormalizedForm() : v;
                     DateTime t;
                     if( DateTime.TryParseExact( m.Groups[4].Value, "u", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal, out t ) )
                     {
                         CommitDate = t;
                         if( t.Kind != DateTimeKind.Utc ) ParseErrorMessage = $"The CommitDate must be Utc: {m.Groups[4].Value} must be {DateTime.SpecifyKind( t, DateTimeKind.Utc ).ToString("u")}.";
-                        else if( !SemVersion.IsValid ) ParseErrorMessage = "The SemVersion is invalid: " + SemVersion.ErrorMessage;
-                        else if( !NuGetVersion.IsValid ) ParseErrorMessage = "The NuGetVersion is invalid: " + NuGetVersion.ErrorMessage;
+                        else if( !Version.IsValid ) ParseErrorMessage = "The SemVersion is invalid: " + Version.ErrorMessage;
                         else if( CommitSha.Length != 40 || !CommitSha.All( IsHexDigit ) ) ParseErrorMessage = "The CommitSha is invalid (must be 40 hex digit).";
                         else IsValidSyntax = true;
                     }
@@ -112,8 +110,8 @@ namespace CSemVer
         InformationalVersion()
         {
             OriginalInformationalVersion = ZeroInformationalVersion;
-            NuGetVersion = SemVersion = SVersion.ZeroVersion;
-            RawNuGetVersion = RawSemVersion = SemVersion.NormalizedText;
+            Version = SVersion.ZeroVersion; 
+            RawVersion = Version.NormalizedText;
             CommitSha = ZeroCommitSha;
             CommitDate = ZeroCommitDate;
             IsValidSyntax = true;
@@ -141,25 +139,15 @@ namespace CSemVer
         /// Gets the semantic version string extracted from <see cref="OriginalInformationalVersion"/>. 
         /// Null if the OriginalInformationalVersion attribute was not standard.
         /// </summary>
-        public string RawSemVersion { get; }
+        public string RawVersion { get; }
 
         /// <summary>
-        /// Gets the parsed <see cref="RawSemVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
+        /// Gets the parsed <see cref="RawVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
         /// or null if the OriginalInformationalVersion attribute was not standard.
+        /// Note that it is the <see cref="CSVersion.ToNormalizedForm()"/> if the version happens to be a <see cref="CSVersion"/>:
+        /// long forms will be transformed into short forms.
         /// </summary>
-        public SVersion SemVersion { get; }
-
-        /// <summary>
-        /// Gets the NuGet version extracted from the <see cref="OriginalInformationalVersion"/>.
-        /// Null if the OriginalInformationalVersion attribute was not standard.
-        /// </summary>
-        public string RawNuGetVersion { get; }
-
-        /// <summary>
-        /// Gets the parsed <see cref="RawNuGetVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
-        /// or null if the OriginalInformationalVersion attribute was not standard.
-        /// </summary>
-        public SVersion NuGetVersion { get; }
+        public SVersion Version { get; }
 
         /// <summary>
         /// Gets the SHA1 extracted from the <see cref="OriginalInformationalVersion"/>.
@@ -249,18 +237,16 @@ namespace CSemVer
         /// <summary>
         /// Builds a standard Informational version string.
         /// </summary>
-        /// <param name="semVer">The semantic version. Must be not null nor empty (no syntaxic validation is done).</param>
-        /// <param name="nugetVer">The nuget version. Must be not null nor empty (no syntaxic validation is done).</param>
+        /// <param name="version">The version. Must not be null nor invalid.</param>
         /// <param name="commitSha">The SHA1 of the commit (must be 40 hex digits).</param>
         /// <param name="commitDateUtc">The commit date (must be in UTC).</param>
         /// <returns>The informational version.</returns>
-        static public string BuildInformationalVersion( string semVer, string nugetVer, string commitSha, DateTime commitDateUtc )
+        static public string BuildInformationalVersion( SVersion version, string commitSha, DateTime commitDateUtc )
         {
-            if( string.IsNullOrWhiteSpace( semVer ) ) throw new ArgumentException( nameof( semVer ) );
-            if( string.IsNullOrWhiteSpace( nugetVer ) ) throw new ArgumentException( nameof( nugetVer ) );
+            if( version == null || !version.IsValid ) throw new ArgumentException( nameof( version ) );
             if( commitSha == null || commitSha.Length != 40 || !commitSha.All( IsHexDigit ) ) throw new ArgumentException( "Must be a 40 hex digits string.", nameof( commitSha ) );
             if( commitDateUtc.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Must be a UTC date.", nameof( commitDateUtc ) );
-            return $"{nugetVer}+{commitSha}/{commitDateUtc.ToString( "u" )} ({semVer})";
+            return $"{version.ToNormalizedString()}+{commitSha}/{commitDateUtc.ToString( "u" )}";
         }
 
         static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');

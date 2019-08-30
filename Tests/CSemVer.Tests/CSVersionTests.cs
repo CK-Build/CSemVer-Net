@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 //using Semver;
 using CSemVer;
+using FluentAssertions;
 
 namespace CSemVer.Tests
 {
@@ -60,6 +61,46 @@ namespace CSemVer.Tests
             Assert.That( t.ToString(), Is.EqualTo( tag ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
             Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
+        }
+
+        [TestCase( "0.0.0", false )]
+        [TestCase( "3.0.1", false )]
+        [TestCase( "1.0.0-a", false )]
+        [TestCase( "1.0.0-a01", false )]
+        [TestCase( "1.0.0-a55-66", false )]
+        [TestCase( "1.0.0-alpha", true )]
+        [TestCase( "1.0.0-alpha.1", true )]
+        [TestCase( "1.0.0-alpha.55.66", true )]
+        public void CSVersion_Parse_with_long_forms( string tag, bool isLongForm )
+        {
+            CSVersion t = CSVersion.Parse( tag );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsLongForm, Is.EqualTo( isLongForm ) );
+        }
+
+        [TestCase( "1.0.0-a", "1.0.0-a" )]
+        [TestCase( "1.0.0-a01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a.01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a-01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a-1", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a.1", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a55-06", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a-55.6", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a.55.06", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a.55.6", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-alpha", "1.0.0-alpha" )]
+        [TestCase( "1.0.0-alpha01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha.01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha-01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha-1", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha.1", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha55-06", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha-55.6", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha.55.06", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha.55.6", "1.0.0-alpha.55.6" )]
+        public void parsing_allows_slightly_deviant_forms( string tag, string finalForm )
+        {
+            CSVersion.Parse( tag ).NormalizedText.Should().Be( finalForm );
         }
 
         [TestCase( "v0.0.0-alpha", 0, 0, 0, 1 )]

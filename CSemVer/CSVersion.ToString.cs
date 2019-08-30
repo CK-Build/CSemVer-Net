@@ -187,9 +187,8 @@ namespace CSemVer
         public string GetInformationalVersion( string commitSha, DateTime commitDateUtc, CIBuildDescriptor buildInfo = null )
         {
             if( !IsValid ) throw new InvalidOperationException( "IsValid must be true. Use CSVersion.InvalidInformationalVersion when IsValid is false." );
-            var semVer = ToString( CSVersionFormat.LongForm, buildInfo );
-            var shortVer = ToString( CSVersionFormat.Normalized, buildInfo );
-            return InformationalVersion.BuildInformationalVersion( semVer, shortVer, commitSha, commitDateUtc );
+            var v = SVersion.Parse( ToString( CSVersionFormat.Normalized, buildInfo ) );
+            return InformationalVersion.BuildInformationalVersion( v, commitSha, commitDateUtc );
         }
     }
 }
