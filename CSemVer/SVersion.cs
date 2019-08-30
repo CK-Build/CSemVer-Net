@@ -203,10 +203,11 @@ namespace CSemVer
         /// the <see cref="CSVersion.ToString(CSVersionFormat, CIBuildDescriptor)"/> with <see cref="CSVersionFormat.Normalized"/> format 
         /// or fallbacks to the <see cref="NormalizedText"/>.
         /// </summary>
-        /// <returns>The version to use for NuGet package.</returns>
-        public string ToNormalizedString() => ErrorMessage
-                                                ?? _csVersion?.ToString( CSVersionFormat.Normalized )
-                                                ?? NormalizedText;
+        /// <param name="withBuildMetaData">True to append the <see cref="BuildMetaData"/>.</param>
+        /// <returns>The normalized version string (short form).</returns>
+        public string ToNormalizedString( bool withBuildMetaData = false ) => ErrorMessage
+                                                ?? _csVersion?.ToString( withBuildMetaData ? CSVersionFormat.NormalizedWithBuildMetaData : CSVersionFormat.Normalized )
+                                                ?? (withBuildMetaData ? NormalizedTextWithBuildMetaData : NormalizedText);
 
         /// <summary>
         /// Returns a new <see cref="SVersion"/> with a potentially new <see cref="BuildMetaData"/>.
@@ -380,6 +381,20 @@ namespace CSemVer
         /// </summary>
         /// <returns>The textual representation.</returns>
         public override string ToString() => ErrorMessage ?? NormalizedText;
+
+        /// <summary>
+        /// Gets the standard Informational version string.
+        /// If <see cref="SVersion.IsValid"/> is false this throws an <see cref="InvalidOperationException"/>: 
+        /// the constant <see cref="InformationalVersion.ZeroInformationalVersion"/> should be used when IsValid is false.
+        /// </summary>
+        /// <param name="commitSha">The SHA1 of the commit (must be 40 hex digits).</param>
+        /// <param name="commitDateUtc">The commit date (must be in UTC).</param>
+        /// <returns>The informational version.</returns>
+        public string GetInformationalVersion( string commitSha, DateTime commitDateUtc )
+        {
+            if( !IsValid ) throw new InvalidOperationException( "IsValid must be true. Use InformationalVersion.ZeroInformationalVersion when IsValid is false." );
+            return InformationalVersion.BuildInformationalVersion( this, commitSha, commitDateUtc );
+        }
 
         /// <summary>
         /// Compares this with another <see cref="SVersion"/>.

@@ -179,16 +179,13 @@ namespace CSemVer
         /// </summary>
         /// <param name="commitSha">The SHA1 of the commit (must be 40 hex digits).</param>
         /// <param name="commitDateUtc">The commit date (must be in UTC).</param>
-        /// <param name="buildInfo">
-        /// Not null for post-release version. 
-        /// <see cref="CIBuildDescriptor.IsValid"/> and <see cref="CIBuildDescriptor.IsValidForShortForm"/> must be true.
-        /// </param>
+        /// <param name="buildInfo">Can be null: not null for post-release version.</param>
         /// <returns>The informational version.</returns>
-        public string GetInformationalVersion( string commitSha, DateTime commitDateUtc, CIBuildDescriptor buildInfo = null )
+        public string GetInformationalVersion( string commitSha, DateTime commitDateUtc, CIBuildDescriptor buildInfo )
         {
-            if( !IsValid ) throw new InvalidOperationException( "IsValid must be true. Use CSVersion.InvalidInformationalVersion when IsValid is false." );
-            var v = SVersion.Parse( ToString( CSVersionFormat.Normalized, buildInfo ) );
-            return InformationalVersion.BuildInformationalVersion( v, commitSha, commitDateUtc );
+            return IsValid && buildInfo != null
+                    ? SVersion.Parse( ToString( CSVersionFormat.Normalized, buildInfo ) ).GetInformationalVersion( commitSha, commitDateUtc )
+                    : GetInformationalVersion( commitSha, commitDateUtc );
         }
     }
 }

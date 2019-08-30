@@ -45,6 +45,46 @@ namespace CSemVer.Tests
             Console.WriteLine( "      " + string.Join( ", ", closest ) );
         }
 
+        [Test]
+        public void from_long_to_normalized_form()
+        {
+            // Without BuildMetaData.
+            {
+                CSVersion lF = CSVersion.Parse( "1.0.0-alpha-01.23" );
+                lF.IsLongForm.Should().BeTrue();
+                lF.ParsedText.Should().Be( "1.0.0-alpha-01.23" );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                CSVersion sF = lF.ToNormalizedForm();
+                sF.IsLongForm.Should().BeFalse();
+                sF.ParsedText.Should().BeNull();
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                CSVersion lF2 = sF.ToLongForm();
+                lF2.IsLongForm.Should().BeTrue();
+                lF2.ParsedText.Should().BeNull();
+                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+            }
+            // With BuildMetaData.
+            {
+                CSVersion lF = CSVersion.Parse( "1.0.0-alpha-01.23+buildMetaData" );
+                lF.BuildMetaData.Should().Be( "buildMetaData" );
+                lF.IsLongForm.Should().BeTrue();
+                lF.ParsedText.Should().Be( "1.0.0-alpha-01.23+buildMetaData" );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                lF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+                CSVersion sF = lF.ToNormalizedForm();
+                sF.IsLongForm.Should().BeFalse();
+                sF.ParsedText.Should().BeNull();
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                sF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-a01-23+buildMetaData" );
+                CSVersion lF2 = sF.ToLongForm();
+                lF2.IsLongForm.Should().BeTrue();
+                lF2.ParsedText.Should().BeNull();
+                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                lF2.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+            }
+
+        }
+
         [TestCase( "0.0.0" )]
         [TestCase( "3.0.1" )]
         [TestCase( "3.0.1" )]
