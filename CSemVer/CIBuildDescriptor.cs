@@ -10,6 +10,7 @@ namespace CSemVer
 
     /// <summary>
     /// Encapsulates CSemVer-CI suffix formatting.
+    /// This is always valid: <see cref="BuildIndex"/> and <see cref="BranchName"/> setters control the values.
     /// </summary>
     public class CIBuildDescriptor
     {
@@ -17,74 +18,66 @@ namespace CSemVer
         /// Defines the maximal build index.
         /// This is required to be able to pad it with a constant number of '0'.
         /// </summary>
-        public const int MaxShortFormIndex = 9999;
+        public const int MaxBuildIndex = 9999;
 
+        string _branchName = "develop";
         int _buildIndex;
 
         /// <summary>
-        /// Gets or sets the build index. Must be greater or equal to 0.
-        /// To be valid for NuGetV2, it must not exceed <see cref="MaxShortFormIndex"/>.
+        /// Gets or sets the build index.
+        /// Must be greater or equal to 0 and must not exceed <see cref="MaxBuildIndex"/>.
         /// </summary>
         public int BuildIndex 
         {
             get { return _buildIndex; } 
             set
             {
-                if( _buildIndex < 0 ) throw new ArgumentException();
+                if( value < 0 || value > MaxBuildIndex ) throw new ArgumentException();
                 _buildIndex = value;
             }
         }
 
         /// <summary>
-        /// Gets or set the branch name to use.
-        /// When null or empty, this descriptor is not applicable.
+        /// Gets or set the branch name to use. Defaults to "develop".
+        /// Must not be null, empty or longer than 8 characters.
         /// </summary>
-        public string BranchName { get; set; }
-
-        /// <summary>
-        /// Gets whether this descriptor can be applied.
-        /// </summary>
-        public bool IsValid
+        public string BranchName
         {
-            get { return _buildIndex >= 0 && !string.IsNullOrWhiteSpace( BranchName ); }
+            get { return _branchName; }
+            set
+            {
+                if( string.IsNullOrWhiteSpace( value ) && value.Length <= 8 ) throw new ArgumentException( "Must be not null, empty and at most 8 characters long." );
+                _branchName = value;
+            }
         }
 
         /// <summary>
-        /// Gets whether this descriptor can be applied for NuGetV2 special name case.
-        /// </summary>
-        public bool IsValidForShortForm
-        {
-            get { return IsValid && _buildIndex <= MaxShortFormIndex && BranchName.Length <= 8; }
-        }
-
-        /// <summary>
-        /// Overridden to return "ci.<see cref="BuildIndex"/>.<see cref="BranchName"/>" when <see cref="IsValid"/> is true,
-        /// the empty string otherwise.
-        /// </summary>
-        /// <returns>The long form like "ci.16.develop".</returns>
-        public override string ToString()
-        {
-            return IsValid ? string.Format( "ci.{0}.{1}", BuildIndex, BranchName ) : string.Empty;
-        }
-
-        /// <summary>
-        /// When <see cref="IsValidForShortForm"/> is true, returns "<see cref="BuildIndex"/>-<see cref="BranchName"/>" where 
-        /// the index is padded with 0, the empty string otherwise.
+        /// Overridden to return  "<see cref="BuildIndex"/>-<see cref="BranchName"/>" where 
+        /// the index is padded with 0.
         /// </summary>
         /// <returns>The short form like "0016-develop".</returns>
-        public string ToStringForShortForm()
+        public override string ToString()
         {
-            Debug.Assert( MaxShortFormIndex.ToString().Length == 4 );
-            return IsValid ? string.Format( "{0:0000}-{1}", BuildIndex, BranchName ) : string.Empty;
+            Debug.Assert( MaxBuildIndex.ToString().Length == 4 );
+            return string.Format( "{0:0000}-{1}", BuildIndex, BranchName );
         }
 
         /// <summary>
-        /// Creates the ZeroTimed short form version string. It uses a base 36 alphabet (case insensitive) and consider the nunber
+        /// Returns the long ci form: "ci.<see cref="BuildIndex"/>.<see cref="BranchName"/>".
+        /// </summary>
+        /// <returns>The long form like "ci.16.develop".</returns>
+        public string ToStringForLongForm()
+        {
+            return string.Format( "ci.{0}.{1}", BuildIndex, BranchName );
+        }
+
+        /// <summary>
+        /// Creates the ZeroTimed short form version string. It uses a base 36 alphabet (case insensitive) and consider the number
         /// of seconds from 1st of january 2015: this fits into 7 characters.
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop"). Must not be null, empty or longer than 8 characters.</param>
         /// <param name="timeRelease">The utc date time of the release.</param>
-        /// <returns>A Short form version string like "O.O.O--009iJKg-develop".</returns>
+        /// <returns>A short form version string like "O.O.O--009iJKg-develop".</returns>
         public static string CreateShortFormZeroTimed( string ciBuildName, DateTime timeRelease )
         {
             CheckCIBuildName( ciBuildName, true );
@@ -100,12 +93,12 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Creates the ZeroTimed SemVer version string.
+        /// Creates the ZeroTimed long form version string.
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop").</param>
         /// <param name="timeRelease">The utc date time of the release.</param>
-        /// <returns>A SemVer version string like "O.O.O--ci.2018-07-27T09-45-28-34.develop".</returns>
-        public static string CreateSemVerZeroTimed( string ciBuildName, DateTime timeRelease )
+        /// <returns>A long form version string like "O.O.O--ci.2018-07-27T09-45-28-34.develop".</returns>
+        public static string CreateLongFormZeroTimed( string ciBuildName, DateTime timeRelease )
         {
             CheckCIBuildName( ciBuildName, false );
             return string.Format( "0.0.0--ci.{0:yyyy-MM-ddTHH-mm-ss-ff}.{1}", timeRelease, ciBuildName );

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -6,11 +6,11 @@
     <IsPackable>False</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Protocol" Version="5.1.0" />
-    <PackageReference Include="NuGet.Credentials" Version="5.1.0" />
+    <PackageReference Include="NuGet.Protocol" Version="5.2.0" />
+    <PackageReference Include="NuGet.Credentials" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Text" Version="8.0.3--0025-develop" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="0.38.0" />
+    <PackageReference Include="CK.Text" Version="8.0.4--0009-develop" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="0.39.1--0004-develop" />
   </ItemGroup>
 </Project>

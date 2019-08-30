@@ -26,7 +26,7 @@ namespace CSemVer.Tests
             Console.WriteLine( " -> - found {0} successors for '{1}' (NuGetV2 = {2}, Ordered Version = {3}, File = {4}.{5}.{6}.{7}):",
                                 succ.Count(),
                                 t,
-                                t.ToString( CSVersionFormat.NuGetPackage ),
+                                t.ToString(),
                                 t.OrderedVersion,
                                 t.OrderedVersionMajor,
                                 t.OrderedVersionMinor,
@@ -60,12 +60,12 @@ namespace CSemVer.Tests
 
         static void DumpVersionInfo( CIBuildDescriptor buildInfo, CSVersion t )
         {
-            var nugetV2Build = t.ToString( CSVersionFormat.NuGetPackage, buildInfo );
+            var nugetV2Build = t.ToString( CSVersionFormat.Normalized, buildInfo );
             int nugetV2BuildSNLen = SVersion.Parse( nugetV2Build ).Prerelease.Length;
             Console.WriteLine( "{0}, CI = {1}, NuGet = {2}, NuGet CI = {3}, NugetV2Build.SpecialName.Length = {4}",
                                 t,
                                 t.ToString( CSVersionFormat.Normalized, buildInfo ),
-                                t.ToString( CSVersionFormat.NuGetPackage ),
+                                t.ToString( CSVersionFormat.Normalized ),
                                 nugetV2Build,
                                 nugetV2BuildSNLen
                                 );
@@ -92,8 +92,8 @@ namespace CSemVer.Tests
             Assert.That( t.IsValid );
             Assert.That( t.IsPrerelease );
             Assert.That( t.IsPreReleasePatch, Is.EqualTo( isPrereleasePatch ) );
-            Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( tag ) );
-            Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
+            Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( nuget ) );
             Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
 
         }
@@ -106,19 +106,23 @@ namespace CSemVer.Tests
         [TestCase( "3.0.1-kappa.1.5", "3.0.1-k01-05" )]
         [TestCase( "3.0.1-prerelease.0.1", "3.0.1-p00-01" )]
         [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99" )]
-        public void pre_release_with_standard_names_and_fix_number_nugetV2_mappings( string tag, string nuget )
+        public void pre_release_with_standard_names_and_fix_number_normalized_mappings( string longF, string shortF )
         {
-            CSVersion fromShortForm = CSVersion.Parse( nuget );
-            CSVersion t = CSVersion.TryParse( tag );
-            Assert.That( t, Is.EqualTo( fromShortForm ) );
+            CSVersion tS = CSVersion.Parse( shortF );
+            CSVersion tL = CSVersion.TryParse( longF );
+            Assert.That( tL, Is.EqualTo( tS.ToLongForm() ) );
+            Assert.That( tS, Is.EqualTo( tL.ToNormalizedForm() ) );
 
-            Assert.That( t.IsValid );
-            Assert.That( t.IsPrerelease );
-            Assert.That( t.IsPreReleasePatch );
-            Assert.That( t.PrereleasePatch, Is.GreaterThan( 0 ) );
-            Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
-            Assert.That( t.ToString( CSVersionFormat.NuGetPackage ), Is.EqualTo( nuget ) );
-            Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
+            Assert.That( tL.IsValid );
+            Assert.That( tL.IsPrerelease );
+            Assert.That( tL.IsPreReleasePatch );
+            Assert.That( tL.PrereleasePatch, Is.GreaterThan( 0 ) );
+            Assert.That( tL.ToString( CSVersionFormat.Normalized ), Is.EqualTo( shortF ) );
+            Assert.That( tS.ToString( CSVersionFormat.LongForm ), Is.EqualTo( longF ) );
+            Assert.That( tS.NormalizedText, Is.EqualTo( shortF ) );
+            Assert.That( tL.NormalizedText, Is.EqualTo( longF ) );
+            var buildInfo = tS.ToString( CSVersionFormat.Normalized, new CIBuildDescriptor() { BuildIndex = CIBuildDescriptor.MaxBuildIndex, BranchName = "ABCDEFGH" } );
+            Assert.That( SVersion.Parse( buildInfo ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
 
         }
 

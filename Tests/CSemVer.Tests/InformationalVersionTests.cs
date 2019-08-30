@@ -11,15 +11,19 @@ namespace CSemVer.Tests
     [TestFixture]
     public class InformationalVersionTests
     {
-        [TestCase( null )]
-        [TestCase( "" )]
-        [TestCase( "not matched" )]
-        [TestCase( "0.0.0-0 (0.Z.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        [TestCase( "0.A.0-0 (0.2.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000X00000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 01-01 00:00:00Z" )]
-        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 0001-01-01 00:00:00" )]
+        //[TestCase( null )]
+        //[TestCase( "" )]
+        //[TestCase( "not matched" )]
+        //[TestCase( "0.0.0-0 (0.Z.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000X00000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 01-01 00:00:00Z" )]
+        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 0001-01-01 00:00:00" )]
+        //[TestCase( "A.0.0-0+1000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        //[TestCase( "1.0.0+00000000000000000/2017-06-27 08:27:35Z" )]
+        //[TestCase( "1.0.0+1000000000000000000000000000000000000000" )]
+        //[TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27" )]
+        //[TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27 08:27:35" )]
         public void parsing_invalid_InformationalVersion_carries_a_ParseErrorMessage( string v )
         {
             var i = new InformationalVersion( v );
@@ -28,13 +32,26 @@ namespace CSemVer.Tests
             Assert.Throws<ArgumentException>( () => InformationalVersion.Parse( v ) );
         }
 
-        [TestCase( "1.2.3-prerelease (1.2.3-a) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
+        [TestCase( "1.2.3-p (1.2.3-a) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
+        [TestCase( "Even.Not.A.Version (0.2.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
         [TestCase( "99.0.2 (1.0.0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
-        public void NuGet_and_SemVer_versions_equivalence_are_not_checked( string v )
+        public void the_long_form_is_now_ignored_when_old_format_is_used( string v )
         {
             var i = new InformationalVersion( v );
             i.IsValidSyntax.Should().BeTrue();
             i.ParseErrorMessage.Should().BeNull();
+            InformationalVersion.Parse( v );
+        }
+
+        [TestCase( "99.0.2-alpha+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        [TestCase( "2.0.2-beta.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        [TestCase( "2.0.2-b.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        public void parsing_new_format_normalized_the_version( string v )
+        {
+            var i = new InformationalVersion( v );
+            i.IsValidSyntax.Should().BeTrue();
+            i.ParseErrorMessage.Should().BeNull();
+            i.Version.AsCSVersion.IsLongForm.Should().BeFalse();
             InformationalVersion.Parse( v );
         }
 
@@ -62,7 +79,6 @@ namespace CSemVer.Tests
             info.IsValidSyntax.Should().BeTrue();
             info.ParseErrorMessage.Should().BeNull();
         }
-
 
         [Test]
         public void InformationalVersion_ReadFromFile_only_throws_if_path_is_null_or_empty()

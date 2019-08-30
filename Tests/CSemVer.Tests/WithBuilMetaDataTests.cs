@@ -41,6 +41,7 @@ namespace CSemVer.Tests
             Assert.That( svncB.AsCSVersion, Is.Not.Null );
             Assert.That( svncB.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-pre+Test" ) );
             Assert.That( svncB.AsCSVersion.NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-prerelease+Test" ) );
+            Assert.That( svncB.AsCSVersion.ToNormalizedForm().NormalizedTextWithBuildMetaData, Is.EqualTo( "1.0.0-p+Test" ) );
 
         }
     }

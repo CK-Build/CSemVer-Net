@@ -166,7 +166,7 @@ namespace CSemVer
         /// <summary>
         /// Retuns this <see cref="PackageQualityVersions"/> or a new one combined with another one.
         /// </summary>
-        /// <param name="v">Other versions to be combined.</param>
+        /// <param name="other">Other versions to be combined.</param>
         /// <returns>The resulting QualityVersions.</returns>
         public PackageQualityVersions With( PackageQualityVersions other )
         {

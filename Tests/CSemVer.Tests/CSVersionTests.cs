@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 //using Semver;
 using CSemVer;
+using FluentAssertions;
 
 namespace CSemVer.Tests
 {
@@ -44,20 +45,102 @@ namespace CSemVer.Tests
             Console.WriteLine( "      " + string.Join( ", ", closest ) );
         }
 
+        [Test]
+        public void from_long_to_normalized_form()
+        {
+            // Without BuildMetaData.
+            {
+                CSVersion lF = CSVersion.Parse( "1.0.0-alpha-01.23" );
+                lF.IsLongForm.Should().BeTrue();
+                lF.ParsedText.Should().Be( "1.0.0-alpha-01.23" );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                CSVersion sF = lF.ToNormalizedForm();
+                sF.IsLongForm.Should().BeFalse();
+                sF.ParsedText.Should().BeNull();
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                CSVersion lF2 = sF.ToLongForm();
+                lF2.IsLongForm.Should().BeTrue();
+                lF2.ParsedText.Should().BeNull();
+                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+            }
+            // With BuildMetaData.
+            {
+                CSVersion lF = CSVersion.Parse( "1.0.0-alpha-01.23+buildMetaData" );
+                lF.BuildMetaData.Should().Be( "buildMetaData" );
+                lF.IsLongForm.Should().BeTrue();
+                lF.ParsedText.Should().Be( "1.0.0-alpha-01.23+buildMetaData" );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                lF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+                CSVersion sF = lF.ToNormalizedForm();
+                sF.IsLongForm.Should().BeFalse();
+                sF.ParsedText.Should().BeNull();
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                sF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-a01-23+buildMetaData" );
+                CSVersion lF2 = sF.ToLongForm();
+                lF2.IsLongForm.Should().BeTrue();
+                lF2.ParsedText.Should().BeNull();
+                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                lF2.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+            }
+
+        }
+
         [TestCase( "0.0.0" )]
         [TestCase( "3.0.1" )]
         [TestCase( "3.0.1" )]
         [TestCase( "99999.49999.9999" )]
         public void parsing_valid_release( string tag )
         {
-            CSVersion t = CSVersion.TryParse( tag );
+            CSVersion t = CSVersion.Parse( tag );
             Assert.That( t.IsValid );
+            Assert.That( t.IsLongForm, Is.False );
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
-            Assert.That( t.ToNuGetPackageString(), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
+            Assert.That( t.ToString( CSVersionFormat.LongFormWithBuildMetaData ), Is.EqualTo( tag ) );
             Assert.That( t.ToString(), Is.EqualTo( tag ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
             Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
+        }
+
+        [TestCase( "0.0.0", false )]
+        [TestCase( "3.0.1", false )]
+        [TestCase( "1.0.0-a", false )]
+        [TestCase( "1.0.0-a01", false )]
+        [TestCase( "1.0.0-a55-66", false )]
+        [TestCase( "1.0.0-alpha", true )]
+        [TestCase( "1.0.0-alpha.1", true )]
+        [TestCase( "1.0.0-alpha.55.66", true )]
+        public void CSVersion_Parse_with_long_forms( string tag, bool isLongForm )
+        {
+            CSVersion t = CSVersion.Parse( tag );
+            Assert.That( t.IsValid );
+            Assert.That( t.IsLongForm, Is.EqualTo( isLongForm ) );
+        }
+
+        [TestCase( "1.0.0-a", "1.0.0-a" )]
+        [TestCase( "1.0.0-a01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a.01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a-01", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a-1", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a.1", "1.0.0-a01" )]
+        [TestCase( "1.0.0-a55-06", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a-55.6", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a.55.06", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a.55.6", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-alpha", "1.0.0-alpha" )]
+        [TestCase( "1.0.0-alpha01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha.01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha-01", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha-1", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha.1", "1.0.0-alpha.1" )]
+        [TestCase( "1.0.0-alpha55-06", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha-55.6", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha.55.06", "1.0.0-alpha.55.6" )]
+        [TestCase( "1.0.0-alpha.55.6", "1.0.0-alpha.55.6" )]
+        public void parsing_allows_slightly_deviant_forms( string tag, string finalForm )
+        {
+            CSVersion.Parse( tag ).NormalizedText.Should().Be( finalForm );
         }
 
         [TestCase( "v0.0.0-alpha", 0, 0, 0, 1 )]
@@ -67,7 +150,7 @@ namespace CSemVer.Tests
         [TestCase( "v0.0.0-beta", 0, 0, 0, 100 * 99 + 101 )]
         public void version_ordering_starts_at_1_for_the_very_first_possible_version( string tag, int oMajor, int oMinor, int oBuild, int oRevision )
         {
-            var t = CSVersion.TryParse( tag, true );
+            var t = CSVersion.TryParse( tag );
             Assert.That( t.IsValid );
             Assert.That( t.OrderedVersionMajor, Is.EqualTo( oMajor ) );
             Assert.That( t.OrderedVersionMinor, Is.EqualTo( oMinor ) );
@@ -123,18 +206,24 @@ namespace CSemVer.Tests
         [TestCase( "99999.49999.9999", true, 0 )]
         public void checking_extreme_version_ordering( string tag, bool atEnd, int expectedRank )
         {
-            var t = CSVersion.TryParse( tag );
-            if( atEnd )
+            var tOrigin = CSVersion.TryParse( tag );
+            Check( tOrigin );
+            Check( tOrigin.IsLongForm ? tOrigin.ToNormalizedForm() : tOrigin.ToLongForm() );
+
+            void Check( CSVersion t )
             {
-                Assert.That( t.OrderedVersion - (CSVersion.VeryLastVersion.OrderedVersion - expectedRank), Is.EqualTo( 0 ) );
+                if( atEnd )
+                {
+                    Assert.That( t.OrderedVersion - (CSVersion.VeryLastVersion.OrderedVersion - expectedRank), Is.EqualTo( 0 ) );
+                }
+                else
+                {
+                    Assert.That( t.OrderedVersion - (CSVersion.VeryFirstVersion.OrderedVersion + expectedRank), Is.EqualTo( 0 ) );
+                }
+                var t2 = CSVersion.Create( t.OrderedVersion, t.IsLongForm );
+                Assert.That( t2.ToString(), Is.EqualTo( t.ToString() ) );
+                Assert.That( t.Equals( t2 ) );
             }
-            else
-            {
-                Assert.That( t.OrderedVersion - (CSVersion.VeryFirstVersion.OrderedVersion + expectedRank), Is.EqualTo( 0 ) );
-            }
-            var t2 = CSVersion.Create( t.OrderedVersion );
-            Assert.That( t2.ToString(), Is.EqualTo( t.ToString() ) );
-            Assert.That( t.Equals( t2 ) );
         }
 
 
@@ -226,11 +315,11 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "0.0.0-alpha", "0.0.0-alpha.0.1" )]
-        [TestCase( "0.0.0-alpha.0.1", "0.0.0-alpha.0.2" )]
-        [TestCase( "0.0.0-rc.99", "0.0.0-rc.99.1" )]
-        [TestCase( "0.0.0-rc.1.99", "" )]
-        [TestCase( "0.0.0", "0.0.1-alpha, 0.0.1-beta, 0.0.1-delta, 0.0.1-epsilon, 0.0.1-gamma, 0.0.1-kappa, 0.0.1-prerelease, 0.0.1-rc, 0.0.1" )]
+        [TestCase( "0.0.0-a", "0.0.0-a00-01" )]
+        [TestCase( "0.0.0-a-00-01", "0.0.0-a00-02" )]
+        [TestCase( "0.0.0-r99", "0.0.0-r99-01" )]
+        [TestCase( "0.0.0-r01-99", "" )]
+        [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {
             var next = nextVersions.Split( ',' )
@@ -329,11 +418,11 @@ namespace CSemVer.Tests
         public void check_first_possible_versions()
         {
             string firstPossibleVersions = @"
-                        0.0.0-alpha, 0.0.0-beta, 0.0.0-delta, 0.0.0-epsilon, 0.0.0-gamma, 0.0.0-kappa, 0.0.0-prerelease, 0.0.0-rc, 
+                        0.0.0-a, 0.0.0-b, 0.0.0-d, 0.0.0-e, 0.0.0-g, 0.0.0-k, 0.0.0-p, 0.0.0-r, 
                         0.0.0, 
-                        0.1.0-alpha, 0.1.0-beta, 0.1.0-delta, 0.1.0-epsilon, 0.1.0-gamma, 0.1.0-kappa, 0.1.0-prerelease, 0.1.0-rc, 
+                        0.1.0-a, 0.1.0-b, 0.1.0-d, 0.1.0-e, 0.1.0-g, 0.1.0-k, 0.1.0-p, 0.1.0-r, 
                         0.1.0, 
-                        1.0.0-alpha, 1.0.0-beta, 1.0.0-delta, 1.0.0-epsilon, 1.0.0-gamma, 1.0.0-kappa, 1.0.0-prerelease, 1.0.0-rc, 
+                        1.0.0-a, 1.0.0-b, 1.0.0-d, 1.0.0-e, 1.0.0-g, 1.0.0-k, 1.0.0-p, 1.0.0-r, 
                         1.0.0";
             var next = firstPossibleVersions.Split( ',' )
                                     .Select( v => v.Trim() )

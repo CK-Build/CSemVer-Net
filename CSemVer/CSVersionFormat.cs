@@ -9,7 +9,9 @@ namespace CSemVer
         /// Normalized semantic version format.
         /// It is the same as <see cref="SVersion.ToString()"/> when no <see cref="CIBuildDescriptor"/> is provided (it
         /// does not include the <see cref="SVersion.BuildMetaData"/>).
-        /// The prerelease name is the standard one (ie. 'prerelease' for any unknown name).
+        /// It is short, readable even when a CIBuildDescriptor is provided and compatible with any version of NuGet (or
+        /// other basic, non conformant, implementation of Semantic Versionning).
+        /// The prerelease short name is the standard one (ie. 'p' for any unknown name).
         /// This is the default.
         /// </summary>
         Normalized,
@@ -27,22 +29,17 @@ namespace CSemVer
         FileVersion,
 
         /// <summary>
-        /// Short form. This format is the one to use for package version.
-        /// This includes <see cref="CIBuildDescriptor"/> if an applicable one is provided but not the <see cref="SVersion.BuildMetaData"/>.
-        /// It is short, readable even when a CIBuildDescriptor is provided and compatible with any version of NuGet (or
-        /// other basic, non conformant, implementation of Semantic Versionning).
+        /// Long form. This format is the original one that was supposed to be "best" representation.
+        /// It appeared that this long form was less readable than the short one.
+        /// Since version 6.0.0 this long form is no more the default one.
         /// </summary>
-        ShortForm,
+        LongForm,
 
         /// <summary>
-        /// Same as <see cref="ShortForm"/> with the trailng +<see cref="SVersion.BuildMetaData"/>.
+        /// Same as <see cref="LongForm"/> with the trailing +<see cref="SVersion.BuildMetaData"/>.
+        /// Since version 6.0.0 this long form is no more the default one.
         /// </summary>
-        ShortFormWithBuildMetaData,
-
-        /// <summary>
-        /// NuGet format. The <see cref="ShortForm"/> is always used.
-        /// </summary>
-        NuGetPackage = ShortForm
+        LongFormWithBuildMetaData
 
     }
 }
