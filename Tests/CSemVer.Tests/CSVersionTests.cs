@@ -69,18 +69,20 @@ namespace CSemVer.Tests
                 lF.BuildMetaData.Should().Be( "buildMetaData" );
                 lF.IsLongForm.Should().BeTrue();
                 lF.ParsedText.Should().Be( "1.0.0-alpha-01.23+buildMetaData" );
-                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
-                lF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
                 CSVersion sF = lF.ToNormalizedForm();
                 sF.IsLongForm.Should().BeFalse();
                 sF.ParsedText.Should().BeNull();
-                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
-                sF.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-a01-23+buildMetaData" );
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23+buildMetaData" );
                 CSVersion lF2 = sF.ToLongForm();
                 lF2.IsLongForm.Should().BeTrue();
                 lF2.ParsedText.Should().BeNull();
-                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
-                lF2.NormalizedTextWithBuildMetaData.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+                lF2.NormalizedText.Should().Be( "1.0.0-alpha.1.23+buildMetaData" );
+                //
+                lF = lF.WithBuildMetaData( null );
+                lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
+                sF = sF.WithBuildMetaData( null );
+                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
             }
 
         }
@@ -97,10 +99,8 @@ namespace CSemVer.Tests
             Assert.That( t.IsPrerelease, Is.False );
             Assert.That( t.IsPreReleasePatch, Is.False );
             Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
-            Assert.That( t.ToString( CSVersionFormat.LongFormWithBuildMetaData ), Is.EqualTo( tag ) );
             Assert.That( t.ToString(), Is.EqualTo( tag ) );
             Assert.That( t.NormalizedText, Is.EqualTo( tag ) );
-            Assert.That( t.NormalizedTextWithBuildMetaData, Is.EqualTo( tag ) );
         }
 
         [TestCase( "0.0.0", false )]

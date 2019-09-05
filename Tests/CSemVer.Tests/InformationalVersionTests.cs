@@ -11,19 +11,19 @@ namespace CSemVer.Tests
     [TestFixture]
     public class InformationalVersionTests
     {
-        //[TestCase( null )]
-        //[TestCase( "" )]
-        //[TestCase( "not matched" )]
-        //[TestCase( "0.0.0-0 (0.Z.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000X00000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 01-01 00:00:00Z" )]
-        //[TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 0001-01-01 00:00:00" )]
-        //[TestCase( "A.0.0-0+1000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
-        //[TestCase( "1.0.0+00000000000000000/2017-06-27 08:27:35Z" )]
-        //[TestCase( "1.0.0+1000000000000000000000000000000000000000" )]
-        //[TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27" )]
-        //[TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27 08:27:35" )]
+        [TestCase( null )]
+        [TestCase( "" )]
+        [TestCase( "not matched" )]
+        [TestCase( "0.0.0-0 (0.Z.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000X00000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
+        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 01-01 00:00:00Z" )]
+        [TestCase( "1.0.0-0 (0.3.0-0) - SHA1: 1000000000000000000a00000000000000000000 - CommitDate: 0001-01-01 00:00:00" )]
+        [TestCase( "A.0.0-0+1000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        [TestCase( "1.0.0+00000000000000000/2017-06-27 08:27:35Z" )]
+        [TestCase( "1.0.0+1000000000000000000000000000000000000000" )]
+        [TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27" )]
+        [TestCase( "1.0.0+1000000000000000000000000000000000000000/2017-06-27 08:27:35" )]
         public void parsing_invalid_InformationalVersion_carries_a_ParseErrorMessage( string v )
         {
             var i = new InformationalVersion( v );
@@ -46,10 +46,12 @@ namespace CSemVer.Tests
         [TestCase( "99.0.2-alpha+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
         [TestCase( "2.0.2-beta.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
         [TestCase( "2.0.2-b.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
+        // v7 now authorizes build meta data in version.
+        [TestCase( "2.0.2-b.1.2+metadata/0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
         public void parsing_new_format_normalized_the_version( string v )
         {
             var i = new InformationalVersion( v );
-            i.IsValidSyntax.Should().BeTrue();
+            i.IsValidSyntax.Should().BeTrue( i.ParseErrorMessage );
             i.ParseErrorMessage.Should().BeNull();
             i.Version.AsCSVersion.IsLongForm.Should().BeFalse();
             InformationalVersion.Parse( v );

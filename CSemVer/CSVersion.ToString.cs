@@ -41,7 +41,7 @@ namespace CSemVer
                     {
                         if( _cacheOtherForm == null )
                         {
-                            _cacheOtherForm = ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, String.Empty, null );
+                            _cacheOtherForm = ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, null );
                         }
                         return _cacheOtherForm;
                     }
@@ -52,7 +52,7 @@ namespace CSemVer
                     if( IsLongForm ) return NormalizedText;
                     if( _cacheOtherForm == null )
                     {
-                        _cacheOtherForm = ComputeLongFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, String.Empty, null );
+                        _cacheOtherForm = ComputeLongFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, null );
                     }
                     return _cacheOtherForm;
                 }
@@ -62,20 +62,14 @@ namespace CSemVer
                 return ToStringFileVersion( buildInfo != null );
             }
 
-            if( f == CSVersionFormat.LongForm || f == CSVersionFormat.LongFormWithBuildMetaData )
+            if( f == CSVersionFormat.LongForm )
             {
-                string suffix = f == CSVersionFormat.LongFormWithBuildMetaData && BuildMetaData.Length > 0
-                                        ? "+" + BuildMetaData
-                                        : String.Empty;
-                return ComputeLongFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
+                return ComputeLongFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, buildInfo );
             }
             else
             {
-                Debug.Assert( f == CSVersionFormat.Normalized || f == CSVersionFormat.NormalizedWithBuildMetaData );
-                string suffix = f == CSVersionFormat.NormalizedWithBuildMetaData && BuildMetaData.Length > 0
-                                        ? "+" + BuildMetaData
-                                        : String.Empty;
-                return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, suffix, buildInfo );
+                Debug.Assert( f == CSVersionFormat.Normalized );
+                return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, buildInfo );
             }
         }
 
@@ -100,12 +94,10 @@ namespace CSemVer
             return longForm ? _standardNames[preReleaseNameIdx] : _standardNamesI[preReleaseNameIdx];
         }
 
-        static string ComputeLongFormVersion( int major, int minor, int patch, int prereleaseNameIdx, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
+        static string ComputeLongFormVersion( int major, int minor, int patch, int prereleaseNameIdx, int preReleaseNumber, int preReleasePatch, string buildMetaData, CIBuildDescriptor buildInfo = null )
         {
-            if( buildInfo != null )
-            {
-                suffix = buildInfo.ToStringForLongForm() + suffix;
-            }
+            string suffix = buildMetaData.Length > 0 ? "+" + buildMetaData : String.Empty;
+            if( buildInfo != null ) suffix = buildInfo.ToStringForLongForm() + suffix;
             if( prereleaseNameIdx >= 0 )
             {
                 if( preReleasePatch > 0 )
@@ -137,8 +129,9 @@ namespace CSemVer
             return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}{3}", major, minor, patch, suffix );
         }
 
-        static string ComputeShortFormVersion( int major, int minor, int patch, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch, string suffix, CIBuildDescriptor buildInfo = null )
+        static string ComputeShortFormVersion( int major, int minor, int patch, int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch, string buildMetaData, CIBuildDescriptor buildInfo = null )
         {
+            string suffix = buildMetaData.Length > 0 ? "+" + buildMetaData : String.Empty;
             if( buildInfo != null ) suffix = buildInfo.ToString() + suffix;
             if( preReleaseNameIdx >= 0 )
             {
