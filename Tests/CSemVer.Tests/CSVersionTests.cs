@@ -15,11 +15,18 @@ namespace CSemVer.Tests
     {
 
         [Explicit]
+        [TestCase( "v0.0.0" )]
+        [TestCase( "v0.0.0-a" )]
+
+        [TestCase( "v1.0.0" )]
+        [TestCase( "v1.0.1" )]
+        [TestCase( "v1.0.0-rc" )]
+        [TestCase( "v1.1.0-rc" )]
+        [TestCase( "v1.0.1-rc" )]
+
         [TestCase( "v0.0.0-alpha.1" )]
         [TestCase( "v0.0.0-alpha.2" )]
         [TestCase( "v0.0.0-alpha.0.1" )]
-        [TestCase( "v1.0.0" )]
-        [TestCase( "v1.0.1" )]
         [TestCase( "v1.1.0" )]
         [TestCase( "v1.1.0" )]
         [TestCase( "v2.0.0-rc" )]
@@ -285,11 +292,11 @@ namespace CSemVer.Tests
 
         // A Major.0.0 can be reached from any major version below.
         // One can jump to any prerelease of it.
-        [TestCase( "4.0.0, 4.0.0-alpha, 4.0.0-rc", true, "3.0.0, 3.5.44, 3.0.0-alpha, 3.49999.9999-rc.87, 3.0.3-rc.99.99, 3.0.3-alpha.54.99, 3.999.999" )]
+        [TestCase( "4.0.0, 4.0.0-alpha, 4.0.0-rc", true, "3.0.0, 3.5.44, 3.49999.9999-rc.87, 3.0.3-rc.99.99, 3.0.3-alpha.54.99, 3.999.999" )]
         [TestCase( "4.1.0, 4.1.0-alpha, 4.1.0-rc", false, "3.0.0, 3.5.44, 3.0.0-alpha, 3.49999.9999-rc.87, 3.0.3-rc.99.99, 3.0.3-alpha.54.99, 3.999.999" )]
 
         // Same for a minor bump of 1.
-        [TestCase( "4.3.0, 4.3.0-alpha, 4.3.0-rc", true, "4.2.0, 4.2.0-alpha, 4.2.44, 4.2.3-rc.87, 4.2.3-rc.99.99, 4.2.3-rc.5.8, 4.2.3-alpha, 4.2.3-alpha.54.99, 4.2.9999" )]
+        [TestCase( "4.3.0, 4.3.0-alpha, 4.3.0-rc", true, "4.2.0, 4.2.44, 4.2.3-rc.87, 4.2.3-rc.99.99, 4.2.3-rc.5.8, 4.2.3-alpha, 4.2.3-alpha.54.99, 4.2.9999" )]
         [TestCase( "4.3.0, 4.3.0-rc", true, "4.3.0-alpha, 4.3.0-beta.99.99, 4.3.0-prerelease.99.99" )]
 
         // Patch differs: 
@@ -309,17 +316,20 @@ namespace CSemVer.Tests
             {
                 foreach( var p in prev )
                 {
-                    Assert.That( vTarget.IsDirectPredecessor( p ), Is.EqualTo( previous ), p.ToString() + (previous ? " is a previous of " : " is NOT a previous of ") + vTarget.ToString() );
+                    vTarget.IsDirectPredecessor( p ).Should().Be( previous, p.ToString() + (previous ? " is a previous of " : " is NOT a previous of ") + vTarget.ToString() );
                 }
             }
         }
 
 
-        [TestCase( "0.0.0-a", "0.0.0-a00-01" )]
-        [TestCase( "0.0.0-a-00-01", "0.0.0-a00-02" )]
-        [TestCase( "0.0.0-r99", "0.0.0-r99-01" )]
-        [TestCase( "0.0.0-r01-99", "" )]
+        [TestCase( "0.0.0-a", "0.0.0-a00-01, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-a-00-01", "0.0.0-a00-02, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-r99", "0.0.0-r99-01, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-r01-99", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
         [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+
+        [TestCase( "1.0.0", "1.0.1-a, 1.0.1-b, 1.0.1-d, 1.0.1-e, 1.0.1-g, 1.0.1-k, 1.0.1-p, 1.0.1-r, 1.0.1" )]
+
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {
             var next = nextVersions.Split( ',' )
@@ -337,6 +347,38 @@ namespace CSemVer.Tests
             {
                 Assert.That( n.IsDirectPredecessor( rStart ), "{0} < {1}", rStart, n );
             }
+        }
+
+        [TestCase( "0.0.0-a", "0.0.0-a00-01", true )]
+        [TestCase( "0.0.0-a", "0.0.0-a00-02", false )]
+        [TestCase( "0.0.0-a", "0.0.0-a01", true )]
+        [TestCase( "0.0.0-a", "0.0.0-a02", false )]
+        [TestCase( "0.0.0-a", "0.0.0-b", true )]
+        [TestCase( "0.0.0-a", "0.0.0-d", true )]
+        [TestCase( "0.0.0-a", "0.0.0", true )]
+        [TestCase( "0.0.0-a", "0.0.1", true )]
+        [TestCase( "0.0.0-a", "0.0.2", false )]
+        [TestCase( "0.0.0-a", "0.1.0", true )]
+        [TestCase( "0.0.0-a", "0.2.0", false )]
+        [TestCase( "0.0.0-a", "1.0.0-a01", false )]
+        [TestCase( "0.0.0-a", "1.0.0-a", true )]
+        [TestCase( "0.0.0-a", "1.0.0", true )]
+        [TestCase( "0.0.0-a", "1.0.1", false )]
+
+        [TestCase( "3.0.0", "4.0.0", true )]
+        public void check_predecessors( string predS, string vS, bool isPredecessor )
+        {
+            var pred = CSVersion.Parse( predS );
+            var v = CSVersion.Parse( vS );
+            if( isPredecessor )
+            {
+                pred.GetDirectSuccessors().Should().Contain( v );
+            }
+            else
+            {
+                pred.GetDirectSuccessors().Should().NotContain( v );
+            }
+            v.IsDirectPredecessor( pred ).Should().Be( isPredecessor );
         }
 
 

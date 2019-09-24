@@ -194,10 +194,10 @@ namespace CSemVer
             {
                 if( IsPrerelease )
                 {
-                    int nextPatch = PrereleasePatch + 1;
-                    if( nextPatch <= MaxPreReleasePatch )
+                    int nextPrereleasePatch = PrereleasePatch + 1;
+                    if( nextPrereleasePatch <= MaxPreReleasePatch )
                     {
-                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, nextPatch, IsLongForm );
+                        yield return new CSVersion( Major, Minor, Patch, BuildMetaData, PrereleaseNameIdx, PrereleaseNumber, nextPrereleasePatch, IsLongForm );
                     }
                     if( !patchesOnly )
                     {
@@ -218,9 +218,9 @@ namespace CSemVer
                         yield return new CSVersion( Major, Minor, Patch, BuildMetaData, -1, 0, 0, IsLongForm );
                     }
                 }
-                else
+                if( !IsPrerelease || Major == 0 )
                 {
-                    // A pre release version can not reach the next patch.
+                    // A pre release version can not reach the next patch... Except the 0 major.
                     int nextPatch = Patch + 1;
                     if( nextPatch <= MaxPatch )
                     {
@@ -234,7 +234,7 @@ namespace CSemVer
                 if( !patchesOnly )
                 {
                     int nextMinor = Minor + 1;
-                    if( nextMinor <= MaxMinor )
+                    if( nextMinor <= MaxMinor && (!IsPrerelease || Patch != 0 || Major == 0) )
                     {
                         yield return new CSVersion( Major, nextMinor, 0, BuildMetaData, 0, 0, 0, IsLongForm );
                         if( !patchesOnly )
@@ -248,7 +248,7 @@ namespace CSemVer
                     }
 
                     int nextMajor = Major + 1;
-                    if( nextMajor <= MaxMajor )
+                    if( nextMajor <= MaxMajor && (!IsPrerelease || (Minor != 0 || Patch != 0) || Major == 0) )
                     {
                         yield return new CSVersion( nextMajor, 0, 0, BuildMetaData, 0, 0, 0, IsLongForm );
                         if( !patchesOnly )
@@ -266,6 +266,9 @@ namespace CSemVer
 
         /// <summary>
         /// Computes whether the given version belongs to the set of predecessors.
+        /// This currently does no more than calling <see cref="GetDirectSuccessors(bool)"/> and checking the existence of
+        /// the given <paramref name="previous"/> version. If this need an optimized implementation this can be done but
+        /// for the moment, this is the safest (and easiest) way to do this.
         /// </summary>
         /// <param name="previous">Previous version. Can be null.</param>
         /// <returns>True if previous is actually a direct predecessor.</returns>
@@ -279,56 +282,14 @@ namespace CSemVer
 
             // Major bump greater than 1: previous can not be a direct predecessor.
             if( Major > previous.Major + 1 ) return false;
-            // Major bump of 1: if we are the first major (Major.0.0) or one of its first prerelases (Major.0.0-alpha to Major.0.0-rc), this is fine.
-            if( Major != previous.Major )
+
+            foreach( var succ in previous.GetDirectSuccessors() )
             {
-                Debug.Assert( Major == previous.Major + 1 );
-                return Minor == 0 && Patch == 0 && PrereleaseNumber == 0 && PrereleasePatch == 0;
+                var delta = succ._orderedVersion.Number - _orderedVersion.Number;
+                if( delta == 0 ) return true;
+                if( delta > 0 ) break;
             }
-            Debug.Assert( Major == previous.Major );
-            // Minor bump greater than 1: previous can not be a direct predecessor.
-            if( Minor > previous.Minor + 1 ) return false;
-            // Minor bump of 1: if we are the first minor (Major.Minor.0) or one of its first prerelases (Major.Minor.0-alpha or Major.Minor.0-rc), this is fine.
-            if( Minor != previous.Minor )
-            {
-                return Patch == 0 && PrereleaseNumber == 0 && PrereleasePatch == 0;
-            }
-            Debug.Assert( Major == previous.Major && Minor == previous.Minor );
-            // Patch bump greater than 1: previous can not be a direct predecessor.
-            if( Patch > previous.Patch + 1 ) return false;
-            // Patch bump of 1:
-            // - if previous  is a prelease, it can not be a direct predecessor (4.3.2 nor any 4.3.2-* pre releases can be reached from any 4.3.1-* versions).
-            // - if we are the first minor (Major.Minor.Patch) or one of its first prerelases (Major.Minor.Patch-alpha or Major.Minor.Patch-rc), this is fine:
-            //   a 4.3.1 can give bearth to 4.3.2 or 4.3.2-alpha or -rc.
-            if( Patch != previous.Patch )
-            {
-                if( previous.IsPrerelease ) return false;
-                return PrereleaseNumber == 0 && PrereleasePatch == 0;
-            }
-            Debug.Assert( Major == previous.Major && Minor == previous.Minor && Patch == previous.Patch );
-            Debug.Assert( previous.IsPrerelease, "if previous was not a prerelease, this and previous would be equal." );
-            // If this is not a prerelease, it is fine: one can always bump from a prerelease version to its release version.
-            if( !IsPrerelease ) return true;
-            Debug.Assert( IsPrerelease && previous.IsPrerelease, "Both are now necessarily pre releases." );
-            Debug.Assert( PrereleaseNameIdx >= previous.PrereleaseNameIdx, "This pre release name is grater or the same as the previous one (otherwise previous would be greater than this: this has been handled at the beginning of this function)." );
-            // If we are a fix, there is one alternative:
-            //  1 - the previous is the one just before us.
-            //  2 - the previous is not the one just before us.
-            // Case 1 has been handled at the top of this function (oredered version + 1): if this is a fix, previous can not be a direct predecessor here.
-            if( PrereleasePatch > 0 ) return false;
-            // This is not a fix.
-            // If this is a numbered prerelease, the previous must have the same PreReleaseName.
-            if( PrereleaseNumber > 0 )
-            {
-                if( previous.PrereleaseNameIdx == PrereleaseNameIdx )
-                {
-                    Debug.Assert( PrereleaseNumber > previous.PrereleaseNumber, "Otherwise previous would be greater than this: this has been handled at the beginning of this function." );
-                    return true;
-                }
-                return false;
-            }
-            // This is not a fix nor a numbered release: by design, this is a direct predecesor (bump from a prerelease name to a greater one).
-            return true;
+            return false;
         }
 
         /// <summary>
