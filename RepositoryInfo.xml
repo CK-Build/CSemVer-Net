@@ -3,7 +3,10 @@
   <Branches>
     <Branch Name="develop" VersionName="develop" CIVersionMode="LastReleaseBased" />
 
+    <Branch Name="develop-NetCore2" VersionName="develop" CIVersionMode="LastReleaseBased" />
   </Branches>
+  <SingleMajor>7</SingleMajor>
+
   <!--<Debug IgnoreDirtyWorkingFolder="true"/>-->
 
 </RepositoryInfo>
