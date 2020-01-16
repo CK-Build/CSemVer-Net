@@ -12,8 +12,7 @@ build_script:
   - dotnet run --project CodeCakeBuilder -nointeraction
 test: off
 clone_folder: C:\CKli-World\CK-Build\CSemVer-Net
-install:
-  - ps: ./CodeCakeBuilder/InstallCredentialProvider.ps1
+install: []
 artifacts:
   - path: '**\*.log'
     name: Log file
