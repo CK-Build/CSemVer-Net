@@ -6,11 +6,11 @@
     <IsPackable>False</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Protocol" Version="5.3.0" />
-    <PackageReference Include="NuGet.Credentials" Version="5.3.0" />
+    <PackageReference Include="NuGet.Protocol" Version="5.4.0" />
+    <PackageReference Include="NuGet.Credentials" Version="5.4.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Text" Version="8.0.3" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="0.39.1--0004-develop" />
+    <PackageReference Include="CK.Text" Version="9.0.0" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="2.0.1" />
   </ItemGroup>
 </Project>
