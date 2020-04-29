@@ -1,23 +1,22 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace CSemVer
 {
     public sealed partial class CSVersion
     {
-        internal static CSVersion FromSVersion( string parsedText, int major, int minor, int patch, string prerelease, string metadata )
+        internal static CSVersion? FromSVersion( string? parsedText, int major, int minor, int patch, string prerelease, string metadata )
         {
-            Debug.Assert( prerelease != null && metadata != null );
             if( major > MaxMajor || minor > MaxMinor || patch > MaxPatch ) return null;
-            var error = ParsePreRelease( prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch, out bool longForm );
+            var error = ParsePreRelease( prerelease, out string _, out int prNameIdx, out int prNum, out int prPatch, out bool longForm );
             if( error != null ) return null;
             return new CSVersion( major, minor, patch, metadata, prNameIdx, prNum, prPatch, longForm, 0, parsedText );
         }
 
-        static string ParsePreRelease( string prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch, out bool longForm )
+        static string? ParsePreRelease( string prerelease, out string prName, out int prNameIdx, out int prNum, out int prPatch, out bool longForm )
         {
-            Debug.Assert( prerelease != null );
             prName = String.Empty;
             prNameIdx = -1;
             prNum = 0;
@@ -53,8 +52,8 @@ namespace CSemVer
         {
             SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
             if( sv is CSVersion v ) return v;
-            if( !sv.IsValid ) new CSVersion( sv.ErrorMessage, s );
-            return new CSVersion( "Not a CSVersion.", s );
+            Debug.Assert( sv.IsValid == (sv.ErrorMessage == null) );
+            return new CSVersion( sv.ErrorMessage ?? "Not a CSVersion.", s );
         }
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace CSemVer
         /// <param name="v">Resulting version.</param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="SVersion.BuildMetaData"/> compliance.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParse( string s, out CSVersion v, bool checkBuildMetaDataSyntax = true )
+        public static bool TryParse( string s, [MaybeNullWhen( false )]out CSVersion v, bool checkBuildMetaDataSyntax = true )
         {
             v = null;
             SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
@@ -85,9 +84,7 @@ namespace CSemVer
         {
             SVersion sv = SVersion.TryParse( s, true, checkBuildMetaDataSyntax );
             if( !sv.IsValid ) throw new ArgumentException( sv.ErrorMessage, nameof( s ) );
-            CSVersion v = sv as CSVersion;
-            if( v == null ) throw new ArgumentException( "Not a CSVersion.", nameof( s ) );
-            return v;
+            return sv as CSVersion ?? throw new ArgumentException( "Not a CSVersion.", nameof( s ) );
         }
 
     }

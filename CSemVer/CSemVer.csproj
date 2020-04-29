@@ -3,8 +3,8 @@
   <Import Project="..\Common\Shared.props" />
   
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <LangVersion>7.3</LangVersion>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <Nullable>enable</Nullable>
     <Description>Implements SVersion to handle strict SemVer 2.0 versions (the whole specification is implemented), a CSVersion class that handles all aspects of a CSemVer (http://csemver.org) version and InformationalVersion to help generating and parsing CSemVer standardized InformationalVersionAttribute value.</Description>
     <PackageIconUrl>https://raw.githubusercontent.com/SimpleGitVersion/SGV-Net/master/SimpleGitVersion.png</PackageIconUrl>
     <PackageTags>Versioning, SemVer, NuGet, CSemVer, InformationalVersion</PackageTags>

@@ -13,16 +13,16 @@ namespace CSemVer
     public class SVersion : IEquatable<SVersion>, IComparable<SVersion>
     {
         // This checks a SVersion.
-        static Regex _regExSVersion =
+        static readonly Regex _regExSVersion =
             new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\-(?<4>[0-9A-Za-z\-\.]+))?(\+(?<5>[0-9A-Za-z\-\.]+))?$",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         // This applies to PreRelease and BuildMetaData.
-        static Regex _regexDottedPart =
+        static readonly Regex _regexDottedPart =
             new Regex( @"^(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+)(\.(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+))*$",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
-        readonly CSVersion _csVersion;
+        readonly CSVersion? _csVersion;
 
         /// <summary>
         /// The zero version is "0.0.0-0". It is syntaxically valid and 
@@ -41,15 +41,16 @@ namespace CSemVer
         /// <param name="prerelease">The prerelease. Can be null (normalized to the empty string).</param>
         /// <param name="buildMetaData">The build meta data. Can be null (normalized to the empty string).</param>
         /// <param name="csVersion">Companion CSVersion.</param>
-        protected SVersion( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, CSVersion csVersion )
+        protected SVersion( string? parsedText, int major, int minor, int patch, string? prerelease, string? buildMetaData, CSVersion? csVersion )
         {
-            if( buildMetaData == null ) buildMetaData = String.Empty;
+            prerelease ??= String.Empty;
+            buildMetaData ??= String.Empty;
             if( buildMetaData.Length > 0 && buildMetaData[0] == '+' ) throw new ArgumentException( "Must not start with '+'.", nameof( buildMetaData ) );
             _csVersion = csVersion ?? (this as CSVersion);
             Major = major;
             Minor = minor;
             Patch = patch;
-            Prerelease = prerelease ?? String.Empty;
+            Prerelease = prerelease;
             BuildMetaData = buildMetaData;
             ParsedText = parsedText;
             NormalizedText = ComputeNormalizedText( major, minor, patch, prerelease, buildMetaData );
@@ -68,7 +69,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="error">Error message. Must not be null nor empty.</param>
         /// <param name="parsedText">Can be null.</param>
-        protected SVersion( string error, string parsedText )
+        protected SVersion( string error, string? parsedText )
         {
             if( String.IsNullOrWhiteSpace( error ) ) throw new ArgumentNullException( nameof( error ) );
             ErrorMessage = error;
@@ -84,17 +85,16 @@ namespace CSemVer
         /// <param name="other">Origin version.</param>
         /// <param name="buildMetaData">New BuildMetaData. Must not be null.</param>
         /// <param name="csVersion">Companion CSVersion.</param>
-        protected SVersion( SVersion other, string buildMetaData, CSVersion csVersion )
+        protected SVersion( SVersion other, string buildMetaData, CSVersion? csVersion )
         {
             if( other == null ) throw new ArgumentNullException( nameof( other ) );
-            if( buildMetaData == null ) throw new ArgumentNullException( nameof(buildMetaData) );
             if( !other.IsValid ) throw new InvalidOperationException( "Version must be valid." );
             _csVersion = csVersion ?? (this as CSVersion);
             Major = other.Major;
             Minor = other.Minor;
             Patch = other.Patch;
             Prerelease = other.Prerelease;
-            BuildMetaData = buildMetaData;
+            BuildMetaData = buildMetaData ?? throw new ArgumentNullException( nameof(buildMetaData) );
             NormalizedText = ComputeNormalizedText( Major, Minor, Patch, Prerelease, buildMetaData );
         }
 
@@ -131,10 +131,10 @@ namespace CSemVer
         /// <summary>
         /// An error message that describes the error if <see cref="IsValid"/> is false. Null otherwise.
         /// </summary>
-        public string ErrorMessage { get; }
+        public string? ErrorMessage { get; }
 
         /// <summary>
-        /// Gets whether this <see cref="SVersion"/> has no <see cref="ErrorMessage"/>.
+        /// Gets whether this <see cref="SVersion"/> has no <see cref="ErrorMessage"/> (ie. ErrorMessage is null).
         /// </summary>
         public bool IsValid => ErrorMessage == null;
 
@@ -146,7 +146,7 @@ namespace CSemVer
             get
             {
                 if( !IsValid ) return PackageQuality.None;
-                if( AsCSVersion == null )
+                if( _csVersion == null )
                 {
                     return PackageQuality.CI;
                 }
@@ -171,13 +171,13 @@ namespace CSemVer
         /// Gets the normalized version as a string.
         /// Null if <see cref="IsValid"/> is false.
         /// </summary>
-        public string NormalizedText { get; }
+        public string? NormalizedText { get; }
 
         /// <summary>
         /// Gets the parsed text. Available even if <see cref="IsValid"/> is false.
         /// It is null if the original parsed string was null or this version has been explicitely created and not parsed.
         /// </summary>
-        public string ParsedText { get; }
+        public string? ParsedText { get; }
 
         /// <summary>
         /// Gets this <see cref="SVersion"/> as a <see cref="CSVersion"/> if this version happens to
@@ -188,7 +188,7 @@ namespace CSemVer
         /// if this SVersion has been built without the CSVersion lookup (parameter handleCSVersion of create or
         /// parse methods sets to false).
         /// </remarks>
-        public CSVersion AsCSVersion => _csVersion;
+        public CSVersion? AsCSVersion => _csVersion;
 
         /// <summary>
         /// Manages to return the normalized form of this version, whathever it is:
@@ -199,7 +199,7 @@ namespace CSemVer
         /// <returns>The normalized version string (always short form).</returns>
         public string ToNormalizedString() => ErrorMessage
                                                 ?? _csVersion?.ToString( CSVersionFormat.Normalized )
-                                                ?? NormalizedText;
+                                                ?? NormalizedText!;
 
         /// <summary>
         /// Returns a new <see cref="SVersion"/> with a potentially new <see cref="BuildMetaData"/>.
@@ -222,7 +222,7 @@ namespace CSemVer
         {
             Debug.Assert( buildMetaData != null );
             Debug.Assert( _csVersion != this, "Virtual/override routing did its job." );
-            return new SVersion( this, buildMetaData, _csVersion != null ? _csVersion.WithBuildMetaData( buildMetaData ) : null );
+            return new SVersion( this, buildMetaData, _csVersion?.WithBuildMetaData( buildMetaData ) );
         }
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace CSemVer
         /// </param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
         /// <returns>The <see cref="SVersion"/>.</returns>
-        public static SVersion Create( int major, int minor, int patch, string prerelease = null, string buildMetaData = null, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static SVersion Create( int major, int minor, int patch, string? prerelease = null, string? buildMetaData = null, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
             return DoCreate( null, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
         }
@@ -268,10 +268,9 @@ namespace CSemVer
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;
-            int major, minor, patch;
-            if( !int.TryParse( sMajor, out major ) ) return new SVersion( "Invalid Major.", s );
-            if( !int.TryParse( sMinor, out minor ) ) return new SVersion( "Invalid Major.", s );
-            if( !int.TryParse( sPatch, out patch ) ) return new SVersion( "Invalid Patch.", s );
+            if( !int.TryParse( sMajor, out int major ) ) return new SVersion( "Invalid Major.", s );
+            if( !int.TryParse( sMinor, out int minor ) ) return new SVersion( "Invalid Major.", s );
+            if( !int.TryParse( sPatch, out int patch ) ) return new SVersion( "Invalid Patch.", s );
             return DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
@@ -316,7 +315,7 @@ namespace CSemVer
             return v;
         }
 
-        static SVersion DoCreate( string parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax )
+        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax )
         {
             Debug.Assert( prerelease != null && buildMetaData != null );
             if( major < 0 || minor < 0 || patch < 0 ) return new SVersion( "Major, minor and patch must positive or 0.", parsedText );
@@ -327,8 +326,8 @@ namespace CSemVer
                 if( error != null ) return new SVersion( error, parsedText );
             }
             // Try CSVersion first.
-            CSVersion c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
-            if( handleCSVersion  && c != null ) return c;
+            CSVersion? c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
+            if( handleCSVersion && c != null ) return c;
             // If it is not a CSVersion, validate the prerelease.
             // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
             if( c == null && prerelease.Length > 0 )
@@ -339,7 +338,7 @@ namespace CSemVer
             return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c );
         }
 
-        static string ValidateDottedIdentifiers( string s, string partName )
+        static string? ValidateDottedIdentifiers( string s, string partName )
         {
             Match m = _regexDottedPart.Match( s );
             if( !m.Success ) return "Invalid " + partName;
@@ -372,7 +371,7 @@ namespace CSemVer
         /// Overridden to return the <see cref="ErrorMessage"/> if not null or the <see cref="NormalizedText"/>.
         /// </summary>
         /// <returns>The textual representation.</returns>
-        public override string ToString() => ErrorMessage ?? NormalizedText;
+        public override string ToString() => ErrorMessage ?? NormalizedText!;
 
         /// <summary>
         /// Gets the standard Informational version string.
@@ -400,9 +399,9 @@ namespace CSemVer
         /// The other version to compare with this instance. Can be null (null is lower than any version).
         /// </param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        public int CompareTo( SVersion other )
+        public int CompareTo( SVersion? other )
         {
-            if( ReferenceEquals( other, null ) ) return 1;
+            if( other is null ) return 1;
             if( IsValid )
             {
                 if( !other.IsValid ) return 1;
@@ -440,7 +439,7 @@ namespace CSemVer
         /// <returns>Standard positive, negative or zero value.</returns>
         public int CSemVerCompareTo( SVersion other, bool useShortForm = true )
         {
-            if( ReferenceEquals( other, null ) ) return 1;
+            if( other is null ) return 1;
             if( IsValid )
             {
                 if( !other.IsValid ) return 1;
@@ -476,9 +475,9 @@ namespace CSemVer
         /// <returns>Standard positive, negative or zero value.</returns>
         static public int SafeCompare( SVersion x, SVersion y )
         {
-            if( ReferenceEquals( x, null ) )
+            if( x is null )
             {
-                return ReferenceEquals( y, null ) ? 0 : -1;
+                return y is null ? 0 : -1;
             }
             return x.CompareTo( y );
         }
@@ -497,9 +496,9 @@ namespace CSemVer
         /// <returns>Standard positive, negative or zero value.</returns>
         static public int CSemVerSafeCompare( SVersion x, SVersion y, bool useShortForm = true )
         {
-            if( ReferenceEquals( x, null ) )
+            if( x is null )
             {
-                return ReferenceEquals( y, null ) ? 0 : -1;
+                return y is null ? 0 : -1;
             }
             return x.CSemVerCompareTo( y, useShortForm );
         }
@@ -527,10 +526,10 @@ namespace CSemVer
             {
                 var xP = xParts[i];
                 var yP = yParts[i];
-                int xN, yN, r;
-                if( int.TryParse( xP, out xN ) )
+                int r;
+                if( int.TryParse( xP, out int xN ) )
                 {
-                    if( int.TryParse( yP, out yN ) )
+                    if( int.TryParse( yP, out int yN ) )
                     {
                         r = xN - yN;
                         if( r != 0 ) return r;
@@ -539,7 +538,7 @@ namespace CSemVer
                 }
                 else
                 {
-                    if( int.TryParse( yP, out yN ) ) return 1;
+                    if( int.TryParse( yP, out _ ) ) return 1;
                     r = StringComparer.OrdinalIgnoreCase.Compare( xP, yP );
                     if( r != 0 ) return r;
                 }
@@ -554,7 +553,7 @@ namespace CSemVer
         /// <returns>True if the specified object is equal to this instance; otherwise, false.</returns>
         public override bool Equals( object obj )
         {
-            if( ReferenceEquals( obj, null ) ) return false;
+            if( obj is null ) return false;
             if( ReferenceEquals( this, obj ) ) return true;
             return Equals( obj as SVersion );
         }
@@ -578,7 +577,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="other">Other version.</param>
         /// <returns>True if they are the same regardless of <see cref="BuildMetaData"/>.</returns>
-        public bool Equals( SVersion other )
+        public bool Equals( SVersion? other )
         {
             if( other == null ) return false;
             if( ReferenceEquals( this, other ) ) return true;
@@ -599,10 +598,10 @@ namespace CSemVer
         /// <param name="x">First tag.</param>
         /// <param name="y">Second tag.</param>
         /// <returns>True if they are equal.</returns>
-        static public bool operator ==( SVersion x, SVersion y )
+        static public bool operator ==( SVersion? x, SVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return true;
-            if( !ReferenceEquals( x, null ) )
+            if( x is object )
             {
                 return x.Equals( y );
             }
@@ -615,12 +614,12 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is greater than y.</returns>
-        static public bool operator >( SVersion x, SVersion y )
+        static public bool operator >( SVersion? x, SVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return false;
-            if( !ReferenceEquals( x, null ) )
+            if( x is object )
             {
-                if( ReferenceEquals( y, null ) ) return true;
+                if( y is null ) return true;
                 return x.CompareTo( y ) > 0;
             }
             return false;
@@ -632,12 +631,12 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is lower than y.</returns>
-        static public bool operator >=( SVersion x, SVersion y )
+        static public bool operator >=( SVersion? x, SVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return true;
-            if( !ReferenceEquals( x, null ) )
+            if( x is object )
             {
-                if( ReferenceEquals( y, null ) ) return true;
+                if( y is null ) return true;
                 return x.CompareTo( y ) >= 0;
             }
             return false;
@@ -649,7 +648,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if they are not equal.</returns>
-        static public bool operator !=( SVersion x, SVersion y ) => !(x == y);
+        static public bool operator !=( SVersion? x, SVersion? y ) => !(x == y);
 
         /// <summary>
         /// Implements &lt;= operator.
@@ -657,7 +656,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is lower than or equal to y.</returns>
-        static public bool operator <=( SVersion x, SVersion y ) => !(x > y);
+        static public bool operator <=( SVersion? x, SVersion? y ) => !(x > y);
 
         /// <summary>
         /// Implements &lt; operator.
@@ -665,7 +664,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is lower than y.</returns>
-        static public bool operator <( SVersion x, SVersion y ) => !(x >= y);
+        static public bool operator <( SVersion? x, SVersion? y ) => !(x >= y);
     }
 }
 

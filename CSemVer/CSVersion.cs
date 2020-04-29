@@ -81,7 +81,7 @@ namespace CSemVer
 
         CSVersion( int major, int minor, int patch, string buildMetaData,
                    int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch,
-                   bool longForm, long number = 0, string parsedText = null )
+                   bool longForm, long number = 0, string? parsedText = null )
             : base( parsedText, major, minor, patch, ComputeStandardPreRelease( preReleaseNameIdx, preReleaseNumber, preReleasePatch, longForm ), buildMetaData, null )
         {
             PrereleaseNameIdx = preReleaseNameIdx;
@@ -94,7 +94,7 @@ namespace CSemVer
             InlineAssertInvariants( this );
         }
 
-        CSVersion( string error, string parsedText )
+        CSVersion( string error, string? parsedText )
             : base( error, parsedText )
         {
             PrereleaseNameIdx = -1;
@@ -272,7 +272,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="previous">Previous version. Can be null.</param>
         /// <returns>True if previous is actually a direct predecessor.</returns>
-        public bool IsDirectPredecessor( CSVersion previous )
+        public bool IsDirectPredecessor( CSVersion? previous )
         {
             if( !IsValid ) return false;
             long num = _orderedVersion.Number;
@@ -299,7 +299,7 @@ namespace CSemVer
         /// <param name="version">Any version (can be null).</param>
         /// <param name="patchesOnly">True to obtain only patches to the version. False to generate the full list of valid successors (up to 43 successors).</param>
         /// <returns>The direct successors.</returns>
-        public static IEnumerable<CSVersion> GetDirectSuccessors( bool patchesOnly, CSVersion version = null )
+        public static IEnumerable<CSVersion> GetDirectSuccessors( bool patchesOnly, CSVersion? version = null )
         {
             if( version == null )
             {
