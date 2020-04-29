@@ -24,10 +24,10 @@ namespace CSemVer
     /// </summary>
     public class InformationalVersion
     {
-        static Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
+        static readonly Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
         // v6 format was ambiguous with build meta data: using / instead of + fix the issue.
-        static Regex _rV6 = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
-        static Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
+        static readonly Regex _rV6 = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
+        static readonly Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled|RegexOptions.ExplicitCapture|RegexOptions.CultureInvariant );
 
         /// <summary>
         /// The zero <see cref="InformationalVersion"/>.
@@ -76,7 +76,7 @@ namespace CSemVer
         /// the error message.
         /// </summary>
         /// <param name="informationalVersion">Informational version. Can be null.</param>
-        public InformationalVersion( string informationalVersion )
+        public InformationalVersion( string? informationalVersion )
         {
             if( (OriginalInformationalVersion = informationalVersion) != null )
             {
@@ -89,11 +89,10 @@ namespace CSemVer
                     CommitSha = m.Groups[3].Value;
                     var v = SVersion.TryParse( RawVersion );
                     Version = v.AsCSVersion != null ? v.AsCSVersion.ToNormalizedForm() : v;
-                    DateTime t;
-                    if( DateTime.TryParseExact( m.Groups[4].Value, "u", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal, out t ) )
+                    if( DateTime.TryParseExact( m.Groups[4].Value, "u", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal, out DateTime t ) )
                     {
                         CommitDate = t;
-                        if( t.Kind != DateTimeKind.Utc ) ParseErrorMessage = $"The CommitDate must be Utc: {m.Groups[4].Value} must be {DateTime.SpecifyKind( t, DateTimeKind.Utc ).ToString("u")}.";
+                        if( t.Kind != DateTimeKind.Utc ) ParseErrorMessage = $"The CommitDate must be Utc: {m.Groups[4].Value} must be {DateTime.SpecifyKind( t, DateTimeKind.Utc ):u}.";
                         else if( !Version.IsValid ) ParseErrorMessage = "The SemVersion is invalid: " + Version.ErrorMessage;
                         else if( CommitSha.Length != 40 || !CommitSha.All( IsHexDigit ) ) ParseErrorMessage = "The CommitSha is invalid (must be 40 hex digit).";
                         else IsValidSyntax = true;
@@ -105,6 +104,7 @@ namespace CSemVer
             else ParseErrorMessage = "String to parse is null.";
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Style", "IDE0060:Remove unused parameter", Justification = "This makes the role of this fake parameter explicit." )]
         InformationalVersion( string parseErrorMessage, bool forPrivateError )
         {
             ParseErrorMessage = parseErrorMessage;
@@ -131,35 +131,35 @@ namespace CSemVer
         /// Gets an error message whenever <see cref="IsValidSyntax"/> is true.
         /// Null otherwise.
         /// </summary>
-        public string ParseErrorMessage { get; }
+        public string? ParseErrorMessage { get; }
 
         /// <summary>
-        /// Gets the original informational (can be null).
+        /// Gets the original informational version (can be null).
         /// </summary>
-        public string OriginalInformationalVersion { get; }
+        public string? OriginalInformationalVersion { get; }
 
         /// <summary>
         /// Gets the semantic version string extracted from <see cref="OriginalInformationalVersion"/>. 
         /// Null if the OriginalInformationalVersion attribute was not standard.
         /// </summary>
-        public string RawVersion { get; }
+        public string? RawVersion { get; }
 
         /// <summary>
         /// Gets the parsed <see cref="RawVersion"/> (that may be not <see cref="SVersion.IsValid"/>) 
-        /// or null if the OriginalInformationalVersion attribute was not standard.
+        /// or null if the <see cref="OriginalInformationalVersion"/> attribute was not standard.
         /// Note that it is the <see cref="CSVersion.ToNormalizedForm()"/> if the version happens to be a <see cref="CSVersion"/>:
         /// long forms will be transformed into short forms.
         /// </summary>
-        public SVersion Version { get; }
+        public SVersion? Version { get; }
 
         /// <summary>
         /// Gets the SHA1 extracted from the <see cref="OriginalInformationalVersion"/>.
         /// Null if the OriginalInformationalVersion attribute was not standard.
         /// </summary>
-        public string CommitSha { get; }
+        public string? CommitSha { get; }
 
         /// <summary>
-        /// Gets the commit date  extracted from the <see cref="InformationalVersion"/>.
+        /// Gets the commit date extracted from the <see cref="InformationalVersion"/>.
         /// <see cref="DateTime.MinValue"/> if the OriginalInformationalVersion attribute was not standard.
         /// This date is required to be in Utc in "u" DateTime format.
         /// </summary>
@@ -169,7 +169,7 @@ namespace CSemVer
         /// Overridden to return the <see cref="ParseErrorMessage"/> or the <see cref="OriginalInformationalVersion"/>.
         /// </summary>
         /// <returns>The textual representation.</returns>
-        public override string ToString() => ParseErrorMessage ?? OriginalInformationalVersion;
+        public override string ToString() => ParseErrorMessage ?? OriginalInformationalVersion!;
 
         /// <summary>
         /// Parses the given string. Throws an <see cref="ArgumentException"/> if the syntax is invalid.
@@ -177,7 +177,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="s">The string to parse.</param>
         /// <returns>A <see cref="IsValidSyntax"/> informational version.</returns>
-        static public InformationalVersion Parse( string s )
+        static public InformationalVersion Parse( string? s )
         {
             var i = new InformationalVersion( s );
             if( !i.IsValidSyntax ) throw new ArgumentException( i.ParseErrorMessage, nameof( s ) );
@@ -249,7 +249,7 @@ namespace CSemVer
             if( version == null || !version.IsValid ) throw new ArgumentException( nameof( version ) );
             if( commitSha == null || commitSha.Length != 40 || !commitSha.All( IsHexDigit ) ) throw new ArgumentException( "Must be a 40 hex digits string.", nameof( commitSha ) );
             if( commitDateUtc.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Must be a UTC date.", nameof( commitDateUtc ) );
-            return $"{version.ToNormalizedString()}/{commitSha}/{commitDateUtc.ToString( "u" )}";
+            return $"{version.ToNormalizedString()}/{commitSha}/{commitDateUtc:u}";
         }
 
         static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');

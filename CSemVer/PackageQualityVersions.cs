@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -12,11 +13,11 @@ namespace CSemVer
     /// </summary>
     public readonly struct PackageQualityVersions : IEnumerable<SVersion>
     {
-        readonly SVersion _sta;
-        readonly SVersion _lat;
-        readonly SVersion _pre;
-        readonly SVersion _exp;
-        readonly SVersion _ci;
+        readonly SVersion? _sta;
+        readonly SVersion? _lat;
+        readonly SVersion? _pre;
+        readonly SVersion? _exp;
+        readonly SVersion? _ci;
 
         /// <summary>
         /// Initializes a new <see cref="PackageQualityVersions"/> from a set of versions.
@@ -60,7 +61,7 @@ namespace CSemVer
         /// <param name="pre">The current best Preview version.</param>
         /// <param name="lat">The current best Latest version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public static void Apply( SVersion v, ref SVersion ci, ref SVersion exp, ref SVersion pre, ref SVersion lat, ref SVersion sta )
+        public static void Apply( SVersion v, [AllowNull]ref SVersion ci, ref SVersion? exp, ref SVersion? pre, ref SVersion? lat, ref SVersion? sta )
         {
             if( v != null && v.IsValid )
             {
@@ -77,7 +78,7 @@ namespace CSemVer
 
         PackageQualityVersions( PackageQualityVersions q, SVersion v )
         {
-            Debug.Assert( v?.IsValid ?? false );
+            Debug.Assert( v?.IsValid ?? false, "v must be not null and valid." );
             _ci = q.CI;
             _exp = q.Exploratory;
             _pre = q.Preview;
@@ -97,17 +98,16 @@ namespace CSemVer
         /// </summary>
         /// <param name="quality">The minimal required quality.</param>
         /// <returns>The best version or null if not found.</returns>
-        public SVersion GetVersion( PackageQuality quality )
+        public SVersion? GetVersion( PackageQuality quality )
         {
-            if( !IsValid ) throw new InvalidOperationException();
-            switch( quality )
+            return quality switch
             {
-                case PackageQuality.Release: return Stable;
-                case PackageQuality.ReleaseCandidate: return Latest;
-                case PackageQuality.Preview: return Preview;
-                case PackageQuality.Exploratory: return Exploratory;
-                default: return CI;
-            }
+                PackageQuality.Release => Stable,
+                PackageQuality.ReleaseCandidate => Latest,
+                PackageQuality.Preview => Preview,
+                PackageQuality.Exploratory => Exploratory,
+                _ => CI,
+            };
         }
 
         /// <summary>
@@ -115,42 +115,39 @@ namespace CSemVer
         /// </summary>
         /// <param name="label">The required label.</param>
         /// <returns>The best version or null if not found.</returns>
-        public SVersion GetVersion( PackageLabel label )
+        public SVersion? GetVersion( PackageLabel label ) => label switch
         {
-            switch( label )
-            {
-                case PackageLabel.Stable: return Stable;
-                case PackageLabel.Latest: return Latest;
-                case PackageLabel.Preview: return Preview;
-                case PackageLabel.Exploratory: return Exploratory;
-                default: return CI;
-            }
-        }
+            PackageLabel.Stable => Stable,
+            PackageLabel.Latest => Latest,
+            PackageLabel.Preview => Preview,
+            PackageLabel.Exploratory => Exploratory,
+            _ => CI,
+        };
 
         /// <summary>
         /// Gets the best stable version or null if no such version exists.
         /// </summary>
-        public SVersion Stable => _sta;
+        public SVersion? Stable => _sta;
 
         /// <summary>
         /// Gets the best latest compatible version or null if no such version exists.
         /// </summary>
-        public SVersion Latest => _lat;
+        public SVersion? Latest => _lat;
 
         /// <summary>
         /// Gets the best preview compatible version or null if no such version exists.
         /// </summary>
-        public SVersion Preview => _pre;
+        public SVersion? Preview => _pre;
 
         /// <summary>
         /// Gets the best exploratory compatible version or null if no such version exists.
         /// </summary>
-        public SVersion Exploratory => _exp;
+        public SVersion? Exploratory => _exp;
 
         /// <summary>
         /// Gets the best version or null if <see cref="IsValid"/> is false.
         /// </summary>
-        public SVersion CI => _ci;
+        public SVersion? CI => _ci;
 
         /// <summary>
         /// Retuns this <see cref="PackageQualityVersions"/> or a new one that combines a new version.

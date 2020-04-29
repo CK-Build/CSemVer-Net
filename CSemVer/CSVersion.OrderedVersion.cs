@@ -51,9 +51,11 @@ namespace CSemVer
         public const int MaxPreReleasePatch = 99;
 
         const long MaxOrderedVersion = (MaxMajor + 1L)
-                                        * (MaxMinor + 1L)
-                                        * (MaxPatch + 1L)
-                                        * (1L + (MaxPreReleaseNameIdx + 1L) * (MaxPreReleaseNumber + 1L) * (MaxPreReleasePatch + 1L));
+                                       * (MaxMinor + 1L)
+                                       * (MaxPatch + 1L)
+                                       * (1L + (MaxPreReleaseNameIdx + 1L)
+                                       * (MaxPreReleaseNumber + 1L)
+                                       * (MaxPreReleasePatch + 1L));
 
         static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "prerelease", "rc" };
         static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
@@ -122,13 +124,13 @@ namespace CSemVer
             if( v == 0 ) return new CSVersion( "Invalid CSVersion.", null );
 
             long dV = v;
-            int prNameIdx = -1;
-            int prNumber = 0;
-            int prPatch = 0;
+            int prNameIdx;
+            int prNumber;
+            int prPatch;
             long preReleasePart = dV % MulPatch;
             if( preReleasePart != 0 )
             {
-                preReleasePart = preReleasePart - 1L;
+                preReleasePart -= 1L;
                 prNameIdx = (int)(preReleasePart / MulName);
                 preReleasePart -= (long)prNameIdx * MulName;
                 prNumber = (int)(preReleasePart / MulNum);
@@ -139,6 +141,8 @@ namespace CSemVer
             {
                 dV -= MulPatch;
                 prNameIdx = -1;
+                prNumber = 0;
+                prPatch = 0;
             }
             int major = (int)(dV / MulMajor);
             dV -= major * MulMajor;
@@ -203,7 +207,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="other">Other version.</param>
         /// <returns>True if they have the same OrderedVersion.</returns>
-        public bool Equals( CSVersion other )
+        public bool Equals( CSVersion? other )
         {
             if( other == null ) return false;
             return _orderedVersion.Number == other._orderedVersion.Number;
@@ -226,10 +230,10 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if they are equal.</returns>
-        static public bool operator ==( CSVersion x, CSVersion y )
+        static public bool operator ==( CSVersion? x, CSVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return true;
-            if( !ReferenceEquals( x, null ) && !ReferenceEquals( y, null ) )
+            if( x is object && y is object )
             {
                 return x._orderedVersion.Number == y._orderedVersion.Number;
             }
@@ -242,12 +246,12 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is greater than y.</returns>
-        static public bool operator >( CSVersion x, CSVersion y )
+        static public bool operator >( CSVersion? x, CSVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return false;
-            if( !ReferenceEquals( x, null ) )
+            if( x is object )
             {
-                if( ReferenceEquals( y, null ) ) return true;
+                if( y is null ) return true;
                 return x._orderedVersion.Number > y._orderedVersion.Number;
             }
             return false;
@@ -259,12 +263,12 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is greater than or equal to y.</returns>
-        static public bool operator >=( CSVersion x, CSVersion y )
+        static public bool operator >=( CSVersion? x, CSVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return true;
-            if( !ReferenceEquals( x, null ) )
+            if( x is object )
             {
-                if( ReferenceEquals( y, null ) ) return true;
+                if( y is null ) return true;
                 return x._orderedVersion.Number >= y._orderedVersion.Number;
             }
             return false;
@@ -276,7 +280,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if they are not equal.</returns>
-        static public bool operator !=( CSVersion x, CSVersion y ) => !(x == y);
+        static public bool operator !=( CSVersion? x, CSVersion? y ) => !(x == y);
 
         /// <summary>
         /// Implements &lt;= operator.
@@ -284,7 +288,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is lower than or equal to y.</returns>
-        static public bool operator <=( CSVersion x, CSVersion y ) => !(x > y);
+        static public bool operator <=( CSVersion? x, CSVersion? y ) => !(x > y);
 
         /// <summary>
         /// Implements &lt; operator.
@@ -292,7 +296,7 @@ namespace CSemVer
         /// <param name="x">First version.</param>
         /// <param name="y">Second version.</param>
         /// <returns>True if x is lower than y.</returns>
-        static public bool operator <( CSVersion x, CSVersion y ) => !(x >= y);
+        static public bool operator <( CSVersion? x, CSVersion? y ) => !(x >= y);
 
         /// <summary>
         /// Version are equal it their <see cref="OrderedVersion"/> are equals.
