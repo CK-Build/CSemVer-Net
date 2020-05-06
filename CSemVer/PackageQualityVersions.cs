@@ -10,6 +10,8 @@ namespace CSemVer
 {
     /// <summary>
     /// Handles 5 potentially different versions associated to <see cref="PackageQuality"/>.
+    /// When all 5 versions are null then <see cref="IsValid"/> is false: as long as at least a <see cref="CI"/> version
+    /// is specified, this is valid.
     /// </summary>
     public readonly struct PackageQualityVersions : IEnumerable<SVersion>
     {
@@ -43,7 +45,7 @@ namespace CSemVer
         /// <param name="pre">The current best Preview version.</param>
         /// <param name="lat">The current best Latest version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public PackageQualityVersions( SVersion ci, SVersion exp, SVersion pre, SVersion lat, SVersion sta )
+        public PackageQualityVersions( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? lat, SVersion? sta )
         {
             _ci = ci;
             _exp = exp;

@@ -6,6 +6,8 @@ namespace CSemVer
 {
     /// <summary>
     /// A package quality is associated to a <see cref="SVersion"/>.
+    /// The quality is functionally dependent on the version number whereas <see cref="PackageLabel"/>
+    /// denotes expected version ranges. 
     /// </summary>
     public enum PackageQuality
     {
@@ -21,7 +23,7 @@ namespace CSemVer
         CI,
 
         /// <summary>
-        /// A risky prerelease version ("alpha", "beta", "delta") that is not really ready.
+        /// A risky prerelease version ("alpha", "beta", "delta") that should not be used in production.
         /// Applies only to <see cref="CSVersion"/>.
         /// </summary>
         Exploratory,

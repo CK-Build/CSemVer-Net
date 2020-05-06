@@ -5,7 +5,7 @@ using System.Text;
 namespace CSemVer
 {
     /// <summary>
-    /// A label tags a package based on its <see cref="PackageQuality"/>.
+    /// A label describes an expected (range of) <see cref="PackageQuality"/>.
     /// </summary>
     public enum PackageLabel
     {
