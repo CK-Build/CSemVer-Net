@@ -7,7 +7,12 @@ namespace CSemVer
     /// <summary>
     /// A package quality is associated to a <see cref="SVersion"/>.
     /// The quality is functionally dependent on the version number whereas <see cref="PackageLabel"/>
-    /// denotes expected version ranges. 
+    /// denotes expected version ranges.
+    /// <para>
+    /// Among these 5 levels, versions that are not <see cref="CSVersion"/> are either in lowest (CI)
+    /// or highest (Release) quality: these are all the versions with -prerelease tag and normal,
+    /// stable versions. 
+    /// </para>
     /// </summary>
     public enum PackageQuality
     {
@@ -18,7 +23,7 @@ namespace CSemVer
 
         /// <summary>
         /// Package produced without any explicit version (all <see cref="SVersion"/>
-        /// that are not <see cref="CSVersion"/> are CI quality).
+        /// in prerelease that are not <see cref="CSVersion"/> are CI quality).
         /// </summary>
         CI,
 
@@ -42,7 +47,7 @@ namespace CSemVer
 
         /// <summary>
         /// An official release.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// Applies to <see cref="SVersion"/> in general.
         /// </summary>
         Release
     }

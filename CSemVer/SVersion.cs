@@ -14,7 +14,7 @@ namespace CSemVer
     {
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
-            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\-(?<4>[0-9A-Za-z\-\.]+))?(\+(?<5>[0-9A-Za-z\-\.]+))?$",
+            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\-(?<4>[0-9A-Za-z\-\.]+))?(\+(?<5>[0-9A-Za-z\-\.]+))?",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         // This applies to PreRelease and BuildMetaData.
@@ -260,18 +260,45 @@ namespace CSemVer
         /// of prerelease names) must not be done.
         /// </param>
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
+        public static SVersion TryParse( ref ReadOnlySpan<char> s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        {
+            // Note: Waiting for .Net 5. Regex will support ReadOnlySpan<char> and so this will be the real
+            //       implementation and the string version will call it.
+            var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax );
+            s = s.Slice( r.Item2 );
+            return r.Item1;
+        }
+
+        /// <summary>
+        /// Parses the specified string to a semantic version and returns a <see cref="SVersion"/> that 
+        /// may not be <see cref="IsValid"/>.
+        /// </summary>
+        /// <param name="s">The string to parse.</param>
+        /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
+        /// <param name="handleCSVersion">
+        /// False to skip <see cref="CSVersion"/> conformance lookup. The resulting version
+        /// will be a <see cref="SVersion"/> even if it is a valid <see cref="CSVersion"/>.
+        /// This should be used in rare scenario where the normalization of a <see cref="CSVersion"/> (standardization
+        /// of prerelease names) must not be done.
+        /// </param>
+        /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
         public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
-            if( string.IsNullOrEmpty( s ) ) return new SVersion( "Null or empty version string.", s );
+            return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax ).Item1;
+        }
+
+        private static (SVersion,int) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax )
+        {
+            if( string.IsNullOrEmpty( s ) ) return (new SVersion( "Null or empty version string.", s ), 0);
             Match m = _regExSVersion.Match( s );
-            if( !m.Success ) return new SVersion( "Pattern not matched.", s );
+            if( !m.Success ) return (new SVersion( "Pattern not matched.", s ), 0);
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;
-            if( !int.TryParse( sMajor, out int major ) ) return new SVersion( "Invalid Major.", s );
-            if( !int.TryParse( sMinor, out int minor ) ) return new SVersion( "Invalid Major.", s );
-            if( !int.TryParse( sPatch, out int patch ) ) return new SVersion( "Invalid Patch.", s );
-            return DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax );
+            if( !int.TryParse( sMajor, out int major ) ) return (new SVersion( "Invalid Major.", s ), 0);
+            if( !int.TryParse( sMinor, out int minor ) ) return (new SVersion( "Invalid Major.", s ), 0);
+            if( !int.TryParse( sPatch, out int patch ) ) return (new SVersion( "Invalid Patch.", s ), 0);
+            return (DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax ), m.Length );
         }
 
         /// <summary>
@@ -503,13 +530,36 @@ namespace CSemVer
             return x.CSemVerCompareTo( y, useShortForm );
         }
 
-        static int ComparePreRelease( string x, string y )
+        // Fun with Span and alloc-free string parsing.
+        // Using this https://github.com/dotnet/runtime/pull/295 (not yet available)
+        // would require to change the algorithm since we need to know the number of
+        // slpitted parts: we stack allocate a big enough array of Range and fills it
+        // with the splitted parts.
+        // The magic is: the algorithm is the same as the one with the strings!
+        static int ComparePreRelease( ReadOnlySpan<char> x, ReadOnlySpan<char> y )
         {
             if( x.Length == 0 ) return y.Length == 0 ? 0 : 1;
             if( y.Length == 0 ) return -1;
 
-            var xParts = x.Split( '.' );
-            var yParts = y.Split( '.' );
+            static Span<Range> StackSplit( ReadOnlySpan<char> x, Span<Range> store )
+            {
+                int count = 0, offset = 0, index = 0;
+                do
+                {
+                    var next = x.Slice( offset );
+                    var nextIdx = next.IndexOf( '.' );
+                    index = nextIdx != -1 ? nextIdx : next.Length;
+                    store[count++] = new Range( offset, offset += index++ );
+                }
+                while( ++offset < x.Length );
+                return store.Slice( 0, count );
+            }
+
+            // var xParts = x.Split( '.' );
+            // var yParts = y.Split( '.' );
+            // ==> StackSplit replaces the string.Split() method.
+            var xParts = StackSplit( x, stackalloc Range[1 + x.Length >> 1] );
+            var yParts = StackSplit( y, stackalloc Range[1 + y.Length >> 1] );
 
             int commonParts = xParts.Length;
             int ultimateResult = -1;
@@ -524,8 +574,11 @@ namespace CSemVer
             }
             for( int i = 0; i < commonParts; i++ )
             {
-                var xP = xParts[i];
-                var yP = yParts[i];
+                // var xP = xParts[i];
+                // var yP = yParts[i];
+                // ==> Use the Range indexing to obtain the parts as ReadOnlySpan<char>/
+                var xP = x[xParts[i]];
+                var yP = y[yParts[i]];
                 int r;
                 if( int.TryParse( xP, out int xN ) )
                 {
@@ -539,7 +592,10 @@ namespace CSemVer
                 else
                 {
                     if( int.TryParse( yP, out _ ) ) return 1;
-                    r = StringComparer.OrdinalIgnoreCase.Compare( xP, yP );
+                    // r = StringComparer.OrdinalIgnoreCase.Compare( xP, yP );
+                    // ==> Replace the call to OrdinalIgnoreCase.Compare by the convenient
+                    //     extension method on ReadOnlySpan<char>.
+                    r = xP.CompareTo( yP, StringComparison.OrdinalIgnoreCase );
                     if( r != 0 ) return r;
                 }
             }
