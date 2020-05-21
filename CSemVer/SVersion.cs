@@ -146,17 +146,22 @@ namespace CSemVer
             get
             {
                 if( !IsValid ) return PackageQuality.None;
-                if( _csVersion == null )
-                {
-                    return PackageQuality.CI;
-                }
                 if( Prerelease.Length > 0 )
                 {
-                    return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
-                            ? (_csVersion.PrereleaseNameIdx < 3
-                                ? PackageQuality.Exploratory
-                                : PackageQuality.Preview)
-                            : PackageQuality.ReleaseCandidate;
+                    if( _csVersion != null )
+                    {
+                        return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
+                                ? (_csVersion.PrereleaseNameIdx < 3
+                                    ? PackageQuality.Exploratory
+                                    : PackageQuality.Preview)
+                                : PackageQuality.ReleaseCandidate;
+                    }
+                    var prerelease = Prerelease;
+                    if( prerelease.StartsWith( "alpha", StringComparison.OrdinalIgnoreCase )
+                        || prerelease.StartsWith( "beta", StringComparison.OrdinalIgnoreCase ) ) return PackageQuality.Exploratory;
+                    if( prerelease.StartsWith( "pre" ) ) return PackageQuality.Preview;
+                    if( prerelease.StartsWith( "rc" ) ) return PackageQuality.ReleaseCandidate;
+                    return PackageQuality.CI;
                 }
                 return PackageQuality.Release;
             }
