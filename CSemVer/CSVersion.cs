@@ -29,7 +29,7 @@ namespace CSemVer
         public bool IsPrerelease => PrereleaseNameIdx >= 0;
 
         /// <summary>
-        /// When <see cref="IsPrerelease"/> is true, the this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
+        /// When <see cref="IsPrerelease"/> is true, this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
         /// otherwise this is -1.
         /// </summary>
         public readonly int PrereleaseNameIdx;
