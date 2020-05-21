@@ -15,7 +15,7 @@ namespace CSemVer
     /// "version ranges".
     /// </para>
     /// </summary>
-    public partial class SVersionBound : IEquatable<SVersionBound>, IComparable<SVersionBound>
+    public partial class SVersionBound : IEquatable<SVersionBound>
     {
         /// <summary>
         /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true.
@@ -71,21 +71,6 @@ namespace CSemVer
         {
             var minBase = Base > other.Base ? other : this;
             return minBase.SetLock( Lock.Union( other.Lock ) ).SetMinQuality( MinQuality.Union( other.MinQuality ) );
-        }
-
-        /// <summary>
-        /// Compares this with another range: the <see cref="Base"/>, <see cref="MinQuality"/> and
-        /// the <see cref="Lock"/> (in this order) are considered.
-        /// </summary>
-        /// <param name="other">The other range.</param>
-        /// <returns>Standard positive, negative or zero value.</returns>
-        public int CompareTo( SVersionBound other )
-        {
-            int cmp = Base.CompareTo( other.Base );
-            if( cmp != 0 ) return cmp;
-            cmp = (int)MinQuality - (int)other.MinQuality;
-            if( cmp != 0 ) return cmp;
-            return cmp == 0 ? (int)Lock - (int)other.Lock : cmp;
         }
 
         /// <summary>
