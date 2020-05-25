@@ -9,10 +9,17 @@ namespace CSemVer
     /// <para>
     /// This aims to define a sensible response to one of the dependency management issue: how to specify "version ranges".
     /// </para>
+    /// <para>
+    /// The <see cref="Union(in SVersionBound)"/> binary operation defines a partial order (materialized by <see cref="Contains"/>)
+    /// on the set of all possible bounds: <see cref="None"/> is the identity element (and the greatest element of the whole set)
+    /// and <see cref="All"/> is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the lowest element
+    /// of the set.
+    /// </para>
     /// </summary>
     public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     {
         readonly SVersion? _base;
+        readonly PackageQuality _minQuality;
 
         /// <summary>
         /// All bound with no restriction: <see cref="Base"/> is <see cref="SVersion.ZeroVersion"/> and there is
@@ -42,10 +49,9 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the minimal package quality that must be used.
-        /// This may be <see cref="PackageQuality.None"/> (that denotes invalid packages), but the
-        /// operational minimum is <see cref="PackageQuality.CI"/>.
+        /// This is never <see cref="PackageQuality.None"/> (that denotes invalid packages), the minimum is <see cref="PackageQuality.CI"/>.
         /// </summary>
-        public PackageQuality MinQuality { get; }
+        public PackageQuality MinQuality => _minQuality != PackageQuality.None ? _minQuality : PackageQuality.CI;
 
         /// <summary>
         /// Initializes a new version range on a valid <see cref="Base"/> version.
@@ -57,8 +63,7 @@ namespace CSemVer
         {
             _base = version ?? SVersion.ZeroVersion;
             if( !_base.IsValid ) throw new ArgumentException( "Must be valid. Error: " + _base.ErrorMessage, nameof( version ) );
-            if( minQuality == PackageQuality.None ) minQuality = PackageQuality.CI;
-            MinQuality = minQuality;
+            _minQuality = minQuality;
             Lock = r;
         }
 
@@ -156,6 +161,11 @@ namespace CSemVer
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => Base.GetHashCode() ^ ((int)MinQuality << 13) ^ ((int)Lock << 26);
 
+        /// <summary>
+        /// Overridden to return the base version and the restrictions.
+        /// </summary>
+        /// <returns>A readable string.</returns>
+        public override string ToString() => $"{Base}[{Lock},{MinQuality}]";
 
     }
 

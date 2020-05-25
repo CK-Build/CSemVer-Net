@@ -1,4 +1,4 @@
-﻿namespace CSemVer
+namespace CSemVer
 {
     /// <summary>
     /// Extends SVersionLock enum.
@@ -14,7 +14,7 @@
         /// <returns>The weakest of the two.</returns>
         public static SVersionLock Union( this SVersionLock @this, SVersionLock other )
         {
-            return @this < other ? other : @this;
+            return @this < other ? @this : other;
         }
     }
 
