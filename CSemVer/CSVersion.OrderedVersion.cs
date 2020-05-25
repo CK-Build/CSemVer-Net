@@ -40,11 +40,11 @@ namespace CSemVer
         /// <summary>
         /// The maximum number of prereleases is also the index of the "rc" entry in <see cref="StandardPrereleaseNames"/>.
         /// </summary>
-        public const int MaxPreReleaseNameIdx = 7;
+        public const int MaxPreReleaseNameIdx = 3;
         /// <summary>
         /// The maximum number of prereleases.
         /// </summary>
-        public const int MaxPreReleaseNumber = 99;
+        public const int MaxPreReleaseNumber = 199;
         /// <summary>
         /// The maximum number of fixes to a pre-release.
         /// </summary>
@@ -57,9 +57,9 @@ namespace CSemVer
                                        * (MaxPreReleaseNumber + 1L)
                                        * (MaxPreReleasePatch + 1L));
 
-        static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "prerelease", "rc" };
-        static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
-        static readonly char[] _standardNamesC = new[] { 'a', 'b', 'd', 'e', 'g', 'k', 'p', 'r' };
+        static readonly string[] _standardNames = new[] { "alpha", "beta", "preview", "rc" };
+        static readonly string[] _standardNamesI = new[] { "a", "b", "p", "r" };
+        static readonly char[] _standardNamesC = new[] { 'a', 'b', 'p', 'r' };
 
         const long MulNum = MaxPreReleasePatch + 1;
         const long MulName = MulNum * (MaxPreReleaseNumber + 1);
@@ -99,14 +99,14 @@ namespace CSemVer
 
         static IReadOnlyList<CSVersion> BuildFirstPossibleVersions()
         {
-            var versions = new CSVersion[3 * 9];
+            var versions = new CSVersion[3 * 5];
             long v = 1L;
             int i = 0;
-            while( i < 3 * 9 )
+            while( i < 3 * 5 )
             {
                 versions[i++] = Create( v );
-                if( (i % 18) == 0 ) v += MulMajor - MulMinor - MulPatch + 1;
-                else if( (i % 9) == 0 ) v += MulMinor - MulPatch + 1;
+                if( (i % 10) == 0 ) v += MulMajor - MulMinor - MulPatch + 1;
+                else if( (i % 5) == 0 ) v += MulMinor - MulPatch + 1;
                 else v += MulName;
             }
             return versions;
@@ -155,6 +155,7 @@ namespace CSemVer
 
         static long ComputeOrderedVersion( int major, int minor, int patch, int preReleaseNameIdx = -1, int preReleaseNumber = 0, int preReleaseFix = 0 )
         {
+            Debug.Assert( preReleaseNameIdx >= 0 || (preReleaseNumber == 0 && preReleaseFix == 0), "preReleaseNameIdx = -1 ==> preReleaseNumber = preReleaseFix = 0" );
             long v = MulMajor * major;
             v += MulMinor * minor;
             v += MulPatch * (patch + 1);
@@ -166,12 +167,12 @@ namespace CSemVer
                 v += preReleaseFix;
             }
             Debug.Assert( Create( v )._orderedVersion.Number == v );
-            Debug.Assert( preReleaseNameIdx >= 0 == ((v % MulPatch) != 0) );
+            Debug.Assert( (preReleaseNameIdx >= 0) == ((v % MulPatch) != 0) );
             Debug.Assert( major == (int)((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMajor) );
             Debug.Assert( minor == (int)(((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMinor) - major * (MaxMinor + 1L)) );
             Debug.Assert( patch == (int)(((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulPatch) - (major * (MaxMinor + 1L) + minor) * (MaxPatch + 1L)) );
             Debug.Assert( preReleaseNameIdx == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) / MulName) : -1) );
-            Debug.Assert( preReleaseNumber == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) / MulNum - preReleaseNameIdx * MulNum) : 0) );
+            Debug.Assert( preReleaseNumber == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) % MulName) / MulNum : 0) );
             Debug.Assert( preReleaseFix == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) % MulNum) : 0) );
             return v;
         }

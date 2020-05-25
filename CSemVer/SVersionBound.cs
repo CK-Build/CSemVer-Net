@@ -1,9 +1,5 @@
-using CSemVer;
 using System;
-using System.ComponentModel.Design;
 using System.Diagnostics;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 
 namespace CSemVer
 {
@@ -11,16 +7,33 @@ namespace CSemVer
     /// Immutable base <see cref="Base"/> valid version that is the inclusive minimum acceptable <see cref="PackageQuality"/>
     /// and an optional <see cref="Lock"/> to the Base's components.
     /// <para>
-    /// This aims to define a sensible response to one of the dependency management issue: how to specify
-    /// "version ranges".
+    /// This aims to define a sensible response to one of the dependency management issue: how to specify "version ranges".
     /// </para>
     /// </summary>
-    public partial class SVersionBound : IEquatable<SVersionBound>
+    public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     {
+        readonly SVersion? _base;
+
         /// <summary>
-        /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true.
+        /// All bound with no restriction: <see cref="Base"/> is <see cref="SVersion.ZeroVersion"/> and there is
+        /// no restriction: <see cref="Satisfy(in SVersion)"/> is true for any valid version.
+        /// This bound is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation.
         /// </summary>
-        public SVersion Base { get; }
+        public static readonly SVersionBound All = new SVersionBound();
+
+        /// <summary>
+        /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
+        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.Release"/>): <see cref="Satisfy(in SVersion)"/> is
+        /// true only for the last version.
+        /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation.
+        /// </summary>
+        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.Release );
+
+        /// <summary>
+        /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true
+        /// since it defaults to <see cref="SVersion.ZeroVersion"/>.
+        /// </summary>
+        public SVersion Base => _base ?? SVersion.ZeroVersion;
 
         /// <summary>
         /// Gets whether only the same Major, Minor, Patch (or the exact version) of <see cref="Base"/> must be considered.
@@ -29,20 +42,21 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the minimal package quality that must be used.
-        /// This is never <see cref="PackageQuality.None"/> (that denotes invalid packages): <see cref="PackageQuality.CI"/> is the minimum.
+        /// This may be <see cref="PackageQuality.None"/> (that denotes invalid packages), but the
+        /// operational minimum is <see cref="PackageQuality.CI"/>.
         /// </summary>
         public PackageQuality MinQuality { get; }
 
         /// <summary>
-        /// Initializes a new version range.
+        /// Initializes a new version range on a valid <see cref="Base"/> version.
         /// </summary>
         /// <param name="version">The base version that must be valid.</param>
         /// <param name="r">The lock to apply.</param>
         /// <param name="minQuality">The minimal quality to accept.</param>
-        public SVersionBound( SVersion version, SVersionLock r = SVersionLock.None, PackageQuality minQuality = PackageQuality.CI )
+        public SVersionBound( SVersion? version = null, SVersionLock r = SVersionLock.None, PackageQuality minQuality = PackageQuality.None )
         {
-            Base = version ?? throw new ArgumentNullException( nameof( version ) );
-            if( !version.IsValid ) throw new ArgumentException( "Must be valid. Error: " + version.ErrorMessage, nameof( version ) );
+            _base = version ?? SVersion.ZeroVersion;
+            if( !_base.IsValid ) throw new ArgumentException( "Must be valid. Error: " + _base.ErrorMessage, nameof( version ) );
             if( minQuality == PackageQuality.None ) minQuality = PackageQuality.CI;
             MinQuality = minQuality;
             Lock = r;
@@ -67,7 +81,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public SVersionBound Union( SVersionBound other )
+        public SVersionBound Union( in SVersionBound other )
         {
             var minBase = Base > other.Base ? other : this;
             return minBase.SetLock( Lock.Union( other.Lock ) ).SetMinQuality( MinQuality.Union( other.MinQuality ) );
@@ -81,7 +95,7 @@ namespace CSemVer
         public bool Satisfy( in SVersion v )
         {
             int cmp = Base.CompareTo( v );
-            // If v is greater than this Base, it's over.
+            // If v is lower than this Base, it's over.
             if( cmp > 0 ) return false;
             // If v is the Base, it's trivially okay. 
             if( cmp == 0 ) return true;
@@ -142,26 +156,6 @@ namespace CSemVer
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => Base.GetHashCode() ^ ((int)MinQuality << 13) ^ ((int)Lock << 26);
 
-
-        public readonly struct ParseResult
-        {
-            public readonly SVersionBound? Result;
-            public readonly string? Error;
-            public readonly bool IsApproximated;
-
-            public ParseResult( SVersionBound result, bool isApproximated )
-            {
-                Result = result ?? throw new ArgumentNullException( nameof( result ) );
-                IsApproximated = isApproximated;
-                Error = null;
-            }
-            public ParseResult( string error )
-            {
-                Result = null;
-                IsApproximated = false;
-                Error = error ?? throw new ArgumentNullException( nameof( error ) );
-            }
-        }
 
     }
 

@@ -64,7 +64,7 @@ namespace CSemVer.Tests
                 CSVersion sF = lF.ToNormalizedForm();
                 sF.IsLongForm.Should().BeFalse();
                 sF.ParsedText.Should().BeNull();
-                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                sF.NormalizedText.Should().Be( "1.0.0-a001-23" );
                 CSVersion lF2 = sF.ToLongForm();
                 lF2.IsLongForm.Should().BeTrue();
                 lF2.ParsedText.Should().BeNull();
@@ -80,7 +80,7 @@ namespace CSemVer.Tests
                 CSVersion sF = lF.ToNormalizedForm();
                 sF.IsLongForm.Should().BeFalse();
                 sF.ParsedText.Should().BeNull();
-                sF.NormalizedText.Should().Be( "1.0.0-a01-23+buildMetaData" );
+                sF.NormalizedText.Should().Be( "1.0.0-a001-23+buildMetaData" );
                 CSVersion lF2 = sF.ToLongForm();
                 lF2.IsLongForm.Should().BeTrue();
                 lF2.ParsedText.Should().BeNull();
@@ -89,7 +89,7 @@ namespace CSemVer.Tests
                 lF = lF.WithBuildMetaData( null );
                 lF.NormalizedText.Should().Be( "1.0.0-alpha.1.23" );
                 sF = sF.WithBuildMetaData( null );
-                sF.NormalizedText.Should().Be( "1.0.0-a01-23" );
+                sF.NormalizedText.Should().Be( "1.0.0-a001-23" );
             }
 
         }
@@ -126,15 +126,15 @@ namespace CSemVer.Tests
         }
 
         [TestCase( "1.0.0-a", "1.0.0-a" )]
-        [TestCase( "1.0.0-a01", "1.0.0-a01" )]
-        [TestCase( "1.0.0-a.01", "1.0.0-a01" )]
-        [TestCase( "1.0.0-a-01", "1.0.0-a01" )]
-        [TestCase( "1.0.0-a-1", "1.0.0-a01" )]
-        [TestCase( "1.0.0-a.1", "1.0.0-a01" )]
-        [TestCase( "1.0.0-a55-06", "1.0.0-a55-06" )]
-        [TestCase( "1.0.0-a-55.6", "1.0.0-a55-06" )]
-        [TestCase( "1.0.0-a.55.06", "1.0.0-a55-06" )]
-        [TestCase( "1.0.0-a.55.6", "1.0.0-a55-06" )]
+        [TestCase( "1.0.0-a01", "1.0.0-a001" )]
+        [TestCase( "1.0.0-a.01", "1.0.0-a001" )]
+        [TestCase( "1.0.0-a-01", "1.0.0-a001" )]
+        [TestCase( "1.0.0-a-1", "1.0.0-a001" )]
+        [TestCase( "1.0.0-a.1", "1.0.0-a001" )]
+        [TestCase( "1.0.0-a55-06", "1.0.0-a055-06" )]
+        [TestCase( "1.0.0-a-55.6", "1.0.0-a055-06" )]
+        [TestCase( "1.0.0-a.55.06", "1.0.0-a055-06" )]
+        [TestCase( "1.0.0-a.55.6", "1.0.0-a055-06" )]
         [TestCase( "1.0.0-alpha", "1.0.0-alpha" )]
         [TestCase( "1.0.0-alpha01", "1.0.0-alpha.1" )]
         [TestCase( "1.0.0-alpha.01", "1.0.0-alpha.1" )]
@@ -154,7 +154,7 @@ namespace CSemVer.Tests
         [TestCase( "v0.0.0-alpha.0.1", 0, 0, 0, 2 )]
         [TestCase( "v0.0.0-alpha.0.2", 0, 0, 0, 3 )]
         [TestCase( "v0.0.0-alpha.1", 0, 0, 0, 101 )]
-        [TestCase( "v0.0.0-beta", 0, 0, 0, 100 * 99 + 101 )]
+        [TestCase( "v0.0.0-beta", 0, 0, 0, 100 * 199 + 101 )]
         public void version_ordering_starts_at_1_for_the_very_first_possible_version( string tag, int oMajor, int oMinor, int oBuild, int oRevision )
         {
             var t = CSVersion.TryParse( tag );
@@ -172,9 +172,9 @@ namespace CSemVer.Tests
         }
 
         [TestCase( "0", 0, "Invalid are always 0." )]
-        [TestCase( "0.0.0-prerelease", 1, "Normal = 1." )]
+        [TestCase( "0.0.0-preview", 1, "Normal = 1." )]
         [TestCase( "0.0.0", 1, "Normal = 1" )]
-        [TestCase( "0.0.0-gamma", 1, "Normal = 1" )]
+        [TestCase( "0.0.0-other", 0, "CI or other = 0" )]
         [TestCase( "88.88.88-rc+Invalid", 2, "Invalid = 2" )]
         [TestCase( "88.88.88+Invalid", 2, "Marked Invalid = 2" )]
         public void equal_release_tags_can_have_different_definition_strengths( string tag, int level, string message )
@@ -186,30 +186,29 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0-alpha", false, 0 )]
         [TestCase( "0.0.0-alpha.0.1", false, 1 )]
         [TestCase( "0.0.0-alpha.0.2", false, 2 )]
-        [TestCase( "0.0.0-alpha.99.99", false, 100 * 99 + 100 - 1 )]
-        [TestCase( "0.0.0-beta", false, 100 * 99 + 100 )]
-        [TestCase( "0.0.0-delta", false, 2 * (100 * 99 + 100) )]
-        [TestCase( "0.0.0-rc", false, 7 * (100 * 99 + 100) )]
-        [TestCase( "0.0.0-rc.99.99", false, 7 * (100 * 99 + 100) + 100 * 99 + 99 )]
-        [TestCase( "0.0.0", false, 8 * 100 * 100 )]
+        [TestCase( "0.0.0-alpha.199.99", false, 100 * 199 + 100 - 1 )]
+        [TestCase( "0.0.0-beta", false, 100 * 199 + 100 )]
+        [TestCase( "0.0.0-pre", false, 2 * (100 * 199 + 100) )]
+        [TestCase( "0.0.0-rc", false, 3 * (100 * 199 + 100) )]
+        [TestCase( "0.0.0-rc.199.99", false, 3 * (100 * 199 + 100) + 100 * 199 + 99 )]
+        [TestCase( "0.0.0", false, 4 * 200 * 100 )]
 
-        [TestCase( "0.0.1-alpha", false, (8 * 100 * 100) + 1 )]
-        [TestCase( "0.0.1-alpha.0.1", false, ((8 * 100 * 100) + 1) + 1 )]
-        [TestCase( "0.0.1-alpha.0.2", false, ((8 * 100 * 100) + 1) + 2 )]
-        [TestCase( "0.0.1-alpha.99.99", false, ((8 * 100 * 100) + 1) + 100 * 99 + 100 - 1 )]
-        [TestCase( "0.0.1-beta", false, ((8 * 100 * 100) + 1) + 100 * 99 + 100 )]
-        [TestCase( "0.0.1-delta", false, ((8 * 100 * 100) + 1) + 2 * (100 * 99 + 100) )]
-        [TestCase( "0.0.1-epsilon", false, ((8 * 100 * 100) + 1) + 3 * (100 * 99 + 100) )]
-        [TestCase( "0.0.1-rc", false, ((8 * 100 * 100) + 1) + 7 * (100 * 99 + 100) )]
-        [TestCase( "0.0.1-rc.99.99", false, ((8 * 100 * 100) + 1) + 7 * (100 * 99 + 100) + 100 * 99 + 99 )]
-        [TestCase( "0.0.1", false, ((8 * 100 * 100) + 1) + 8 * 100 * 100 )]
+        [TestCase( "0.0.1-alpha", false, (4 * 200 * 100) + 1 )]
+        [TestCase( "0.0.1-alpha.0.1", false, ((4 * 200 * 100) + 1) + 1 )]
+        [TestCase( "0.0.1-alpha.0.2", false, ((4 * 200 * 100) + 1) + 2 )]
+        [TestCase( "0.0.1-alpha.99.99", false, ((4 * 200 * 100) + 1) + 100 * 99 + 100 - 1 )]
+        [TestCase( "0.0.1-beta", false, ((4 * 200 * 100) + 1) + 100 * 199 + 100 )]
+        [TestCase( "0.0.1-preview", false, ((4 * 200 * 100) + 1) + 2 * (100 * 199 + 100) )]
+        [TestCase( "0.0.1-rc", false, ((4 * 200 * 100) + 1) + 3 * (100 * 199 + 100) )]
+        [TestCase( "0.0.1-rc.199.99", false, ((4 * 200 * 100) + 1) + 3 * (100 * 199 + 100) + 100 * 199 + 99 )]
+        [TestCase( "0.0.1", false, ((4 * 200 * 100) + 1) + 4 * 200 * 100 )]
 
-        [TestCase( "99999.49999.9998", true, (8 * 100 * 100) + 1 )]
-        [TestCase( "99999.49999.9999-prerelease", true, 2 * (100 * 99 + 100) )]
-        [TestCase( "99999.49999.9999-prerelease.99.99", true, 100 * 99 + 100 + 1 )]
-        [TestCase( "99999.49999.9999-rc", true, 100 * 99 + 100 )]
-        [TestCase( "99999.49999.9999-rc.99.98", true, 2 )]
-        [TestCase( "99999.49999.9999-rc.99.99", true, 1 )]
+        [TestCase( "99999.49999.9998", true, (4 * 200 * 100) + 1 )]
+        [TestCase( "99999.49999.9999-preview", true, 2 * (100 * 199 + 100) )]
+        [TestCase( "99999.49999.9999-preview.199.99", true, 100 * 199 + 100 + 1 )]
+        [TestCase( "99999.49999.9999-rc", true, 100 * 199 + 100 )]
+        [TestCase( "99999.49999.9999-rc.199.98", true, 2 )]
+        [TestCase( "99999.49999.9999-rc.199.99", true, 1 )]
         [TestCase( "99999.49999.9999", true, 0 )]
         public void checking_extreme_version_ordering( string tag, bool atEnd, int expectedRank )
         {
@@ -247,13 +246,9 @@ namespace CSemVer.Tests
                     "0.0.0-beta",
                     "0.0.0-beta.1",
                     "0.0.0-beta.1.1",
-                    "0.0.0-gamma",
-                    "0.0.0-gamma.0.1",
-                    "0.0.0-gamma.50",
-                    "0.0.0-gamma.50.20",
-                    "0.0.0-prerelease",
-                    "0.0.0-prerelease.0.1",
-                    "0.0.0-prerelease.2",
+                    "0.0.0-preview",
+                    "0.0.0-preview.0.1",
+                    "0.0.0-preview.2",
                     "0.0.0-rc",
                     "0.0.0-rc.0.1",
                     "0.0.0-rc.2",
@@ -297,7 +292,7 @@ namespace CSemVer.Tests
 
         // Same for a minor bump of 1.
         [TestCase( "4.3.0, 4.3.0-alpha, 4.3.0-rc", true, "4.2.0, 4.2.44, 4.2.3-rc.87, 4.2.3-rc.99.99, 4.2.3-rc.5.8, 4.2.3-alpha, 4.2.3-alpha.54.99, 4.2.9999" )]
-        [TestCase( "4.3.0, 4.3.0-rc", true, "4.3.0-alpha, 4.3.0-beta.99.99, 4.3.0-prerelease.99.99" )]
+        [TestCase( "4.3.0, 4.3.0-rc", true, "4.3.0-alpha, 4.3.0-beta.99.99, 4.3.0-preview.99.99" )]
 
         // Patch differs: 
         [TestCase( "4.3.2", true, "4.3.1, 4.3.2-alpha, 4.3.2-rc, 4.3.2-rc.99.99" )]
@@ -322,13 +317,13 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "0.0.0-a", "0.0.0-a00-01, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
-        [TestCase( "0.0.0-a-00-01", "0.0.0-a00-02, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
-        [TestCase( "0.0.0-r99", "0.0.0-r99-01, 0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
-        [TestCase( "0.0.0-r01-99", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
-        [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-d, 0.0.1-e, 0.0.1-g, 0.0.1-k, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-a", "0.0.0-a000-01, 0.0.1-a, 0.0.1-b, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-a000-01", "0.0.0-a000-02, 0.0.1-a, 0.0.1-b, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-r199", "0.0.0-r199-01, 0.0.1-a, 0.0.1-b, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0-r001-99", "0.0.1-a, 0.0.1-b, 0.0.1-p, 0.0.1-r, 0.0.1" )]
+        [TestCase( "0.0.0", "0.0.1-a, 0.0.1-b, 0.0.1-p, 0.0.1-r, 0.0.1" )]
 
-        [TestCase( "1.0.0", "1.0.1-a, 1.0.1-b, 1.0.1-d, 1.0.1-e, 1.0.1-g, 1.0.1-k, 1.0.1-p, 1.0.1-r, 1.0.1" )]
+        [TestCase( "1.0.0", "1.0.1-a, 1.0.1-b, 1.0.1-p, 1.0.1-r, 1.0.1" )]
 
         public void checking_next_fixes_and_predecessors( string start, string nextVersions )
         {
@@ -349,18 +344,18 @@ namespace CSemVer.Tests
             }
         }
 
-        [TestCase( "0.0.0-a", "0.0.0-a00-01", true )]
-        [TestCase( "0.0.0-a", "0.0.0-a00-02", false )]
-        [TestCase( "0.0.0-a", "0.0.0-a01", true )]
-        [TestCase( "0.0.0-a", "0.0.0-a02", false )]
+        [TestCase( "0.0.0-a", "0.0.0-a000-01", true )]
+        [TestCase( "0.0.0-a", "0.0.0-a000-02", false )]
+        [TestCase( "0.0.0-a", "0.0.0-a001", true )]
+        [TestCase( "0.0.0-a", "0.0.0-a002", false )]
         [TestCase( "0.0.0-a", "0.0.0-b", true )]
-        [TestCase( "0.0.0-a", "0.0.0-d", true )]
+        [TestCase( "0.0.0-a", "0.0.0-p", true )]
         [TestCase( "0.0.0-a", "0.0.0", true )]
         [TestCase( "0.0.0-a", "0.0.1", true )]
         [TestCase( "0.0.0-a", "0.0.2", false )]
         [TestCase( "0.0.0-a", "0.1.0", true )]
         [TestCase( "0.0.0-a", "0.2.0", false )]
-        [TestCase( "0.0.0-a", "1.0.0-a01", false )]
+        [TestCase( "0.0.0-a", "1.0.0-a001", false )]
         [TestCase( "0.0.0-a", "1.0.0-a", true )]
         [TestCase( "0.0.0-a", "1.0.0", true )]
         [TestCase( "0.0.0-a", "1.0.1", false )]
@@ -460,11 +455,11 @@ namespace CSemVer.Tests
         public void check_first_possible_versions()
         {
             string firstPossibleVersions = @"
-                        0.0.0-a, 0.0.0-b, 0.0.0-d, 0.0.0-e, 0.0.0-g, 0.0.0-k, 0.0.0-p, 0.0.0-r, 
+                        0.0.0-a, 0.0.0-b, 0.0.0-p, 0.0.0-r, 
                         0.0.0, 
-                        0.1.0-a, 0.1.0-b, 0.1.0-d, 0.1.0-e, 0.1.0-g, 0.1.0-k, 0.1.0-p, 0.1.0-r, 
+                        0.1.0-a, 0.1.0-b, 0.1.0-p, 0.1.0-r, 
                         0.1.0, 
-                        1.0.0-a, 1.0.0-b, 1.0.0-d, 1.0.0-e, 1.0.0-g, 1.0.0-k, 1.0.0-p, 1.0.0-r, 
+                        1.0.0-a, 1.0.0-b, 1.0.0-p, 1.0.0-r, 
                         1.0.0";
             var next = firstPossibleVersions.Split( ',' )
                                     .Select( v => v.Trim() )

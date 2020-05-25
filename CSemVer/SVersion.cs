@@ -31,6 +31,12 @@ namespace CSemVer
         static public readonly SVersion ZeroVersion = new SVersion( null, 0, 0, 0, "0", String.Empty, null );
 
         /// <summary>
+        /// The last SemVer version possible has <see cref="int.MaxValue"/> as its Major, Minor and Patch and has no prerelease.
+        /// It is syntaxically valid and its precedence is greater than any other <see cref="SVersion"/>.
+        /// </summary>
+        static public readonly SVersion LastVersion = new SVersion( null, int.MaxValue, int.MaxValue, int.MaxValue, prerelease: String.Empty, buildMetaData: String.Empty, csVersion: null );
+
+        /// <summary>
         /// Protected straight constructor for valid versions.
         /// No checks are done here.
         /// </summary>
@@ -117,7 +123,7 @@ namespace CSemVer
         public int Patch { get; }
 
         /// <summary>
-        /// Gets the pre-release version.
+        /// Gets the pre-release tag without the leading '-'.
         /// Normalized to the empty string when this is a Stable release or when <see cref="IsValid"/> is false.
         /// </summary>
         public string Prerelease { get; }
@@ -150,11 +156,13 @@ namespace CSemVer
                 {
                     if( _csVersion != null )
                     {
-                        return _csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
-                                ? (_csVersion.PrereleaseNameIdx < 3
-                                    ? PackageQuality.Exploratory
-                                    : PackageQuality.Preview)
-                                : PackageQuality.ReleaseCandidate;
+                        return _csVersion.PrereleaseNameIdx switch
+                        {
+                            -1 => PackageQuality.Release,
+                            CSVersion.MaxPreReleaseNameIdx => PackageQuality.ReleaseCandidate,
+                            CSVersion.MaxPreReleaseNameIdx - 1 => PackageQuality.Preview,
+                            _ => PackageQuality.Exploratory
+                        };
                     }
                     var prerelease = Prerelease;
                     if( prerelease.StartsWith( "alpha", StringComparison.OrdinalIgnoreCase )
@@ -269,7 +277,7 @@ namespace CSemVer
         {
             // Note: Waiting for .Net 5. Regex will support ReadOnlySpan<char> and so this will be the real
             //       implementation and the string version will call it.
-            var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax );
+            var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, false );
             s = s.Slice( r.Item2 );
             return r.Item1;
         }
@@ -289,14 +297,16 @@ namespace CSemVer
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
         public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
-            return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax ).Item1;
+            return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax, true ).Item1;
         }
 
-        private static (SVersion,int) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax )
+        private static (SVersion,int) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool checkLength )
         {
             if( string.IsNullOrEmpty( s ) ) return (new SVersion( "Null or empty version string.", s ), 0);
             Match m = _regExSVersion.Match( s );
-            if( !m.Success ) return (new SVersion( "Pattern not matched.", s ), 0);
+            // Checking the end of the pattern (^ equivalent). ReadOnlySpan implementation will not rely on ^
+            // sice we want to be able to parse a prefix.
+            if( !m.Success || (checkLength && s.Length > m.Length) ) return (new SVersion( "Pattern not matched.", s ), 0);
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;

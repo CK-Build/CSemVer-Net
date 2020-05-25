@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Text;
 
 namespace CSemVer
 {
-    partial class SVersionBound
+    public readonly partial struct SVersionBound
     {
         static readonly CSVersion _000Version = CSVersion.FirstPossibleVersions[CSVersion.FirstPossibleVersions.Count - 1];
 
@@ -35,79 +36,74 @@ namespace CSemVer
             return (null, 0, 0, version.ErrorMessage);
         }
 
-        static ParseResult TryMatchRangeAlone( ref ReadOnlySpan<char> s, SVersionLock defaultBound, PackageQuality quality )
+        static ParseResult TryMatchRangeAlone( ref ReadOnlySpan<char> s, SVersionLock defaultBound, bool includePreRelease )
         {
             var r = TryMatchFloatingVersion( ref s );
             if( r.Error != null ) return new ParseResult( r.Error );
-            if( r.Version != null ) return new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), false );
-            // Empty string, '*' leads to ">=0.0.0" and this excludes any prereleases for npm.
-            if( r.FMajor < 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, PackageQuality.Release ), false );
+
+            PackageQuality quality = includePreRelease ? PackageQuality.None : PackageQuality.Release;
+            if( r.Version != null )
+            {
+                return new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated: false );
+            }
+            if( r.FMajor < 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, quality ), false );
             if( r.FMinor < 0 ) return new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, 0, 0 ), SVersionLock.LockedMajor, quality ), false );
             return new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, r.FMinor, 0 ), SVersionLock.LockedMinor, quality ), false );
         }
 
-        static ParseResult TryMatchHeadRange( ParseResult? left, ref ReadOnlySpan<char> s, bool includePreRelease, bool strict )
+        static ParseResult TryMatchHeadRange( ParseResult left, ref ReadOnlySpan<char> s, bool includePreRelease )
         {
             if( TryMatch( ref s, '>' ) )
             {
-                if( !TryMatch( ref s, '=' ) )
-                {
-                    if( left == null )
-                    {
-                        if( strict ) return new ParseResult( "Unhandled comparator." );
-                        // We approximate a strict > with a >=...
-                        return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease ? PackageQuality.None : PackageQuality.Release ).SetIsApproximated( true );
-                    }
-                    Debug.Assert( left.Value.Result != null, "The left result is valid." );
-                    // There is a left: if this is one is "contained" in the left, nothing changes.
-                    var right = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease ? PackageQuality.None : PackageQuality.Release );
-                    if( right.Result == null ) return right;
-
-                    if( left.Value.Result.Contains( right.Result ) ) 
-
-                    // 
-                }
-                return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease ? PackageQuality.None : PackageQuality.Release ).SetIsApproximated( isApproximated );
+                bool isApproximated = !TryMatch( ref s, '=' );
+                // if( strict && isApproximated ) return new ParseResult( "> alone is not handled.");
+                var right = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease );
+                return left.Union( right ).EnsureIsApproximated( isApproximated );
             }
             if( TryMatch( ref s, '<' ) )
             {
                 TryMatch( ref s, '=' );
-                if( strict ) return new ParseResult( "Unhandled range: upper limit makes no sense.");
-                return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease ? PackageQuality.None : PackageQuality.Release );
+                // if( strict ) return new ParseResult( "Unhandled range: upper limit makes no sense.");
+                var forget = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease );
+                return forget.Error != null ? forget : left.EnsureIsApproximated( true );
             }
             if( TryMatch( ref s, '~' ) )
             {
-                return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockedMinor, includePreRelease ? PackageQuality.None : PackageQuality.Release );
+                return left.Union( TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockedMinor, includePreRelease ) );
             }
             if( TryMatch( ref s, '^' ) )
             {
-                var r = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockedMajor, includePreRelease ? PackageQuality.None : PackageQuality.Release );
-                if( r.Error != null ) return (null, r.Error);
-                var v = r.Result!;
-                if( v.Base.Major == 0 && v.Lock == SVersionLock.LockedMajor )
+                var r = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockedMajor, includePreRelease );
+                if( r.Error == null )
                 {
-                    v = v.SetLock( SVersionLock.LockedMinor );
-                    if( v.Base.Minor == 0 && v.Lock == SVersionLock.LockedMinor )
+                    SVersionBound v = r.Result;
+                    if( v.Base.Major == 0 && v.Lock == SVersionLock.LockedMajor )
                     {
-                        v = v.SetLock( SVersionLock.LockedPatch );
+                        v = v.SetLock( SVersionLock.LockedMinor );
+                        if( v.Base.Minor == 0 && v.Lock == SVersionLock.LockedMinor )
+                        {
+                            v = v.SetLock( SVersionLock.LockedPatch );
+                        }
+                        r = r.SetResult( v );
                     }
                 }
-                return (v, null);
+                return left.Union( r );
             }
             // '=' prefix is optional.
             if( TryMatch( ref s, '=' ) ) Trim( ref s );
-            return TryMatchRangeAlone( ref s, SVersionLock.Locked, includePreRelease ? PackageQuality.None : PackageQuality.Release );
+            return left.Union( TryMatchRangeAlone( ref s, SVersionLock.Locked, includePreRelease ) );
         }
 
-        public static ParseResult TryMatchRange( ref ReadOnlySpan<char> s, bool includePreRelease, bool strict )
+        public static ParseResult TryMatchRange( ref ReadOnlySpan<char> s, bool includePreRelease )
         {
-            var r = TryMatchHeadRange( ref s, includePreRelease, strict );
+            var r = TryMatchHeadRange( new ParseResult( SVersionBound.None, false ), ref s, includePreRelease );
             if( r.Error != null || Trim( ref s ).Length == 0 ) return r;
             if( TryMatch( ref s, '-' ) )
             {
                 // https://semver.npmjs.com/ forbids this "1.0.0 -2": there must be a space after the dash.
                 // Here, we don't care: we skip any whitespace and eat any upper bound: we simply ignore upper bound.
-                TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease ? PackageQuality.None : PackageQuality.Release );
+                TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePreRelease );
+                r = r.EnsureIsApproximated( true );
             }
             return r;
         }
@@ -119,17 +115,16 @@ namespace CSemVer
         /// <param name="includePreRelease"></param>
         /// <param name="strict"></param>
         /// <returns></returns>
-        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePreRelease, bool strict = false )
+        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePreRelease )
         {
-            var r = TryMatchRange( ref s, includePreRelease, strict );
+            var r = TryMatchRange( ref s, includePreRelease );
             if( r.Error != null || Trim( ref s ).Length == 0 ) return r;
-            while( TryMatch( ref s, '|' ) )
+            while( r.Error == null
+                    && Trim( ref s ).Length > 0
+                    && TryMatch( ref s, '|' ) )
             {
-                if( !TryMatch( ref s, '|' ) ) return (null, "Expecting '||': '|' alone is invalid.");
-                var r2 = TryMatchRange( ref Trim( ref s ), includePreRelease, strict );
-                if( r2.Error != null ) return r2;
-                r.Result = r.Result!.Union( r2.Result! );
-                Trim( ref s );
+                if( !TryMatch( ref s, '|' ) ) return new ParseResult( "Expecting '||': '|' alone is invalid." );
+                r = r.Union( TryMatchRange( ref Trim( ref s ), includePreRelease ) );
             }
             return r;
         }

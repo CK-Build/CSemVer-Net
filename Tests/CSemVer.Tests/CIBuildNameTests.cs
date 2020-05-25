@@ -43,12 +43,12 @@ namespace CSemVer.Tests
 
         [TestCase( "1.0.0" )]
         [TestCase( "1.0.0-a" )]
-        [TestCase( "1.0.0-a00-01" )]
-        [TestCase( "1.0.0-a01" )]
-        [TestCase( "1.0.0-a03" )]
-        [TestCase( "1.0.0-a03-04" )]
-        [TestCase( "1.0.0-e04-05" )]
-        [TestCase( "1.0.0-r99-99" )]
+        [TestCase( "1.0.0-a000-01" )]
+        [TestCase( "1.0.0-a001" )]
+        [TestCase( "1.0.0-a003" )]
+        [TestCase( "1.0.0-a003-04" )]
+        [TestCase( "1.0.0-p004-05" )]
+        [TestCase( "1.0.0-r199-99" )]
         [TestCase( "1.0.1" )]
         [TestCase( "1.0.9999" )]
         public void CIBuildVersion_LastReleaseBased_are_correctely_ordered( string tag )

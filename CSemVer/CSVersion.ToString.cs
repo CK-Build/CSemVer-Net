@@ -84,13 +84,13 @@ namespace CSemVer
             {
                 return longForm
                     ? String.Format( "{0}.{1}.{2}", _standardNames[preReleaseNameIdx], preReleaseNumber, preReleasePatch )
-                    : String.Format( "{0}{1:00}-{2:00}", _standardNamesI[preReleaseNameIdx], preReleaseNumber, preReleasePatch );
+                    : String.Format( "{0}{1:000}-{2:00}", _standardNamesI[preReleaseNameIdx], preReleaseNumber, preReleasePatch );
             }
             else if( preReleaseNumber > 0 )
             {
                 return longForm
                     ? String.Format( "{0}.{1}", _standardNames[preReleaseNameIdx], preReleaseNumber )
-                    : String.Format( "{0}{1:00}", _standardNamesI[preReleaseNameIdx], preReleaseNumber );
+                    : String.Format( "{0}{1:000}", _standardNamesI[preReleaseNameIdx], preReleaseNumber );
             }
             return longForm ? _standardNames[preReleaseNameIdx] : _standardNamesI[preReleaseNameIdx];
         }
@@ -141,21 +141,21 @@ namespace CSemVer
                 {
                     if( buildInfo != null )
                     {
-                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}-{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:000}-{5:00}-{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
                     }
-                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-{5:00}{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:000}-{5:00}{6}", major, minor, patch, prName, preReleaseNumber, preReleasePatch, suffix );
                 }
                 if( preReleaseNumber > 0 )
                 {
                     if( buildInfo != null )
                     {
-                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}-00-{5}", major, minor, patch, prName, preReleaseNumber, suffix );
+                        return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:000}-00-{5}", major, minor, patch, prName, preReleaseNumber, suffix );
                     }
-                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:00}{5}", major, minor, patch, prName, preReleaseNumber, suffix );
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4:000}{5}", major, minor, patch, prName, preReleaseNumber, suffix );
                 }
                 if( buildInfo != null )
                 {
-                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}00-00-{4}", major, minor, patch, prName, suffix );
+                    return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}000-00-{4}", major, minor, patch, prName, suffix );
                 }
                 return string.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}-{3}{4}", major, minor, patch, prName, suffix );
             }

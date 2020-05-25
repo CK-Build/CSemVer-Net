@@ -73,16 +73,12 @@ namespace CSemVer.Tests
         }
 
         [TestCase( "0.0.0-alpha", "0.0.0-a", false )]
-        [TestCase( "3.0.1-beta.12", "3.0.1-b12", false )]
-        [TestCase( "3.0.1-delta.1", "3.0.1-d01", false )]
-        [TestCase( "3.0.1-epsilon.18", "3.0.1-e18", false )]
-        [TestCase( "3.0.1-epsilon.18.1", "3.0.1-e18-01", true )]
-        [TestCase( "3.0.1-gamma.19", "3.0.1-g19", false )]
-        [TestCase( "3.0.1-kappa.21", "3.0.1-k21", false )]
-        [TestCase( "3.0.1-prerelease.24", "3.0.1-p24", false )]
-        [TestCase( "3.0.1-prerelease.24.99", "3.0.1-p24-99", true )]
-        [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r99", false )]
-        [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99", true )]
+        [TestCase( "3.0.1-beta.12", "3.0.1-b012", false )]
+        [TestCase( "3.0.1-beta.12.87", "3.0.1-b012-87", true )]
+        [TestCase( "3.0.1-preview.24", "3.0.1-p024", false )]
+        [TestCase( "3.0.1-preview.24.99", "3.0.1-p024-99", true )]
+        [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r099", false )]
+        [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r099-99", true )]
         public void pre_release_with_standard_names_nugetV2_mappings( string tag, string nuget, bool isPrereleasePatch )
         {
             CSVersion fromShortForm = CSVersion.Parse( nuget );
@@ -94,18 +90,14 @@ namespace CSemVer.Tests
             Assert.That( t.IsPreReleasePatch, Is.EqualTo( isPrereleasePatch ) );
             Assert.That( t.ToString( CSVersionFormat.LongForm ), Is.EqualTo( tag ) );
             Assert.That( t.ToString( CSVersionFormat.Normalized ), Is.EqualTo( nuget ) );
-            Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
+            Assert.That( SVersion.Parse( nuget ).Prerelease.Length, Is.LessThanOrEqualTo( 21 ) );
 
         }
 
-        [TestCase( "0.0.0-alpha.0.1", "0.0.0-a00-01" )]
-        [TestCase( "3.0.1-beta.12.8", "3.0.1-b12-08" )]
-        [TestCase( "3.0.1-delta.1.99", "3.0.1-d01-99" )]
-        [TestCase( "3.0.1-epsilon.18.2", "3.0.1-e18-02" )]
-        [TestCase( "3.0.1-gamma.19.4", "3.0.1-g19-04" )]
-        [TestCase( "3.0.1-kappa.1.5", "3.0.1-k01-05" )]
-        [TestCase( "3.0.1-prerelease.0.1", "3.0.1-p00-01" )]
-        [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99" )]
+        [TestCase( "0.0.0-alpha.0.1", "0.0.0-a000-01" )]
+        [TestCase( "3.0.1-beta.12.8", "3.0.1-b012-08" )]
+        [TestCase( "3.0.1-preview.0.1", "3.0.1-p000-01" )]
+        [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r099-99" )]
         public void pre_release_with_standard_names_and_fix_number_normalized_mappings( string longF, string shortF )
         {
             CSVersion tS = CSVersion.Parse( shortF );
@@ -122,7 +114,7 @@ namespace CSemVer.Tests
             Assert.That( tS.NormalizedText, Is.EqualTo( shortF ) );
             Assert.That( tL.NormalizedText, Is.EqualTo( longF ) );
             var buildInfo = tS.ToString( CSVersionFormat.Normalized, new CIBuildDescriptor() { BuildIndex = CIBuildDescriptor.MaxBuildIndex, BranchName = "ABCDEFGH" } );
-            Assert.That( SVersion.Parse( buildInfo ).Prerelease.Length, Is.LessThanOrEqualTo( 20 ) );
+            Assert.That( SVersion.Parse( buildInfo ).Prerelease.Length, Is.LessThanOrEqualTo( 21 ) );
 
         }
 

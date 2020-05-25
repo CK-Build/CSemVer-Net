@@ -113,20 +113,6 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Gets the best version for a given label or null if no such version exists.
-        /// </summary>
-        /// <param name="label">The required label.</param>
-        /// <returns>The best version or null if not found.</returns>
-        public SVersion? GetVersion( PackageLabel label ) => label switch
-        {
-            PackageLabel.Stable => Stable,
-            PackageLabel.Latest => Latest,
-            PackageLabel.Preview => Preview,
-            PackageLabel.Exploratory => Exploratory,
-            _ => CI,
-        };
-
-        /// <summary>
         /// Gets the best stable version or null if no such version exists.
         /// </summary>
         public SVersion? Stable => _sta;

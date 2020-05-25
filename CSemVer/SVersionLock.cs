@@ -7,7 +7,7 @@ namespace CSemVer
     /// Simple way to allow or forbids patch/minor/major new versions.
     /// The numeric values of these enums are from weakest (no constraint) to strongest (exact version).
     /// </summary>
-    public enum SVersionLock
+    public enum SVersionLock : byte
     {
         /// <summary>
         /// Version can be freely upgraded, no restriction apply.
@@ -97,25 +97,6 @@ namespace CSemVer
         /// </para>
         /// </summary>
         Locked = 4
-
-    }
-
-    /// <summary>
-    /// Extends SVersionLock enum.
-    /// </summary>
-    public static class SVersionLockExtension
-    {
-        /// <summary>
-        /// Merges this lock with another one: the weakest wins, merging <see cref="SVersionLock.LockedMinor"/> with <see cref="SVersionLock.Locked"/>
-        /// results in <see cref="SVersionLock.LockedMinor"/>.
-        /// </summary>
-        /// <param name="this">This lock.</param>
-        /// <param name="other">The other lock.</param>
-        /// <returns>The weakest of the two.</returns>
-        public static SVersionLock Union( this SVersionLock @this, SVersionLock other )
-        {
-            return @this < other ? other : @this;
-        }
     }
 
 }

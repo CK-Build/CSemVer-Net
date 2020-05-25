@@ -13,7 +13,7 @@ namespace CSemVer
     /// </para>
     /// </summary>
     [Flags]
-    public enum PackageQuality
+    public enum PackageQuality : byte
     {
         /// <summary>
         /// No quality level applies (invalid versions have None quality).
@@ -22,31 +22,32 @@ namespace CSemVer
 
         /// <summary>
         /// Package produced without any explicit version (all <see cref="SVersion"/>
-        /// in prerelease that are not <see cref="CSVersion"/> are CI quality).
+        /// in prerelease that are not <see cref="CSVersion"/> are CI quality by default).
         /// </summary>
         CI = 1,
 
         /// <summary>
-        /// A risky prerelease version ("alpha", "beta", "delta") that should not be used in production.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A risky prerelease version ("alpha" or "beta") that should not be used in production.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with "alpha" or "beta" (case insensitive).
         /// </summary>
         Exploratory = 2 | CI,
 
         /// <summary>
         /// A usable prerelease version ("epsilon", "gamma" or "kappa").
-        /// Applies only to <see cref="CSVersion"/>.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with "pre" (case insensitive).
+        /// This is typically "preview" or "prerelease".
         /// </summary>
         Preview = 4 | Exploratory,
 
         /// <summary>
-        /// A "-pre" (or -"prerelease") or "-rc" prerelease version.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A release candidate version is the last step before <see cref="Release"/>.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with "rc" (case insensitive).
         /// </summary>
         ReleaseCandidate = 8 | Preview,
 
         /// <summary>
-        /// An official release.
-        /// Applies to <see cref="SVersion"/> in general.
+        /// A stable, official, release.
+        /// This applies to any version with an empty <see cref="SVersion.Prerelease"/>.
         /// </summary>
         Release = 16 | ReleaseCandidate
     }
