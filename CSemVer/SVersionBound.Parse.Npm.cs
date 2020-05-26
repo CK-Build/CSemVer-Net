@@ -41,7 +41,7 @@ namespace CSemVer
             var r = TryMatchFloatingVersion( ref s );
             if( r.Error != null ) return new ParseResult( r.Error );
 
-            PackageQuality quality = includePreRelease ? PackageQuality.None : PackageQuality.Release;
+            PackageQuality quality = includePreRelease ? PackageQuality.None : PackageQuality.StableRelease;
             if( r.Version != null )
             {
                 return new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated: false );

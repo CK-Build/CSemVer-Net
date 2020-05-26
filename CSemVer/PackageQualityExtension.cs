@@ -10,7 +10,7 @@ namespace CSemVer
     public static class PackageQualityExtension
     {
         /// <summary>
-        /// Merges this quality with another one: the weakest wins, merging <see cref="PackageQuality.CI"/> and <see cref="PackageQuality.Release"/>
+        /// Merges this quality with another one: the weakest wins, merging <see cref="PackageQuality.CI"/> and <see cref="PackageQuality.StableRelease"/>
         /// results in <see cref="PackageQuality.CI"/>.
         /// </summary>
         /// <param name="this">This quality.</param>

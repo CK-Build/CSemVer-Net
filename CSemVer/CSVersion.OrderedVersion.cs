@@ -40,11 +40,11 @@ namespace CSemVer
         /// <summary>
         /// The maximum number of prereleases is also the index of the "rc" entry in <see cref="StandardPrereleaseNames"/>.
         /// </summary>
-        public const int MaxPreReleaseNameIdx = 3;
+        public const int MaxPreReleaseNameIdx = 7;
         /// <summary>
         /// The maximum number of prereleases.
         /// </summary>
-        public const int MaxPreReleaseNumber = 199;
+        public const int MaxPreReleaseNumber = 99;
         /// <summary>
         /// The maximum number of fixes to a pre-release.
         /// </summary>
@@ -57,9 +57,9 @@ namespace CSemVer
                                        * (MaxPreReleaseNumber + 1L)
                                        * (MaxPreReleasePatch + 1L));
 
-        static readonly string[] _standardNames = new[] { "alpha", "beta", "preview", "rc" };
-        static readonly string[] _standardNamesI = new[] { "a", "b", "p", "r" };
-        static readonly char[] _standardNamesC = new[] { 'a', 'b', 'p', 'r' };
+        static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "preview", "rc" };
+        static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
+        static readonly char[] _standardNamesC = new[] { 'a', 'b', 'd', 'e', 'g', 'k', 'p', 'r' };
 
         const long MulNum = MaxPreReleasePatch + 1;
         const long MulName = MulNum * (MaxPreReleaseNumber + 1);
@@ -99,14 +99,14 @@ namespace CSemVer
 
         static IReadOnlyList<CSVersion> BuildFirstPossibleVersions()
         {
-            var versions = new CSVersion[3 * 5];
+            var versions = new CSVersion[3 * 9];
             long v = 1L;
             int i = 0;
-            while( i < 3 * 5 )
+            while( i < 3 * 9 )
             {
                 versions[i++] = Create( v );
-                if( (i % 10) == 0 ) v += MulMajor - MulMinor - MulPatch + 1;
-                else if( (i % 5) == 0 ) v += MulMinor - MulPatch + 1;
+                if( (i % 18) == 0 ) v += MulMajor - MulMinor - MulPatch + 1;
+                else if( (i % 9) == 0 ) v += MulMinor - MulPatch + 1;
                 else v += MulName;
             }
             return versions;

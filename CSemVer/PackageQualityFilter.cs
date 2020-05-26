@@ -5,7 +5,7 @@ namespace CSemVer
     /// <summary>
     /// Defines a "Min-Max" (this is the string representation) filter of <see cref="PackageQuality"/>.
     /// By default, this filter accepts everything (<see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.CI"/> for <see cref="Min"/>
-    /// and the same as <see cref="PackageQuality.Release"/> for <see cref="Max"/>).
+    /// and the same as <see cref="PackageQuality.StableRelease"/> for <see cref="Max"/>).
     /// </summary>
     public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
     {
@@ -14,9 +14,8 @@ namespace CSemVer
         /// </summary>
         public PackageQuality Min { get; }
 
-
         /// <summary>
-        /// Gets the maximal package quality. <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.Release"/>.
+        /// Gets the maximal package quality. <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.StableRelease"/>.
         /// </summary>
         public PackageQuality Max { get; }
 
@@ -26,9 +25,9 @@ namespace CSemVer
         public bool HasMin => Min != PackageQuality.None && Min != PackageQuality.CI;
 
         /// <summary>
-        /// Gets whether <see cref="Max"/> is relevant (not <see cref="PackageQuality.None"/> nor <see cref="PackageQuality.Release"/>).
+        /// Gets whether <see cref="Max"/> is relevant (not <see cref="PackageQuality.None"/> nor <see cref="PackageQuality.StableRelease"/>).
         /// </summary>
-        public bool HasMax => Max != PackageQuality.None && Max != PackageQuality.Release;
+        public bool HasMax => Max != PackageQuality.None && Max != PackageQuality.StableRelease;
 
         /// <summary>
         /// Gets whether this filter allows the specified quality.
@@ -84,7 +83,7 @@ namespace CSemVer
         /// <summary>
         /// Attempts to parse a string as a <see cref="PackageQualityFilter"/>.
         /// Examples:
-        /// "Release" (is the same as "Release-Release"): only <see cref="PackageQuality.Release"/> is accepted
+        /// "Release" (is the same as "Release-Release"): only <see cref="PackageQuality.StableRelease"/> is accepted
         /// "CI-Release" (is the same as "-Release" or "CI-" or ""): everything is accepted.
         /// "-ReleaseCandidate" (same as "CI-ReleaseCandidate"): everything except Release.
         /// "Exploratory-Preview": No CI, ReleaseCandidate, nor Release.
@@ -112,7 +111,7 @@ namespace CSemVer
             }
             else if( minMax.Length == 2
                 && TryParse( minMax[0], out PackageQuality min, PackageQuality.CI )
-                && TryParse( minMax[1], out PackageQuality max, PackageQuality.Release ) )
+                && TryParse( minMax[1], out PackageQuality max, PackageQuality.StableRelease ) )
             {
                 q = new PackageQualityFilter( min, max );
                 return true;
@@ -124,8 +123,15 @@ namespace CSemVer
         static bool TryParse( string s, out PackageQuality q, PackageQuality def )
         {
             q = def;
-            if( s.Length == 0 ) return true;
-            return Enum.TryParse( s, out q );
+            if( s.Length != 0 && !Enum.TryParse( s, true, out q ) )
+            {
+                if( s.Equals( "Stable", StringComparison.OrdinalIgnoreCase )
+                    || s.Equals( "Release", StringComparison.OrdinalIgnoreCase ) )
+                {
+                    q = PackageQuality.StableRelease;
+                }
+            }
+            return true;
         }
 
         /// <summary>

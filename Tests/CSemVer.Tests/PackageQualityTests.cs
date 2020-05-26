@@ -14,10 +14,10 @@ namespace CSemVer.Tests
         [TestCase( "Not a version", PackageQuality.None )]
         [TestCase( "0.0.0-0", PackageQuality.CI )]
         [TestCase( "1.2.3-not-a-CSemVer", PackageQuality.CI )]
-        [TestCase( "9999999.2.3", PackageQuality.Release )]
-        [TestCase( "99999999.999999999.999999999", PackageQuality.Release )]
-        [TestCase( "0.0.0", PackageQuality.Release )]
-        [TestCase( "0.0.1", PackageQuality.Release )]
+        [TestCase( "9999999.2.3", PackageQuality.StableRelease )]
+        [TestCase( "99999999.999999999.999999999", PackageQuality.StableRelease )]
+        [TestCase( "0.0.0", PackageQuality.StableRelease )]
+        [TestCase( "0.0.1", PackageQuality.StableRelease )]
         [TestCase( "0.0.0-alpha", PackageQuality.Exploratory )]
         [TestCase( "0.0.0-alpha.1", PackageQuality.Exploratory )]
         [TestCase( "0.0.0-alpha.1.1", PackageQuality.Exploratory )]
@@ -35,7 +35,6 @@ namespace CSemVer.Tests
         {
             SVersion.TryParse( version ).PackageQuality.Should().Be( q );
         }
-
 
         [TestCase( "Release", "Release-Release" )]
         [TestCase( "Release-", "Release-Release" )]

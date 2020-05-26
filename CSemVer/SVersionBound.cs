@@ -15,6 +15,10 @@ namespace CSemVer
     /// and <see cref="All"/> is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the lowest element
     /// of the set.
     /// </para>
+    /// <para>
+    /// Mathematically the set of SVersionBound and the Union operation is a bounded meet semilattice that has an identity
+    /// element (the <see cref="None"/>) and an absorbing element (the <see cref="All"/>).
+    /// </para>
     /// </summary>
     public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     {
@@ -30,11 +34,11 @@ namespace CSemVer
 
         /// <summary>
         /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
-        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.Release"/>): <see cref="Satisfy(in SVersion)"/> is
+        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.StableRelease"/>): <see cref="Satisfy(in SVersion)"/> is
         /// true only for the last version.
         /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation.
         /// </summary>
-        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.Release );
+        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.StableRelease );
 
         /// <summary>
         /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true

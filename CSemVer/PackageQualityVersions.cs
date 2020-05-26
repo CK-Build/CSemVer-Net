@@ -25,14 +25,14 @@ namespace CSemVer
         /// Initializes a new <see cref="PackageQualityVersions"/> from a set of versions.
         /// </summary>
         /// <param name="versions">Set of available versions.</param>
-        /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.Release"/> has been met.</param>
+        /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.StableRelease"/> has been met.</param>
         public PackageQualityVersions( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
         {
             _ci = _exp = _pre = _lat = _sta = null;
             foreach( var v in versions )
             {
                 Apply( v, ref _ci, ref _exp, ref _pre, ref _lat, ref _sta );
-                if( versionsAreOrdered && v.PackageQuality == PackageQuality.Release ) break;
+                if( versionsAreOrdered && v.PackageQuality == PackageQuality.StableRelease ) break;
             }
         }
 
@@ -69,7 +69,7 @@ namespace CSemVer
             {
                 switch( v.PackageQuality )
                 {
-                    case PackageQuality.Release: if( v > sta ) sta = v; goto case PackageQuality.ReleaseCandidate;
+                    case PackageQuality.StableRelease: if( v > sta ) sta = v; goto case PackageQuality.ReleaseCandidate;
                     case PackageQuality.ReleaseCandidate: if( v > lat ) lat = v; goto case PackageQuality.Preview;
                     case PackageQuality.Preview: if( v > pre ) pre = v; goto case PackageQuality.Exploratory;
                     case PackageQuality.Exploratory: if( v > exp ) exp = v; goto default;
@@ -104,7 +104,7 @@ namespace CSemVer
         {
             return quality switch
             {
-                PackageQuality.Release => Stable,
+                PackageQuality.StableRelease => Stable,
                 PackageQuality.ReleaseCandidate => Latest,
                 PackageQuality.Preview => Preview,
                 PackageQuality.Exploratory => Exploratory,

@@ -129,6 +129,17 @@ namespace CSemVer
         public string Prerelease { get; }
 
         /// <summary>
+        /// Gets whether this is a prerelease: a prerelease -tag exists.
+        /// If this version is valid and is not a prerelease then this is a Stable release.
+        /// </summary>
+        public bool IsPrerelease => Prerelease.Length > 0;
+
+        /// <summary>
+        /// Gets whether this is a Stable release (valid and not a prerelease).
+        /// </summary>
+        public bool IsStable => IsValid && Prerelease.Length == 0;
+
+        /// <summary>
         /// Gets the build meta data (without the leading '+').
         /// Never null, always normalized to the empty string.
         /// </summary>
@@ -156,22 +167,30 @@ namespace CSemVer
                 {
                     if( _csVersion != null )
                     {
-                        return _csVersion.PrereleaseNameIdx switch
-                        {
-                            -1 => PackageQuality.Release,
-                            CSVersion.MaxPreReleaseNameIdx => PackageQuality.ReleaseCandidate,
-                            CSVersion.MaxPreReleaseNameIdx - 1 => PackageQuality.Preview,
-                            _ => PackageQuality.Exploratory
-                        };
+                        return _csVersion.PrereleaseNameIdx == CSVersion.MaxPreReleaseNameIdx
+                                ? PackageQuality.ReleaseCandidate
+                                : (_csVersion.PrereleaseNameIdx < CSVersion.MaxPreReleaseNameIdx - 1
+                                    ? PackageQuality.Exploratory
+                                    : PackageQuality.Preview);
                     }
+                    Debug.Assert( CSVersion.StandardPrereleaseNames[0] == "alpha"
+                                  && CSVersion.StandardPrereleaseNames[1] == "beta"
+                                  && CSVersion.StandardPrereleaseNames[2] == "delta"
+                                  && CSVersion.StandardPrereleaseNames[3] == "epsilon"
+                                  && CSVersion.StandardPrereleaseNames[4] == "gamma"
+                                  && CSVersion.StandardPrereleaseNames[5] == "kappa" );
                     var prerelease = Prerelease;
                     if( prerelease.StartsWith( "alpha", StringComparison.OrdinalIgnoreCase )
-                        || prerelease.StartsWith( "beta", StringComparison.OrdinalIgnoreCase ) ) return PackageQuality.Exploratory;
+                        || prerelease.StartsWith( "beta", StringComparison.OrdinalIgnoreCase )
+                        || prerelease.StartsWith( "delta", StringComparison.OrdinalIgnoreCase )
+                        || prerelease.StartsWith( "epsilon", StringComparison.OrdinalIgnoreCase )
+                        || prerelease.StartsWith( "gamma", StringComparison.OrdinalIgnoreCase )
+                        || prerelease.StartsWith( "kappa", StringComparison.OrdinalIgnoreCase ) ) return PackageQuality.Exploratory;
                     if( prerelease.StartsWith( "pre" ) ) return PackageQuality.Preview;
                     if( prerelease.StartsWith( "rc" ) ) return PackageQuality.ReleaseCandidate;
                     return PackageQuality.CI;
                 }
-                return PackageQuality.Release;
+                return PackageQuality.StableRelease;
             }
         }
 

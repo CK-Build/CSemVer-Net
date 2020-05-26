@@ -28,7 +28,7 @@ namespace CSemVer
                 prName = m.Groups[1].Value;
                 if( !m.Success || prName.Length == 0 )
                 {
-                    return "CSVersion prerelease name must match a|b|p|r|alpha|beta|pre(view|release)?|rc.";
+                    return "CSVersion prerelease name must match a|b|d|e|g|k|p|r|alpha|beta|delta|epsilon|gamma|kappa|pre(view|release)?|rc.";
                 }
                 longForm = prName.Length > 1;
                 prNameIdx = prName.Length == 0 ? -1 : Array.IndexOf( _standardNamesC, Char.ToLowerInvariant( prName[0] ) );
