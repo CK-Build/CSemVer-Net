@@ -34,11 +34,11 @@ namespace CSemVer
 
         /// <summary>
         /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
-        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.StableRelease"/>): <see cref="Satisfy(in SVersion)"/> is
+        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion)"/> is
         /// true only for the last version.
         /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation.
         /// </summary>
-        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.StableRelease );
+        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.Stable );
 
         /// <summary>
         /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true

@@ -18,7 +18,7 @@ namespace CSemVer
         static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(view|release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
-        /// Gets the standard pre release name among <see cref="StandardPrereleaseNames"/>.
+        /// Gets the standard, normalized, pre release name among <see cref="StandardPrereleaseNames"/>.
         /// <see cref="string.Empty"/> when this is not a pre release version.
         /// </summary>
         public string PrereleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;

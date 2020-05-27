@@ -14,10 +14,10 @@ namespace CSemVer.Tests
         [TestCase( "Not a version", PackageQuality.None )]
         [TestCase( "0.0.0-0", PackageQuality.CI )]
         [TestCase( "1.2.3-not-a-CSemVer", PackageQuality.CI )]
-        [TestCase( "9999999.2.3", PackageQuality.StableRelease )]
-        [TestCase( "99999999.999999999.999999999", PackageQuality.StableRelease )]
-        [TestCase( "0.0.0", PackageQuality.StableRelease )]
-        [TestCase( "0.0.1", PackageQuality.StableRelease )]
+        [TestCase( "9999999.2.3", PackageQuality.Stable )]
+        [TestCase( "99999999.999999999.999999999", PackageQuality.Stable )]
+        [TestCase( "0.0.0", PackageQuality.Stable )]
+        [TestCase( "0.0.1", PackageQuality.Stable )]
         [TestCase( "0.0.0-alpha", PackageQuality.Exploratory )]
         [TestCase( "0.0.0-alpha.1", PackageQuality.Exploratory )]
         [TestCase( "0.0.0-alpha.1.1", PackageQuality.Exploratory )]
@@ -36,12 +36,15 @@ namespace CSemVer.Tests
             SVersion.TryParse( version ).PackageQuality.Should().Be( q );
         }
 
-        [TestCase( "Release", "Release-Release" )]
-        [TestCase( "Release-", "Release-Release" )]
-        [TestCase( "-Release", "CI-Release" )]
+        [TestCase( "Release", "Stable-Stable" )]
+        [TestCase( "Release-", "Stable-Stable" )]
+        [TestCase( "-Release", "CI-Stable" )]
         [TestCase( "-CI", "CI-CI" )]
         [TestCase( "-ReleaseCandidate", "CI-ReleaseCandidate" )]
+        [TestCase( "stable-RC", "ReleaseCandidate-Stable" )]
+        [TestCase( "release-rc", "ReleaseCandidate-Stable" )]
         [TestCase( "Preview-Exploratory", "Exploratory-Preview" )]
+        [TestCase( "Pre-Exp", "Exploratory-Preview" )]
         [TestCase( "-", "None-None" )]
         [TestCase( "", "None-None" )]
         public void PackageQualityFilter_tests( string form1, string form2 )

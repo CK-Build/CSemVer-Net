@@ -5,7 +5,7 @@ namespace CSemVer
     /// <summary>
     /// Defines a "Min-Max" (this is the string representation) filter of <see cref="PackageQuality"/>.
     /// By default, this filter accepts everything (<see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.CI"/> for <see cref="Min"/>
-    /// and the same as <see cref="PackageQuality.StableRelease"/> for <see cref="Max"/>).
+    /// and the same as <see cref="PackageQuality.Stable"/> for <see cref="Max"/>).
     /// </summary>
     public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
     {
@@ -15,7 +15,7 @@ namespace CSemVer
         public PackageQuality Min { get; }
 
         /// <summary>
-        /// Gets the maximal package quality. <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.StableRelease"/>.
+        /// Gets the maximal package quality. <see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.Stable"/>.
         /// </summary>
         public PackageQuality Max { get; }
 
@@ -25,9 +25,9 @@ namespace CSemVer
         public bool HasMin => Min != PackageQuality.None && Min != PackageQuality.CI;
 
         /// <summary>
-        /// Gets whether <see cref="Max"/> is relevant (not <see cref="PackageQuality.None"/> nor <see cref="PackageQuality.StableRelease"/>).
+        /// Gets whether <see cref="Max"/> is relevant (not <see cref="PackageQuality.None"/> nor <see cref="PackageQuality.Stable"/>).
         /// </summary>
-        public bool HasMax => Max != PackageQuality.None && Max != PackageQuality.StableRelease;
+        public bool HasMax => Max != PackageQuality.None && Max != PackageQuality.Stable;
 
         /// <summary>
         /// Gets whether this filter allows the specified quality.
@@ -83,7 +83,7 @@ namespace CSemVer
         /// <summary>
         /// Attempts to parse a string as a <see cref="PackageQualityFilter"/>.
         /// Examples:
-        /// "Release" (is the same as "Release-Release"): only <see cref="PackageQuality.StableRelease"/> is accepted
+        /// "Release" (is the same as "Release-Release"): only <see cref="PackageQuality.Stable"/> is accepted
         /// "CI-Release" (is the same as "-Release" or "CI-" or ""): everything is accepted.
         /// "-ReleaseCandidate" (same as "CI-ReleaseCandidate"): everything except Release.
         /// "Exploratory-Preview": No CI, ReleaseCandidate, nor Release.
@@ -93,6 +93,16 @@ namespace CSemVer
         /// <returns>True on success, false on error.</returns>
         public static bool TryParse( string s, out PackageQualityFilter q )
         {
+            static bool TryParseWithDefaultEmpty( string s, out PackageQuality q, PackageQuality def )
+            {
+                if( s.Length == 0 )
+                {
+                    q = def;
+                    return true;
+                }
+                return PackageQualityExtension.TryParse( s, out q );
+            }
+
             var minMax = s.Replace( " ", "" )
                           .Split( '-' );
             if( minMax.Length == 1 )
@@ -103,35 +113,21 @@ namespace CSemVer
                     q = new PackageQualityFilter();
                     return true;
                 }
-                if( TryParse( only, out PackageQuality both, PackageQuality.None ) )
+                if( PackageQualityExtension.TryParse( only, out PackageQuality both ) )
                 {
                     q = new PackageQualityFilter( both, both );
                     return true;
                 }
             }
             else if( minMax.Length == 2
-                && TryParse( minMax[0], out PackageQuality min, PackageQuality.CI )
-                && TryParse( minMax[1], out PackageQuality max, PackageQuality.StableRelease ) )
+                && TryParseWithDefaultEmpty( minMax[0], out PackageQuality min, PackageQuality.CI )
+                && TryParseWithDefaultEmpty( minMax[1], out PackageQuality max, PackageQuality.Stable ) )
             {
                 q = new PackageQualityFilter( min, max );
                 return true;
             }
             q = new PackageQualityFilter();
             return false;
-        }
-
-        static bool TryParse( string s, out PackageQuality q, PackageQuality def )
-        {
-            q = def;
-            if( s.Length != 0 && !Enum.TryParse( s, true, out q ) )
-            {
-                if( s.Equals( "Stable", StringComparison.OrdinalIgnoreCase )
-                    || s.Equals( "Release", StringComparison.OrdinalIgnoreCase ) )
-                {
-                    q = PackageQuality.StableRelease;
-                }
-            }
-            return true;
         }
 
         /// <summary>

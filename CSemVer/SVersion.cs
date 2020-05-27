@@ -190,7 +190,7 @@ namespace CSemVer
                     if( prerelease.StartsWith( "rc" ) ) return PackageQuality.ReleaseCandidate;
                     return PackageQuality.CI;
                 }
-                return PackageQuality.StableRelease;
+                return PackageQuality.Stable;
             }
         }
 
