@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace CSemVer
 {
     /// <summary>
-    /// Immutable base <see cref="Base"/> valid version that is the inclusive minimum acceptable <see cref="PackageQuality"/>
+    /// Immutable <see cref="Base"/> valid version that is the inclusive minimum acceptable <see cref="PackageQuality"/>
     /// and an optional <see cref="Lock"/> to the Base's components.
     /// <para>
     /// This aims to define a sensible response to one of the dependency management issue: how to specify "version ranges".
@@ -16,8 +16,8 @@ namespace CSemVer
     /// of the set.
     /// </para>
     /// <para>
-    /// Mathematically the set of SVersionBound and the Union operation is a bounded meet semilattice that has an identity
-    /// element (the <see cref="None"/>) and an absorbing element (the <see cref="All"/>).
+    /// Mathematically the set of SVersionBound and the Union operation is a bounded meet semilattice (see https://en.wikipedia.org/wiki/Semilattice)
+    /// that has an identity element (the <see cref="None"/>) and an absorbing element (the <see cref="All"/>).
     /// </para>
     /// </summary>
     public readonly partial struct SVersionBound : IEquatable<SVersionBound>
@@ -164,6 +164,22 @@ namespace CSemVer
         /// </summary>
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => Base.GetHashCode() ^ ((int)MinQuality << 13) ^ ((int)Lock << 26);
+
+        /// <summary>
+        /// Support == operator.
+        /// </summary>
+        /// <param name="b1">The left bound.</param>
+        /// <param name="b2">The right bound.</param>
+        /// <returns>True if equal, false otherwise.</returns>
+        public static bool operator ==( in SVersionBound b1, in SVersionBound b2 ) => b1.Equals( b2 );
+
+        /// <summary>
+        /// Support != operator.
+        /// </summary>
+        /// <param name="b1">The left bound.</param>
+        /// <param name="b2">The right bound.</param>
+        /// <returns>True if different, false when the are equal.</returns>
+        public static bool operator !=( in SVersionBound b1, in SVersionBound b2 ) => !b1.Equals( b2 );
 
         /// <summary>
         /// Overridden to return the base version and the restrictions.

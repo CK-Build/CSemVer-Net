@@ -19,7 +19,7 @@ namespace CSemVer.Tests
         public void collecting_best_version( string versions, string result )
         {
             var v = versions.Split( ',' ).Select( x => SVersion.Parse( x.Trim() ) ).ToArray();
-            var q = new PackageQualityVersions(v, false);
+            var q = new PackageQualityVector(v, false);
             q.ToString().Should().Be( result );
         }
 
@@ -37,7 +37,7 @@ namespace CSemVer.Tests
         public void collecting_multiple_versions( string versions, string result )
         {
             var v = versions.Split( ',' ).Select( x => SVersion.Parse( x.Trim() ) ).ToArray();
-            var q = new PackageQualityVersions( v, false );
+            var q = new PackageQualityVector( v, false );
             q.ToString().Should().Be( result );
         }
 

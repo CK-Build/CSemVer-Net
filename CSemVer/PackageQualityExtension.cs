@@ -38,7 +38,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="this">This quality.</param>
         /// <returns>This quality followed by its lowest ones.</returns>
-        public static IReadOnlyList<PackageQuality> GetPackageQualities( this PackageQuality @this ) => _map[(int)@this];
+        public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this ) => _map[(int)@this];
 
         /// <summary>
         /// Tries to parse a text <see cref="PackageQuality"/>. The parsing is case insensitive and supports synonyms, supported forms are:

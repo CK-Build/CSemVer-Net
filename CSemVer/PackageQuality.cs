@@ -10,7 +10,7 @@ namespace CSemVer
     /// Numerical values of these 5 levels are ordered from the less restrictive (CI) to the most one (Release).
     /// These values can also be used as bitflags (most restrictive values "cover" less restrictive ones). This brings nothing on
     /// the table except that this express the fact that a Release version "superseds" a Preview that itself "superseds" a CI version:
-    /// see <see cref="PackageQualityExtension.GetPackageQualities(PackageQuality)"/> extension method that provides the lower qualities.
+    /// see <see cref="PackageQualityExtension.GetAllQualities(PackageQuality)"/> extension method that provides the lower qualities.
     /// </para>
     /// </summary>
     [Flags]

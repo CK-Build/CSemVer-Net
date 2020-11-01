@@ -13,7 +13,7 @@ namespace CSemVer
     /// When all 5 versions are null then <see cref="IsValid"/> is false: as long as at least a <see cref="CI"/> version
     /// is specified, this is valid.
     /// </summary>
-    public readonly struct PackageQualityVersions : IEnumerable<SVersion>
+    public readonly struct PackageQualityVector : IEnumerable<SVersion>
     {
         readonly SVersion? _sta;
         readonly SVersion? _rc;
@@ -22,11 +22,11 @@ namespace CSemVer
         readonly SVersion? _ci;
 
         /// <summary>
-        /// Initializes a new <see cref="PackageQualityVersions"/> from a set of versions.
+        /// Initializes a new <see cref="PackageQualityVector"/> from a set of versions.
         /// </summary>
         /// <param name="versions">Set of available versions.</param>
         /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.Stable"/> has been met.</param>
-        public PackageQualityVersions( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
+        public PackageQualityVector( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
         {
             _ci = _exp = _pre = _rc = _sta = null;
             foreach( var v in versions )
@@ -37,7 +37,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Initializes a new <see cref="PackageQualityVersions"/> with known best versions.
+        /// Initializes a new <see cref="PackageQualityVector"/> with known best versions.
         /// (this is a low level constructor that does not test/ensure anything).
         /// </summary>
         /// <param name="ci">The current best CI version.</param>
@@ -45,7 +45,7 @@ namespace CSemVer
         /// <param name="pre">The current best Preview version.</param>
         /// <param name="rc">The current best ReleaseCandidate version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public PackageQualityVersions( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? rc, SVersion? sta )
+        public PackageQualityVector( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? rc, SVersion? sta )
         {
             _ci = ci;
             _exp = exp;
@@ -78,7 +78,7 @@ namespace CSemVer
             }
         }
 
-        PackageQualityVersions( PackageQualityVersions q, SVersion v )
+        PackageQualityVector( PackageQualityVector q, SVersion v )
         {
             Debug.Assert( v?.IsValid ?? false, "v must be not null and valid." );
             _ci = q.CI;
@@ -90,7 +90,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Gets whether this <see cref="PackageQualityVersions"/> is valid: at least <see cref="CI"/>
+        /// Gets whether this <see cref="PackageQualityVector"/> is valid: at least <see cref="CI"/>
         /// is available.
         /// </summary>
         public bool IsValid => CI != null;
@@ -138,26 +138,26 @@ namespace CSemVer
         public SVersion? CI => _ci;
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVersions"/> or a new one that combines a new version.
+        /// Retuns this <see cref="PackageQualityVector"/> or a new one that combines a new version.
         /// </summary>
         /// <param name="v">Version to handle. May be null or invalid.</param>
         /// <returns>The QualityVersions.</returns>
-        public PackageQualityVersions WithVersion( SVersion v )
+        public PackageQualityVector WithVersion( SVersion v )
         {
             if( v == null || !v.IsValid ) return this;
-            return IsValid ? new PackageQualityVersions( this, v ) : new PackageQualityVersions( new[] { v } );
+            return IsValid ? new PackageQualityVector( this, v ) : new PackageQualityVector( new[] { v } );
         }
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVersions"/> or a new one combined with another one.
+        /// Retuns this <see cref="PackageQualityVector"/> or a new one combined with another one.
         /// </summary>
         /// <param name="other">Other versions to be combined.</param>
         /// <returns>The resulting QualityVersions.</returns>
-        public PackageQualityVersions With( PackageQualityVersions other )
+        public PackageQualityVector With( PackageQualityVector other )
         {
             if( !IsValid ) return other;
             if( !other.IsValid ) return this;
-            return new PackageQualityVersions( other.Concat( this ) );
+            return new PackageQualityVector( other.Concat( this ) );
         }
 
         /// <summary>
