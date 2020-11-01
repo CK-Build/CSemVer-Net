@@ -16,7 +16,7 @@ namespace CSemVer
     public readonly struct PackageQualityVersions : IEnumerable<SVersion>
     {
         readonly SVersion? _sta;
-        readonly SVersion? _lat;
+        readonly SVersion? _rc;
         readonly SVersion? _pre;
         readonly SVersion? _exp;
         readonly SVersion? _ci;
@@ -28,10 +28,10 @@ namespace CSemVer
         /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.Stable"/> has been met.</param>
         public PackageQualityVersions( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
         {
-            _ci = _exp = _pre = _lat = _sta = null;
+            _ci = _exp = _pre = _rc = _sta = null;
             foreach( var v in versions )
             {
-                Apply( v, ref _ci, ref _exp, ref _pre, ref _lat, ref _sta );
+                Apply( v, ref _ci, ref _exp, ref _pre, ref _rc, ref _sta );
                 if( versionsAreOrdered && v.PackageQuality == PackageQuality.Stable ) break;
             }
         }
@@ -43,14 +43,14 @@ namespace CSemVer
         /// <param name="ci">The current best CI version.</param>
         /// <param name="exp">The current best Exploratory version.</param>
         /// <param name="pre">The current best Preview version.</param>
-        /// <param name="lat">The current best Latest version.</param>
+        /// <param name="rc">The current best ReleaseCandidate version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public PackageQualityVersions( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? lat, SVersion? sta )
+        public PackageQualityVersions( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? rc, SVersion? sta )
         {
             _ci = ci;
             _exp = exp;
             _pre = pre;
-            _lat = lat;
+            _rc = rc;
             _sta = sta;
         }
 
@@ -61,16 +61,16 @@ namespace CSemVer
         /// <param name="ci">The current best CI version.</param>
         /// <param name="exp">The current best Exploratory version.</param>
         /// <param name="pre">The current best Preview version.</param>
-        /// <param name="lat">The current best Latest version.</param>
+        /// <param name="rc">The current best ReleaseCandidate version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public static void Apply( SVersion v, [AllowNull]ref SVersion ci, ref SVersion? exp, ref SVersion? pre, ref SVersion? lat, ref SVersion? sta )
+        public static void Apply( SVersion v, [AllowNull]ref SVersion ci, ref SVersion? exp, ref SVersion? pre, ref SVersion? rc, ref SVersion? sta )
         {
             if( v != null && v.IsValid )
             {
                 switch( v.PackageQuality )
                 {
                     case PackageQuality.Stable: if( v > sta ) sta = v; goto case PackageQuality.ReleaseCandidate;
-                    case PackageQuality.ReleaseCandidate: if( v > lat ) lat = v; goto case PackageQuality.Preview;
+                    case PackageQuality.ReleaseCandidate: if( v > rc ) rc = v; goto case PackageQuality.Preview;
                     case PackageQuality.Preview: if( v > pre ) pre = v; goto case PackageQuality.Exploratory;
                     case PackageQuality.Exploratory: if( v > exp ) exp = v; goto default;
                     default: if( v > ci ) ci = v; break;
@@ -84,9 +84,9 @@ namespace CSemVer
             _ci = q.CI;
             _exp = q.Exploratory;
             _pre = q.Preview;
-            _lat = q.Latest;
+            _rc = q.ReleaseCandidate;
             _sta = q.Stable;
-            Apply( v, ref _ci, ref _exp, ref _pre, ref _lat, ref _sta );
+            Apply( v, ref _ci, ref _exp, ref _pre, ref _rc, ref _sta );
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace CSemVer
             return quality switch
             {
                 PackageQuality.Stable => Stable,
-                PackageQuality.ReleaseCandidate => Latest,
+                PackageQuality.ReleaseCandidate => ReleaseCandidate,
                 PackageQuality.Preview => Preview,
                 PackageQuality.Exploratory => Exploratory,
                 _ => CI,
@@ -118,9 +118,9 @@ namespace CSemVer
         public SVersion? Stable => _sta;
 
         /// <summary>
-        /// Gets the best latest compatible version or null if no such version exists.
+        /// Gets the best ReleaseCandidate compatible version or null if no such version exists.
         /// </summary>
-        public SVersion? Latest => _lat;
+        public SVersion? ReleaseCandidate => _rc;
 
         /// <summary>
         /// Gets the best preview compatible version or null if no such version exists.
@@ -177,11 +177,11 @@ namespace CSemVer
             {
                 b.Append( " / " ).Append( Preview.ToString() );
             }
-            if( Latest != null && Latest != Preview )
+            if( ReleaseCandidate != null && ReleaseCandidate != Preview )
             {
-                b.Append( " / " ).Append( Latest.ToString() );
+                b.Append( " / " ).Append( ReleaseCandidate.ToString() );
             }
-            if( Stable != null && Stable != Latest )
+            if( Stable != null && Stable != ReleaseCandidate )
             {
                 b.Append( " / " ).Append( Stable.ToString() );
             }
@@ -189,7 +189,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Returns the distinct CI, Exploratory, Preview, Latest, Stable (in this order) as long as they are not null.
+        /// Returns the distinct CI, Exploratory, Preview, ReleaseCandidate, Stable (in this order) as long as they are not null.
         /// </summary>
         /// <returns>The set of distinct versions (empty if <see cref="IsValid"/> is false).</returns>
         public IEnumerator<SVersion> GetEnumerator()
@@ -203,10 +203,10 @@ namespace CSemVer
                     if( Preview != null )
                     {
                         if( Preview != Exploratory ) yield return Preview;
-                        if( Latest != null )
+                        if( ReleaseCandidate != null )
                         {
-                            if( Latest != Preview ) yield return Latest;
-                            if( Stable != null && Stable != Latest )
+                            if( ReleaseCandidate != Preview ) yield return ReleaseCandidate;
+                            if( Stable != null && Stable != ReleaseCandidate )
                             {
                                 yield return Stable;
                             }
