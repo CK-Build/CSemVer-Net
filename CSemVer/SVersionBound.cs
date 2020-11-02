@@ -15,10 +15,6 @@ namespace CSemVer
     /// and <see cref="All"/> is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the lowest element
     /// of the set.
     /// </para>
-    /// <para>
-    /// Mathematically the set of SVersionBound and the Union operation is a bounded meet semilattice (see https://en.wikipedia.org/wiki/Semilattice)
-    /// that has an identity element (the <see cref="None"/>) and an absorbing element (the <see cref="All"/>).
-    /// </para>
     /// </summary>
     public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     {
@@ -34,11 +30,11 @@ namespace CSemVer
 
         /// <summary>
         /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
-        /// the strongest possible (<see cref="SVersionLock.Locked"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion)"/> is
+        /// the strongest possible (<see cref="SVersionLock.Lock"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion)"/> is
         /// true only for the last version.
         /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation.
         /// </summary>
-        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Locked, PackageQuality.Stable );
+        public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Lock, PackageQuality.Stable );
 
         /// <summary>
         /// Gets the base version (inclusive minimum version). <see cref="SVersion.IsValid"/> is necessarily true
@@ -67,6 +63,10 @@ namespace CSemVer
         {
             _base = version ?? SVersion.ZeroVersion;
             if( !_base.IsValid ) throw new ArgumentException( "Must be valid. Error: " + _base.ErrorMessage, nameof( version ) );
+            if( minQuality == PackageQuality.Stable && r == SVersionLock.LockPatch )
+            {
+                r = SVersionLock.Lock;
+            }
             _minQuality = minQuality;
             Lock = r;
         }
@@ -86,14 +86,25 @@ namespace CSemVer
         public SVersionBound SetMinQuality( PackageQuality min ) => MinQuality != min ? new SVersionBound( Base, Lock, min ) : this;
 
         /// <summary>
-        /// Merges this version bound with another one.
+        /// Merges this version bound with another one: weakest quality wins, weakest lock wins and weakest <see cref="Base"/> version wins.
         /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
+        /// <param name="other">The other bound.</param>
+        /// <returns>The union of this and the other.</returns>
         public SVersionBound Union( in SVersionBound other )
         {
             var minBase = Base > other.Base ? other : this;
             return minBase.SetLock( Lock.Union( other.Lock ) ).SetMinQuality( MinQuality.Union( other.MinQuality ) );
+        }
+
+        /// <summary>
+        /// Intersects this version bound with another one.
+        /// </summary>
+        /// <param name="other">The other bound.</param>
+        /// <returns>The intersection of this and the other.</returns>
+        public SVersionBound Intersect( in SVersionBound other )
+        {
+            var minBase = Base > other.Base ? this : other;
+            return minBase.SetLock( Lock.Intersect( other.Lock ) ).SetMinQuality( MinQuality.Intersect( other.MinQuality ) );
         }
 
         /// <summary>
@@ -109,15 +120,15 @@ namespace CSemVer
             // If v is the Base, it's trivially okay. 
             if( cmp == 0 ) return true;
             // Is the greater v "reachable"?
-            Debug.Assert( v.IsValid, "Since v is greater than this Base and this Base is vaild." );
+            Debug.Assert( v.IsValid, "Since v is greater than this Base and this Base is valid." );
             switch( Lock )
             {
-                case SVersionLock.Locked: return false;
-                case SVersionLock.LockedPatch:
+                case SVersionLock.Lock: return false;
+                case SVersionLock.LockPatch:
                     if( v.Major != Base.Major || v.Minor != Base.Minor || v.Patch != Base.Patch ) return false; break;
-                case SVersionLock.LockedMinor:
+                case SVersionLock.LockMinor:
                     if( v.Major != Base.Major || v.Minor != Base.Minor ) return false; break;
-                case SVersionLock.LockedMajor:
+                case SVersionLock.LockMajor:
                     if( v.Major != Base.Major ) return false; break;
             }
             return MinQuality <= v.PackageQuality;
@@ -138,8 +149,8 @@ namespace CSemVer
             // the other cannot be more restrictive than this... I know it may not be obvious, but it's true.
             // To "see" this consider that Base versions "starts" with the "locked" part and "ends free". The
             // exclamation point expresses this:
-            //  - This: 1!.0.0-beta (LockedMajor) 
-            //  - Other: 1.0.0!-rc (LockedPatch)
+            //  - This: 1!.0.0-beta (LockMajor) 
+            //  - Other: 1.0.0!-rc (LockPatch)
             // If we are here, then the prefix of the other.Base satisfies this bound: any stronger locks
             // don't change the prefix.
             return true;
@@ -185,8 +196,21 @@ namespace CSemVer
         /// Overridden to return the base version and the restrictions.
         /// </summary>
         /// <returns>A readable string.</returns>
-        public override string ToString() => $"{Base}[{Lock},{MinQuality}]";
-
+        public override string ToString()
+        {
+            if( Lock == SVersionLock.None )
+            {
+                return $"{Base}[{MinQuality}]";
+            }
+            else
+            {
+                if( Lock == SVersionLock.Lock )
+                {
+                    return $"{Base}[{Lock}]";
+                }
+                return $"{Base}[{Lock},{MinQuality}]";
+            }
+        }
     }
 
 }

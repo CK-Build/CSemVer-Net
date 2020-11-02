@@ -9,8 +9,19 @@ namespace CSemVer
 
         public readonly struct ParseResult
         {
+            /// <summary>
+            /// The version bound parsed.
+            /// </summary>
             public readonly SVersionBound Result;
+
+            /// <summary>
+            /// The error if any (<see cref="IsValid"/> is false).
+            /// </summary>
             public readonly string? Error;
+
+            /// <summary>
+            /// True if the <see cref="Result"/> is an approximation of the parsed string.
+            /// </summary>
             public readonly bool IsApproximated;
 
             public ParseResult( SVersionBound result, bool isApproximated )
@@ -28,6 +39,11 @@ namespace CSemVer
             }
 
             /// <summary>
+            /// Gets whether this is valid (<see cref="Error"/> is null).
+            /// </summary>
+            public bool IsValid => Error == null;
+
+            /// <summary>
             /// Ensures that this result's <see cref="IsApproximated"/> is true if <paramref name="setApproximated"/> is true
             /// and returns this or a new result.
             /// </summary>
@@ -37,6 +53,13 @@ namespace CSemVer
             {
                 return setApproximated && !IsApproximated
                         ? new ParseResult( Result, setApproximated )
+                        : this;
+            }
+
+            internal ParseResult ClearApproximated()
+            {
+                return IsApproximated
+                        ? new ParseResult( Result, false )
                         : this;
             }
 
@@ -59,7 +82,7 @@ namespace CSemVer
                                                             : new ParseResult( Error == null ? error : Error + Environment.NewLine + error );
 
             /// <summary>
-            /// Merges another <see cref="ParseResult"/> with this and returs this or a new result.
+            /// Merges another <see cref="ParseResult"/> with this and returns this or a new result.
             /// Note that error wins and <see cref="IsApproximated"/> is propagated.
             /// </summary>
             /// <param name="result">The new result.</param>
@@ -70,8 +93,26 @@ namespace CSemVer
                 if( other.Error != null ) return other;
 
                 var c = Result.Union( other.Result );
-                bool isCovered = c.Equals( Result ) || c.Equals( other.Result );
-                return SetResult( c ).EnsureIsApproximated( !isCovered );
+                // The result IsApproximate if any of the 2 is an approximation.
+                // If both are exact, then the unioned result is exact only if one covers the other.
+                return SetResult( c ).EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
+            }
+
+            /// <summary>
+            /// Intersects another <see cref="ParseResult"/> with this and returns this or a new result.
+            /// Note that error wins and <see cref="IsApproximated"/> is propagated.
+            /// </summary>
+            /// <param name="result">The new result.</param>
+            /// <returns>This or a new result.</returns>
+            public ParseResult Intersect( in ParseResult other )
+            {
+                if( Error != null ) return AddError( other.Error );
+                if( other.Error != null ) return other;
+
+                var c = Result.Intersect( other.Result );
+                // The result IsApproximate if any of the 2 is an approximation.
+                // If both are exact, then the unioned result is exact only if one covers the other.
+                return SetResult( c ).EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
             }
         }
 
@@ -96,8 +137,8 @@ namespace CSemVer
                 do
                 {
                     i = i * 10 + v;
-                    if( s.Length == 0 ) break;
                     s = s.Slice( 1 );
+                    if( s.Length == 0 ) break;
                     v = s[0] - '0';
                 }
                 while( v >= 0 && v <= 9 );

@@ -12,7 +12,7 @@ namespace CSemVer
         /// <summary>
         /// Version can be freely upgraded, no restriction apply.
         /// <para>
-        /// For npm, this corresponds to the a '>=' prefix (when the version is naked, '=' applies that is <see cref="Locked"/> for us).
+        /// For npm, this corresponds to the a '>=' prefix (when the version is naked, '=' applies that is <see cref="Lock"/> for us).
         /// However, all -prerelases not rejected by default.
         /// </para>
         /// <para>
@@ -26,7 +26,7 @@ namespace CSemVer
         /// <para>
         /// For npm, this is the ^ (Caret Ranges) version range specification when the Major is at
         /// least 1: "^2.3.4" matches "2.3.4" to "<3.0.0". When Major is 0, npm handle the ^ specifically:
-        /// 0.0.x versions are <see cref="LockedPatch"/> and 0.x.y versions (where x >= 1) are <see cref="LockedMinor"/>.
+        /// 0.0.x versions are <see cref="LockPatch"/> and 0.x.y versions (where x >= 1) are <see cref="LockMinor"/>.
         /// </para>
         /// <para>
         /// Important: this ^ excludes prereleases!
@@ -42,14 +42,14 @@ namespace CSemVer
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X+1.0.0-a)". 
         /// </para>
         /// </summary>
-        LockedMajor = 1,
+        LockMajor = 1,
 
         /// <summary>
         /// Allows Patch-level changes.
         /// <para>
         /// This is the ~ (Tilde Ranges) of npm version range specification when at least Major.Minor
         /// are specified: "~1.2.3" matches "1.2.3" to "<1.3.0".
-        /// When only the Major is specified (like in "~2"), it is a <see cref="LockedMajor"/>.
+        /// When only the Major is specified (like in "~2"), it is a <see cref="LockMajor"/>.
         /// <para>
         /// Important: this ~ excludes prereleases!
         /// </para>
@@ -65,10 +65,10 @@ namespace CSemVer
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y+1.0-a)". 
         /// </para>
         /// </summary>
-        LockedMinor = 2,
+        LockMinor = 2,
 
         /// <summary>
-        /// Same as <see cref="Locked"/> except that pre-releases of the next patch are allowed.
+        /// Same as <see cref="Lock"/> except that pre-releases of the next patch are allowed.
         /// <para>
         /// For npm, this is de facto the option when the version has a prerelease tag.
         /// See https://github.com/npm/node-semver#prerelease-tags.
@@ -84,7 +84,7 @@ namespace CSemVer
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y.Z+1-a)". 
         /// </para>
         /// </summary>
-        LockedPatch = 3,
+        LockPatch = 3,
 
         /// <summary>
         /// Fixed version. Such fixed versions should be changed manually: it indicates that, for any reason, there is a
@@ -96,7 +96,7 @@ namespace CSemVer
         /// For NuGet, this is an "Exact version match" denoted by brackets: "[1.2.3]".
         /// </para>
         /// </summary>
-        Locked = 4
+        Lock = 4
     }
 
 }

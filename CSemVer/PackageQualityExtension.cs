@@ -30,6 +30,18 @@ namespace CSemVer
         public static PackageQuality Union( this PackageQuality @this, PackageQuality other )
         {
             return @this < other ? @this : other;
+        }
+
+        /// <summary>
+        /// Intersects this quality with another one: the strongest wins, merging <see cref="PackageQuality.CI"/> and <see cref="PackageQuality.Stable"/>
+        /// results in <see cref="PackageQuality.Stable"/>.
+        /// </summary>
+        /// <param name="this">This quality.</param>
+        /// <param name="other">The other quality.</param>
+        /// <returns>The strongest of the two.</returns>
+        public static PackageQuality Intersect( this PackageQuality @this, PackageQuality other )
+        {
+            return @this > other ? @this : other;
 
         }
 

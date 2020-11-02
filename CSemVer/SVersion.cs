@@ -280,6 +280,13 @@ namespace CSemVer
         }
 
         /// <summary>
+        /// Creates a new SVersion on error.
+        /// </summary>
+        /// <param name="error">Error message. Must not be null nor empty.</param>
+        /// <param name="parsedText">Can be null.</param>
+        public static SVersion Create( string error, string? parsedText ) => new SVersion( error, parsedText );
+
+        /// <summary>
         /// Parses the specified string to a semantic version and returns a <see cref="SVersion"/> that 
         /// may not be <see cref="IsValid"/>.
         /// </summary>
