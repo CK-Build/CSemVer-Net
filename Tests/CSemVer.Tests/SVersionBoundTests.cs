@@ -316,19 +316,21 @@ namespace CSemVer.Tests
 
         // (1.0,) -- x > 1.0 -- Minimum version, exclusive
         //      We can only approximate this by ignoring the exclusive bound.
-        [TestCase( "(1.0.0,)", "1.0.0", "Approx" )]
+        //      We ignore the notion of "exclusive lower bound" (see below): this is not an approximation.
+
+        [TestCase( "(1.0.0,)", "1.0.0", "" )]
 
         // [1.0] -- x == 1.0 -- Exact version match
         //      This is a locked version.
         [TestCase( "[1.0.0]", "1.0.0[Lock]", "" )]
 
-        // (,1.0] -- x ≤ 1.0 -- Maximum version, inclusive
-        //      We approximate this with a lock on the upper bound.
-        [TestCase( "(,1.0]", "0.0.0-0", "Approx" )]
-
-        // (,1.0) -- x < 1.0 -- Maximum version, exclusive
+        // (,1.0] -- x ≤ 2.0 -- Maximum version, inclusive
         //      We (badly) approximate this with the lower bound... here it's the very first SemVer version.
-        [TestCase( "(,1.0)", "0.0.0-0", "Approx" )]
+        [TestCase( "(,2.0]", "0.0.0-0", "Approx" )]
+
+        // (,1.0) -- x < 2.0 -- Maximum version, exclusive
+        //      Same as above since we ignore the notion of "exclusive lower bound" (see below).
+        [TestCase( "(,2.0)", "0.0.0-0", "Approx" )]
 
         // [1.0,2.0] -- 1.0 ≤ x ≤ 2.0 -- Exact range, inclusive
         //      We approximate this with the lower bound.
@@ -338,7 +340,7 @@ namespace CSemVer.Tests
         // (1.0,2.0) -- 1.0 < x < 2.0 -- Exact range, exclusive
         //      We approximate this with the lower bound.
         //      
-        [TestCase( "(6,7)", "6.0.0", "Approx" )]
+        [TestCase( "(6,8)", "6.0.0", "Approx" )]
 
         // [1.0,2.0) -- 1.0 ≤ x < 2.0 -- Mixed inclusive minimum and exclusive maximum version
         //      We generally approximate this with the lower bound, but in this special case,
@@ -349,7 +351,7 @@ namespace CSemVer.Tests
         //      The workaround is to use 1.0.0-0 as the upper bound... BUT beware: nuget.org forbids the -0 suffix :).
         //      To overcome this, if CSemVer is used (or the first prerelease always used is a[lpha]), one can use 1.0.0-a as the upper bound.
         //
-        //      Here we consider that IS to lock parts...
+        //      Here we consider that the answer IS to lock parts...
         //
         [TestCase( "[1,2)", "1.0.0[LockMajor,CI]", "" )]
         [TestCase( "[1.2,1.3)", "1.2.0[LockMinor,CI]", "" )]
@@ -362,10 +364,25 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
         [TestCase( "[1.2.3,2.0.0-A)", "1.2.3[LockMajor,CI]", "" )]
 
+        //      About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
+        //      that depends on a package "A" (so you necessarily use a given verision of it: "vBase") and say: "I can't work with the
+        //      package "A" in version "vBase". I need a future version... Funny isn't it?
+        //      ==> We decide to consider '(' as being '[': all that applies before works and we consider that this is NOT an approximation. 
+        //      
+        [TestCase( "(1,2)", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "(1.2,1.3)", "1.2.0[LockMinor,CI]", "" )]
+        [TestCase( "(1.2.3,1.2.4)", "1.2.3[LockPatch,CI]", "" )]
+        [TestCase( "(1.2.3,2)", "1.2.3[LockMajor,CI]", "" )]
+        [TestCase( "(1.2.3,1.2.4-0)", "1.2.3[LockPatch,CI]", "" )]
+        [TestCase( "(1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
+        [TestCase( "(1.2.3,2.0.0-A)", "1.2.3[LockMajor,CI]", "" )]
+
+        //      When no lower bound is specified and the upper bound is 1.0.0, this is not an approximation.
+        [TestCase( "(,1)", "0.0.0-0[LockMajor,CI]", "" )]
+        [TestCase( "[,1)", "0.0.0-0[LockMajor,CI]", "" )]
+
         // However, when a prerelease is specified on the upper bound, we cannot be clever anymore...
         [TestCase( "[1.2.3,2.0.0-alpha)", "1.2.3", "Approx" )]
-
-        [TestCase( "[5,12)", "5.0.0", "Approx" )]
 
         public void parse_nuget_syntax( string p, string expected, string approximate )
         {

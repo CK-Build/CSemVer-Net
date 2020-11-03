@@ -93,7 +93,13 @@ namespace CSemVer
             // If v2 is "v2-a" this is less perfect... and when v2 has no prerelease, this is not exact BUT
             // captures the real intent behind the range: we clearly don't want any prerelease of the next major (or
             // minor or patch) to be satisfied!
-            if( begInclusive && v2 != null && !endInclusive && (!v2.IsPrerelease || v2.Prerelease == "0" || v2.Prerelease == "a" || v2.Prerelease == "A") )
+            //
+            // About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
+            // that depends on a package "A" (so you necessarily use a given verision of it: "vBase") and say: "I can't work with the
+            // package "A" is version "vBase". I need a future version... Funny isn't it?
+            // So, we deliberately foget the "begInclusive" parameter. It stil appears in the parameters of this method for the sake of completness. 
+            //
+            if( v2 != null && !endInclusive && (!v2.IsPrerelease || v2.Prerelease == "0" || v2.Prerelease == "a" || v2.Prerelease == "A") )
             {
                 if( v1.Major + 1 == v2.Major && v2.Minor == 0 && v2.Patch == 0 )
                 {
@@ -108,7 +114,8 @@ namespace CSemVer
                     return new ParseResult( new SVersionBound( v1, SVersionLock.LockPatch ), false );
                 }
             }
-            return new ParseResult( new SVersionBound( v1 ), true );
+            // Only if v2 is not null is this an approximation since we ignore the notion of "exclusive lower bound".
+            return new ParseResult( new SVersionBound( v1 ), v2 != null );
         }
 
         static ParseResult TryParseVersionResult( ref ReadOnlySpan<char> s, bool isApproximate )
