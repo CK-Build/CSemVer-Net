@@ -25,7 +25,7 @@ namespace CSemVer
         /// Allows Minor and/or Patch-level changes.
         /// <para>
         /// For npm, this is the ^ (Caret Ranges) version range specification when the Major is at
-        /// least 1: "^2.3.4" matches "2.3.4" to "<3.0.0". When Major is 0, npm handle the ^ specifically:
+        /// least 1: "^2.3.4" matches "2.3.4" to "&lt;3.0.0". When Major is 0, npm handle the ^ specifically:
         /// 0.0.x versions are <see cref="LockPatch"/> and 0.x.y versions (where x >= 1) are <see cref="LockMinor"/>.
         /// </para>
         /// <para>
@@ -48,7 +48,7 @@ namespace CSemVer
         /// Allows Patch-level changes.
         /// <para>
         /// This is the ~ (Tilde Ranges) of npm version range specification when at least Major.Minor
-        /// are specified: "~1.2.3" matches "1.2.3" to "<1.3.0".
+        /// are specified: "~1.2.3" matches "1.2.3" to "&lt;1.3.0".
         /// When only the Major is specified (like in "~2"), it is a <see cref="LockMajor"/>.
         /// <para>
         /// Important: this ~ excludes prereleases unless the "includePrerelease" flag is used (see https://github.com/npm/node-semver#prerelease-tags).

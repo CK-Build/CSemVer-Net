@@ -24,13 +24,13 @@ namespace CSemVer
         public string PrereleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
 
         /// <summary>
-        /// When <see cref="IsPrerelease"/> is true, this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
+        /// When <see cref="SVersion.IsPrerelease"/> is true, this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
         /// otherwise this is -1.
         /// </summary>
         public readonly int PrereleaseNameIdx;
 
         /// <summary>
-        /// Meaningful only if <see cref="IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
+        /// Meaningful only if <see cref="SVersion.IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
         /// </summary>
         public readonly int PrereleaseNumber;
 
@@ -47,7 +47,7 @@ namespace CSemVer
         public readonly bool IsLongForm;
 
         /// <summary>
-        /// Gets whether this is a pre release patch (<see cref="IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
+        /// Gets whether this is a pre release patch (<see cref="SVersion.IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
         /// </summary>
         public bool IsPreReleasePatch => PrereleasePatch > 0;
 

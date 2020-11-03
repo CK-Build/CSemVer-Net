@@ -112,6 +112,11 @@ namespace CSemVer
             /// </summary>
             public readonly bool IsApproximated;
 
+            /// <summary>
+            /// Initializes a new valid <see cref="ParseResult"/>.
+            /// </summary>
+            /// <param name="result">The version bound.</param>
+            /// <param name="isApproximated">Whether the version bound is an approximation.</param>
             public ParseResult( SVersionBound result, bool isApproximated )
             {
                 Result = result;
@@ -119,6 +124,10 @@ namespace CSemVer
                 Error = null;
             }
 
+            /// <summary>
+            /// Initializes a new <see cref="ParseResult"/> on error.
+            /// </summary>
+            /// <param name="error">The error message.</param>
             public ParseResult( string error )
             {
                 Result = SVersionBound.None;
@@ -173,7 +182,7 @@ namespace CSemVer
             /// Merges another <see cref="ParseResult"/> with this and returns this or a new result.
             /// Note that error wins and <see cref="IsApproximated"/> is propagated.
             /// </summary>
-            /// <param name="result">The new result.</param>
+            /// <param name="other">The other result.</param>
             /// <returns>This or a new result.</returns>
             public ParseResult Union( in ParseResult other )
             {
@@ -190,7 +199,7 @@ namespace CSemVer
             /// Intersects another <see cref="ParseResult"/> with this and returns this or a new result.
             /// Note that error wins and <see cref="IsApproximated"/> is propagated.
             /// </summary>
-            /// <param name="result">The new result.</param>
+            /// <param name="other">The other result.</param>
             /// <returns>This or a new result.</returns>
             public ParseResult Intersect( in ParseResult other )
             {

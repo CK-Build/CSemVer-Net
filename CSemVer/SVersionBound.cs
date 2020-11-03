@@ -81,7 +81,7 @@ namespace CSemVer
         /// <summary>
         /// Sets a lock by returning this or a new <see cref="SVersionBound"/>.
         /// </summary>
-        /// <param name="r">The lock to set.</param>
+        /// <param name="min">The lock to set.</param>
         /// <returns>This or a new range.</returns>
         public SVersionBound SetMinQuality( PackageQuality min ) => MinQuality != min ? new SVersionBound( Base, Lock, min ) : this;
 
@@ -134,6 +134,11 @@ namespace CSemVer
             return MinQuality <= v.PackageQuality;
         }
 
+        /// <summary>
+        /// Checks whether this version bound superseds another one.
+        /// </summary>
+        /// <param name="other">The other bound.</param>
+        /// <returns>True if this version bound superseds the other one.</returns>
         public bool Contains( in SVersionBound other )
         {
             // If the other.Base version doesn't satisfy this bound, it's over.
