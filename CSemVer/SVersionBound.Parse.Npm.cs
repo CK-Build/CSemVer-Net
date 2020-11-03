@@ -10,12 +10,12 @@ namespace CSemVer
     {
         static readonly SVersion _000Version = SVersion.Create( 0, 0, 0 );
 
-        static (SVersion? Version, int FMajor, int FMinor, string? Error) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
+        static (SVersion? Version, int FMajor, int FMinor, string? Error, bool FourtPartLost) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
         {
             // Handling the marvellous "" (empty string), that is like '*'.
-            if( s.Length == 0 ) return (null, -1, 0, null);
+            if( s.Length == 0 ) return (null, -1, 0, null, false);
             var version = SVersion.TryParse( ref s );
-            if( version.IsValid ) return (version, 0, 0, null);
+            if( version.IsValid ) return (version, 0, 0, null, false);
             int major, minor = -1;
             if( TryMatchXStarInt( ref s, out major ) )
             {
@@ -25,7 +25,17 @@ namespace CSemVer
                     {
                         if( s.Length == 0 || !TryMatchXStarInt( ref s, out minor ) )
                         {
-                            return (null, 0, 0, "Expecting minor number or *.");
+                            return (null, 0, 0, "Expecting minor number or *.", false);
+                        }
+                        if( minor >= 0 )
+                        {// Try to save the fourth part.
+                            if( s.Length > 0 && TryMatch( ref s, '.' )
+                                && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int patch )
+                                && s.Length > 0 && TryMatch( ref s, '.' )
+                                && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) )
+                            {
+                                return (SVersion.Create( major, minor, patch ), 0, 0, null, true);
+                            }
                         }
                     }
                 }
@@ -37,12 +47,12 @@ namespace CSemVer
                     // Even if the npm grammar allows "3.*-alpha" or "3.1.*+meta", we reject this: https://semver.npmjs.com/ selects nothing.
                     if( s.Length > 0 && (TryMatch( ref s, '-' ) || TryMatch( ref s, '+' )) )
                     {
-                        return (null, 0, 0, "Floating version should not specify -prerelease tag or +meta data.");
+                        return (null, 0, 0, "Floating version should not specify -prerelease tag or +meta data.", false);
                     }
                 }
-                return (null, major, minor, null);
+                return (null, major, minor, null, false);
             }
-            return (null, 0, 0, version.ErrorMessage);
+            return (null, 0, 0, version.ErrorMessage, false);
         }
 
         static (ParseResult Result, bool IsFloatingMinor) TryMatchRangeAlone( ref ReadOnlySpan<char> s, SVersionLock defaultBound, bool includePreRelease )
@@ -75,7 +85,7 @@ namespace CSemVer
                         isApproximated = false;
                     }
                 }
-                return (new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated ), false );
+                return (new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated, r.FourtPartLost ), false );
             }
             if( r.FMajor < 0 ) return (new ParseResult( new SVersionBound( _000Version, SVersionLock.None, quality ), isApproximated: !includePreRelease), false );
             if( r.FMinor < 0 ) return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, 0, 0 ), SVersionLock.LockMajor, quality ), isApproximated: !includePreRelease), true );

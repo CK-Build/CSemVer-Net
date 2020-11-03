@@ -30,13 +30,15 @@ namespace CSemVer
                 {
                     SVersion? v1 = null;
                     SVersion? v2 = null;
+                    bool v1FourthPartLost = false;
+                    bool v2FourthPartLost = false;
                     bool endInclusive;
 
                     bool hasComma = TryMatch( ref s, ',' );
                     if( !hasComma )
                     {
                         if( s.Length == 0 ) return new ParseResult( "Expected nuget version." );
-                        v1 = TryParseVersion( ref s );
+                        v1 = TryParseVersion( ref s, out v1FourthPartLost );
                         if( v1.ErrorMessage != null ) return new ParseResult( v1.ErrorMessage );
                         if( s.Length > 0 )
                         {
@@ -57,7 +59,7 @@ namespace CSemVer
                     endInclusive = TryMatch( ref s, ']' );
                     if( !endInclusive && !TryMatch( ref s, ')' ) )
                     {
-                        v2 = TryParseVersion( ref s );
+                        v2 = TryParseVersion( ref s, out v2FourthPartLost );
                         if( v2.ErrorMessage != null ) return new ParseResult( v2.ErrorMessage );
                         if( s.Length == 0
                             || ( !(endInclusive = TryMatch( ref s, ']' )) && !TryMatch( ref s, ')' ) ))
@@ -70,7 +72,7 @@ namespace CSemVer
                         return new ParseResult( "Invalid nuget version range." );
                     }
                     Debug.Assert( v1 != null || v2 != null );
-                    return CreateResult( begInclusive, v1, v2, endInclusive );
+                    return CreateResult( begInclusive, v1, v2, endInclusive, v1FourthPartLost|v2FourthPartLost );
                 }
                 return TryParseVersionResult( ref s, false );
             }
@@ -81,7 +83,7 @@ namespace CSemVer
 
         }
 
-        static ParseResult CreateResult( bool begInclusive, SVersion? v1, SVersion? v2, bool endInclusive )
+        static ParseResult CreateResult( bool begInclusive, SVersion? v1, SVersion? v2, bool endInclusive, bool fourthPartLost )
         {
             if( v1 == null ) v1 = SVersion.ZeroVersion;
             // Currently, we have no way to handle exclusive bounds.
@@ -115,18 +117,19 @@ namespace CSemVer
                 }
             }
             // Only if v2 is not null is this an approximation since we ignore the notion of "exclusive lower bound".
-            return new ParseResult( new SVersionBound( v1 ), v2 != null );
+            return new ParseResult( new SVersionBound( v1 ), v2 != null, fourthPartLost );
         }
 
         static ParseResult TryParseVersionResult( ref ReadOnlySpan<char> s, bool isApproximate )
         {
-            var v = TryParseVersion( ref s );
-            return v.ErrorMessage == null ? new ParseResult( new SVersionBound( v ), isApproximate ) : new ParseResult( v.ErrorMessage );
+            var v = TryParseVersion( ref s, out bool fourthPartLost );
+            return v.ErrorMessage == null ? new ParseResult( new SVersionBound( v ), isApproximate, fourthPartLost ) : new ParseResult( v.ErrorMessage );
         }
 
-        static SVersion TryParseVersion( ref ReadOnlySpan<char> s )
+        static SVersion TryParseVersion( ref ReadOnlySpan<char> s, out bool fourthPartLost )
         {
             Debug.Assert( s.Length > 0 );
+            fourthPartLost = false;
             var v = SVersion.TryParse( ref s );
             if( !v.IsValid )
             {
@@ -139,6 +142,15 @@ namespace CSemVer
                     if( !TryMatchNonNegativeInt( ref s, out int minor ) )
                     {
                         return SVersion.Create( "Expected Nuget minor part.", null );
+                    }
+                    // Try to save the fourth part.
+                    if( s.Length > 0 && TryMatch( ref s, '.' )
+                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int patch )
+                        && s.Length > 0 && TryMatch( ref s, '.' )
+                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) )
+                    {
+                        fourthPartLost = true;
+                        return SVersion.Create( major, minor, patch );
                     }
                     return SVersion.Create( major, minor, 0 );
                 }

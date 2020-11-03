@@ -23,8 +23,10 @@ namespace CSemVer
         /// </summary>
         /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
         /// <param name="bound">The result. This is <see cref="SVersionBound.None"/> on error.</param>
+        /// <param name="defaultLock">Default lock to apply if none is provided.</param>
+        /// <param name="defaultQuality">Default quality to apply if none is provided.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParse( ref ReadOnlySpan<char> head, out SVersionBound bound )
+        public static bool TryParse( ref ReadOnlySpan<char> head, out SVersionBound bound, SVersionLock defaultLock = SVersionLock.None, PackageQuality defaultQuality = PackageQuality.None )
         {
             var sHead = head;
             bound = SVersionBound.None;
@@ -43,6 +45,8 @@ namespace CSemVer
                 // Match the closing ] if it's here. Ignores it if it's not here.
                 if( Trim( ref head ).Length > 0 ) TryMatch( ref head, ']' );
             }
+            if( l == SVersionLock.None ) l = defaultLock;
+            if( q == PackageQuality.None ) q = defaultQuality;
             bound = new SVersionBound( v, l, q );
             return true;
         }
@@ -57,7 +61,9 @@ namespace CSemVer
         /// <param name="l">The read lock.</param>
         /// <param name="q">The read quality.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParseLockAndMinQuality( ref ReadOnlySpan<char> head, out SVersionLock l, out PackageQuality q )
+        public static bool TryParseLockAndMinQuality( ref ReadOnlySpan<char> head,
+                                                      out SVersionLock l,
+                                                      out PackageQuality q )
         {
             var sSaved = head;
             l = SVersionLock.None;
@@ -113,14 +119,21 @@ namespace CSemVer
             public readonly bool IsApproximated;
 
             /// <summary>
+            /// True if the parsed version had a 4th (or more) part like "1.2.3.4". Those parts are ignored, this
+            /// supports legacy package versions (npm and nuget both accept these - and ignores them).
+            /// </summary>
+            public readonly bool FourthPartLost;
+
+            /// <summary>
             /// Initializes a new valid <see cref="ParseResult"/>.
             /// </summary>
             /// <param name="result">The version bound.</param>
             /// <param name="isApproximated">Whether the version bound is an approximation.</param>
-            public ParseResult( SVersionBound result, bool isApproximated )
+            public ParseResult( SVersionBound result, bool isApproximated, bool fourthPartLost = false )
             {
                 Result = result;
                 IsApproximated = isApproximated;
+                FourthPartLost = fourthPartLost;
                 Error = null;
             }
 
@@ -131,7 +144,7 @@ namespace CSemVer
             public ParseResult( string error )
             {
                 Result = SVersionBound.None;
-                IsApproximated = false;
+                IsApproximated = FourthPartLost = false;
                 Error = error ?? throw new ArgumentNullException( nameof( error ) );
             }
 
@@ -149,7 +162,20 @@ namespace CSemVer
             public ParseResult EnsureIsApproximated( bool setApproximated = true )
             {
                 return setApproximated && !IsApproximated
-                        ? new ParseResult( Result, setApproximated )
+                        ? new ParseResult( Result, true )
+                        : this;
+            }
+
+            /// <summary>
+            /// Ensures that this result's <see cref="FourthPartLost"/> is true if <paramref name="setFourtPartLost"/> is true
+            /// and returns this or a new result.
+            /// </summary>
+            /// <param name="setFourtPartLost">True to ensures that the flag is set. When false, nothing is done.</param>
+            /// <returns>This or a new result.</returns>
+            public ParseResult EnsureFourtPartLost( bool setFourtPartLost = true )
+            {
+                return setFourtPartLost && !FourthPartLost
+                        ? new ParseResult( Result, IsApproximated, true )
                         : this;
             }
 
@@ -167,7 +193,7 @@ namespace CSemVer
             /// <returns>This or a new result.</returns>
             public ParseResult SetResult( SVersionBound result ) => result.Equals( Result )
                                                                         ? this
-                                                                        : new ParseResult( result, IsApproximated );
+                                                                        : new ParseResult( result, IsApproximated, FourthPartLost );
 
             /// <summary>
             /// Sets or concatenates a new <see cref="Error"/> line and returns this or a new result.
@@ -180,7 +206,7 @@ namespace CSemVer
 
             /// <summary>
             /// Merges another <see cref="ParseResult"/> with this and returns this or a new result.
-            /// Note that error wins and <see cref="IsApproximated"/> is propagated.
+            /// Note that error wins and <see cref="IsApproximated"/> and <see cref="FourthPartLost"/> are propagated.
             /// </summary>
             /// <param name="other">The other result.</param>
             /// <returns>This or a new result.</returns>
@@ -192,7 +218,10 @@ namespace CSemVer
                 var c = Result.Union( other.Result );
                 // The result IsApproximate if any of the 2 is an approximation.
                 // If both are exact, then the unioned result is exact only if one covers the other.
-                return SetResult( c ).EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
+                return SetResult( c )
+                        .EnsureFourtPartLost( other.FourthPartLost )
+                        // Testing IsApproximated here shortcuts the Contains evaluation when true.
+                        .EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
             }
 
             /// <summary>
@@ -209,7 +238,10 @@ namespace CSemVer
                 var c = Result.Intersect( other.Result );
                 // The result IsApproximate if any of the 2 is an approximation.
                 // If both are exact, then the unioned result is exact only if one covers the other.
-                return SetResult( c ).EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
+                return SetResult( c )
+                        .EnsureFourtPartLost( other.FourthPartLost )
+                        // Testing IsApproximated here shortcuts the Contains evaluation when true.
+                        .EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
             }
         }
 
