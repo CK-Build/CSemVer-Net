@@ -36,22 +36,36 @@ namespace CSemVer.Tests
             SVersion.TryParse( version ).PackageQuality.Should().Be( q );
         }
 
-        [TestCase( "Release", "Stable-Stable" )]
-        [TestCase( "Release-", "Stable-Stable" )]
-        [TestCase( "-Release", "CI-Stable" )]
-        [TestCase( "-CI", "CI-CI" )]
-        [TestCase( "-ReleaseCandidate", "CI-ReleaseCandidate" )]
-        [TestCase( "stable-RC", "ReleaseCandidate-Stable" )]
-        [TestCase( "release-rc", "ReleaseCandidate-Stable" )]
-        [TestCase( "Preview-Exploratory", "Exploratory-Preview" )]
-        [TestCase( "Pre-Exp", "Exploratory-Preview" )]
-        [TestCase( "-", "None-None" )]
-        [TestCase( "", "None-None" )]
-        public void PackageQualityFilter_tests( string form1, string form2 )
+        [TestCase( " Stable ", "Stable-Stable", " " )]
+        [TestCase( " Stable - X", "Stable-Stable", " - X" )]
+        [TestCase( " - Stable", "CI-Stable", "" )]
+        [TestCase( "-CI", "CI-CI", "" )]
+        [TestCase( "-ReleaseCandidate", "CI-ReleaseCandidate", "" )]
+        [TestCase( "stable - RC-y", "ReleaseCandidate-Stable", "-y" )]
+        [TestCase( " stable - rc", "ReleaseCandidate-Stable", "" )]
+        [TestCase( " ci -nimp", "CI-Stable", " -nimp" )]
+        [TestCase( "Preview-ExploratoryZ", "Exploratory-Preview", "Z" )]
+
+        [TestCase( " nop", "invalid", " nop" )]
+        [TestCase( " -nop", "invalid", " -nop" )]
+        public void PackageQualityFilter_tests( string form1, string form2, string remainder )
         {
-            PackageQualityFilter.TryParse( form1, out var f1 ).Should().BeTrue();
-            PackageQualityFilter.TryParse( form2, out var f2 ).Should().BeTrue();
-            f1.Should().Be( f2 );
+            ReadOnlySpan<char> head = form1;
+            var startHead = head;
+            bool match = PackageQualityFilter.TryParse( ref head, out var f1 );
+
+            if( form2 == "invalid" )
+            {
+                match.Should().BeFalse();
+                (head == startHead).Should().BeTrue();
+            }
+            else
+            {
+                match.Should().BeTrue();
+                PackageQualityFilter.TryParse( form2, out var f2 ).Should().BeTrue();
+                f1.Should().Be( f2 );
+            }
+            head.ToString().Should().Be( remainder );
         }
 
 

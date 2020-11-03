@@ -13,7 +13,7 @@ namespace CSemVer
         /// Version can be freely upgraded, no restriction apply.
         /// <para>
         /// For npm, this corresponds to the a '>=' prefix (when the version is naked, '=' applies that is <see cref="Lock"/> for us).
-        /// However, all -prerelases not rejected by default.
+        /// However, all -prerelases are rejected by default unless the "includePrerelease" flag is used (see https://github.com/npm/node-semver#prerelease-tags).
         /// </para>
         /// <para>
         /// For NuGet, this corresponds to a naked version (Minimum version, inclusive): "1.2.3" is like the npm's ">=1.2.3".
@@ -51,7 +51,7 @@ namespace CSemVer
         /// are specified: "~1.2.3" matches "1.2.3" to "<1.3.0".
         /// When only the Major is specified (like in "~2"), it is a <see cref="LockMajor"/>.
         /// <para>
-        /// Important: this ~ excludes prereleases!
+        /// Important: this ~ excludes prereleases unless the "includePrerelease" flag is used (see https://github.com/npm/node-semver#prerelease-tags).
         /// </para>
         /// </para>
         /// <para>
@@ -75,13 +75,13 @@ namespace CSemVer
         /// </para>
         /// <para>
         /// For NuGet, this can be specified with the "Mixed inclusive minimum and exclusive maximum version"
-        /// with the trick of the lowest prerelease tag being "0" to avoid accepting prerelease of the next patch!
+        /// with the trick of the lowest prerelease tag being "0" to avoid accepting prerelease of the next patch.
         /// syntax: "[1.2.3,1.2.4-0)" (the general pattern being "[X.Y.Z,X.Y.Z+1-0)").
         /// </para>
         /// <para>
         /// Note that until https://github.com/NuGet/NuGetGallery/issues/6948 is resolved, the "-0" trick cannot be used
         /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelase
-        /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y.Z+1-a)". 
+        /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y.Z+1-a)" (nuget, just like CSemVer, is case insensitive). 
         /// </para>
         /// </summary>
         LockPatch = 3,

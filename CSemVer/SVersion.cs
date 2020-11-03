@@ -331,7 +331,7 @@ namespace CSemVer
             if( string.IsNullOrEmpty( s ) ) return (new SVersion( "Null or empty version string.", s ), 0);
             Match m = _regExSVersion.Match( s );
             // Checking the end of the pattern (^ equivalent). ReadOnlySpan implementation will not rely on ^
-            // sice we want to be able to parse a prefix.
+            // since we want to be able to parse a prefix.
             if( !m.Success || (checkLength && s.Length > m.Length) ) return (new SVersion( "Pattern not matched.", s ), 0);
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;

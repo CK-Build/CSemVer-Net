@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace CSemVer
@@ -53,71 +55,75 @@ namespace CSemVer
         public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this ) => _map[(int)@this];
 
         /// <summary>
-        /// Tries to parse a text <see cref="PackageQuality"/>. The parsing is case insensitive and supports synonyms, supported forms are:
-        /// <list type="table">
-        ///     <listheader>
-        ///         <term>Quality</term>
-        ///         <description>Accepted forms (case insensitive).</description>
-        ///     </listheader>
-        ///     <item>
-        ///         <term><see cref="PackageQuality.CI"/></term>
-        ///         <description>CI, All</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="PackageQuality.Exploratory"/></term>
-        ///         <description>Exploratory, Exp</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="PackageQuality.Preview"/></term>
-        ///         <description>Preview, Pre</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="PackageQuality.ReleaseCandidate"/></term>
-        ///         <description>ReleaseCandidate, RC</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="PackageQuality.Stable"/></term>
-        ///         <description>Stable, Release, StableRelease</description>
-        ///     </item>
-        /// </list>
+        /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
+        /// Note that match is case insensitive and that "rc" is a synonym of <see cref="PackageQuality.ReleaseCandidate"/>.
         /// </summary>
-        /// <param name="s">The string to parse.</param>
-        /// <param name="q"></param>
-        /// <returns>The resulting quality.</returns>
-        static public bool TryParse( string s, out PackageQuality q )
+        /// <param name="head">The string to parse.</param>
+        /// <param name="q">The read quality.</param>
+        /// <returns>True on success, false otherwise.</returns>
+        public static bool TryMatch( ReadOnlySpan<char> head, out PackageQuality q ) => TryMatch( ref head, out q );
+
+        /// <summary>
+        /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
+        /// Note that match is case insensitive and that "rc" is a synonym of <see cref="PackageQuality.ReleaseCandidate"/>.
+        /// The head is forwarded right after the match: on success, the head may be on any kind of character.
+        /// </summary>
+        /// <param name="head">The string to parse.</param>
+        /// <param name="q">The read quality.</param>
+        /// <returns>True on success, false otherwise.</returns>
+        public static bool TryMatch( ref ReadOnlySpan<char> head, out PackageQuality q )
         {
-            q = default;
-            if( s.Length == 0 ) return false;
-            if( Enum.TryParse<PackageQuality>( s, true, out q ) ) return true;
-            if( s.Equals( "Release", StringComparison.OrdinalIgnoreCase )
-                || s.Equals( "StableRelease", StringComparison.OrdinalIgnoreCase ) )
+            q = PackageQuality.None;
+            if( head.Length == 0 ) return false;
+            if( head.StartsWith( nameof( PackageQuality.None ), StringComparison.OrdinalIgnoreCase ) )
             {
-                q = PackageQuality.Stable;
+                Debug.Assert( nameof( PackageQuality.None ).Length == 4 );
+                head = head.Slice( 4 );
                 return true;
             }
-            if( s.Equals( "rc", StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.CI ), StringComparison.OrdinalIgnoreCase ) )
             {
-                q = PackageQuality.ReleaseCandidate;
+                Debug.Assert( nameof( PackageQuality.CI ).Length == 2 );
+                q = PackageQuality.CI;
+                head = head.Slice( 2 );
                 return true;
             }
-            if( s.Equals( "pre", StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.Exploratory ), StringComparison.OrdinalIgnoreCase ) )
             {
-                q = PackageQuality.Preview;
-                return true;
-            }
-            if( s.Equals( "exp", StringComparison.OrdinalIgnoreCase ) )
-            {
+                Debug.Assert( nameof( PackageQuality.Exploratory ).Length == 11 );
+                head = head.Slice( 11 );
                 q = PackageQuality.Exploratory;
                 return true;
             }
-            if( s.Equals( "all", StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.Preview ), StringComparison.OrdinalIgnoreCase ) )
             {
-                q = PackageQuality.CI;
+                Debug.Assert( nameof( PackageQuality.Preview ).Length == 7 );
+                head = head.Slice( 7 );
+                q = PackageQuality.Preview;
+                return true;
+            }
+            if( head.StartsWith( nameof( PackageQuality.ReleaseCandidate ), StringComparison.OrdinalIgnoreCase ) )
+            {
+                Debug.Assert( nameof( PackageQuality.ReleaseCandidate ).Length == 16 );
+                head = head.Slice( 16 );
+                q = PackageQuality.ReleaseCandidate;
+                return true;
+            }
+            if( head.StartsWith( "rc", StringComparison.OrdinalIgnoreCase ) )
+            {
+                head = head.Slice( 2 );
+                q = PackageQuality.ReleaseCandidate;
+                return true;
+            }
+            if( head.StartsWith( nameof( PackageQuality.Stable ), StringComparison.OrdinalIgnoreCase ) )
+            {
+                Debug.Assert( nameof( PackageQuality.Stable ).Length == 6 );
+                head = head.Slice( 6 );
+                q = PackageQuality.Stable;
                 return true;
             }
             return false;
         }
-
 
     }
 }

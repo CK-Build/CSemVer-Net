@@ -200,7 +200,7 @@ namespace CSemVer
         {
             if( Lock == SVersionLock.None )
             {
-                return $"{Base}[{MinQuality}]";
+                return MinQuality != PackageQuality.CI ? $"{Base}[{MinQuality}]" : Base.ToString();
             }
             else
             {

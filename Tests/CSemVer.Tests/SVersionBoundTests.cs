@@ -147,7 +147,7 @@ namespace CSemVer.Tests
 
         // Syntax: "1.2.3 - 2.3" ==> ">=1.2.3 <2.4.0-0".
         //          We approximate this with 1.2.3. 
-        [TestCase( "1.2.3 - 2.3.4", "includePreRelease", "1.2.3[CI]", "Approx" )]
+        [TestCase( "1.2.3 - 2.3.4", "includePreRelease", "1.2.3", "Approx" )]
         [TestCase( "1.2.3 - 2.3.4", "", "1.2.3[Stable]", "Approx" )]
 
         [TestCase( "1.2 - 2.3.4", "", "1.2.0[Stable]", "Approx" )]
@@ -155,7 +155,7 @@ namespace CSemVer.Tests
         // Syntax: "*" or "" is >=0.0.0 (Any version satisfies). 
         //         No approximation here (when includePreRelease is true). 
         [TestCase( "*", "", "0.0.0[Stable]", "Approx" )]
-        [TestCase( "", "includePreRelease", "0.0.0[CI]", "" )]
+        [TestCase( "", "includePreRelease", "0.0.0", "" )]
 
         // Syntax: "1.x" is ">=1.0.0 <2.0.0-0" (Matching major version).
         //         No approximation here (when includePreRelease is true). 
@@ -273,15 +273,15 @@ namespace CSemVer.Tests
 
         // Syntax: ">=1.2.9 <2.0.0" is approximated.
         [TestCase( ">=1.2.9 <2.0.0", "", "1.2.9[Stable]", "Approx" )]
-        [TestCase( ">=1.2.9 <2.0.0", "includePreRelease", "1.2.9[CI]", "Approx" )]
+        [TestCase( ">=1.2.9 <2.0.0", "includePreRelease", "1.2.9", "Approx" )]
 
         // Syntax: "1.2.7 || >=1.1.9 <2.0.0" is approximated.
         [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "", "1.1.9[Stable]", "Approx" )]
-        [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePreRelease", "1.1.9[CI]", "Approx" )]
+        [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePreRelease", "1.1.9", "Approx" )]
 
         // Syntax: "<1.2.7" is ignored.
         [TestCase( "<1.2.7", "", "0.0.0-0[Stable]", "Approx" )]
-        [TestCase( "<1.2.7", "includePreRelease", "0.0.0-0[CI]", "Approx" )]
+        [TestCase( "<1.2.7", "includePreRelease", "0.0.0-0", "Approx" )]
 
         // Syntax: "<=1.2.7" is like "=1.2.7".
         [TestCase( "<=1.2.7", "", "1.2.7[Lock]", "Approx" )]
@@ -310,13 +310,13 @@ namespace CSemVer.Tests
 
         // 1.0 -- x ≥ 1.0 -- Minimum version, inclusive
         //      Basic version: any greater version statisfies.
-        [TestCase( "1", "1.0.0[CI]", "" )]
-        [TestCase( "1.0", "1.0.0[CI]", "" )]
-        [TestCase( "1.0.0", "1.0.0[CI]", "" )]
+        [TestCase( "1", "1.0.0", "" )]
+        [TestCase( "1.0", "1.0.0", "" )]
+        [TestCase( "1.0.0", "1.0.0", "" )]
 
         // (1.0,) -- x > 1.0 -- Minimum version, exclusive
         //      We can only approximate this by ignoring the exclusive bound.
-        [TestCase( "(1.0.0,)", "1.0.0[CI]", "Approx" )]
+        [TestCase( "(1.0.0,)", "1.0.0", "Approx" )]
 
         // [1.0] -- x == 1.0 -- Exact version match
         //      This is a locked version.
@@ -324,39 +324,48 @@ namespace CSemVer.Tests
 
         // (,1.0] -- x ≤ 1.0 -- Maximum version, inclusive
         //      We approximate this with a lock on the upper bound.
-        [TestCase( "(,1.0]", "0.0.0-0[CI]", "Approx" )]
+        [TestCase( "(,1.0]", "0.0.0-0", "Approx" )]
 
         // (,1.0) -- x < 1.0 -- Maximum version, exclusive
-        //      We (badly) approximate this with a lock on the upper bound.
-        //      Note that this is currently somehow buggy (https://github.com/NuGet/Home/issues/6434#issuecomment-546423937) since
-        //      this allows 1.0.0-pre to be satisfied!
-        //      The workaround is to use 1.0.0-0 as the upper bound... BUT beware: nuget.org forbids the -0 suffix :).
-        //      To overcome this, if CSemVer is used (or the first prerelease always used is a[lpha]), one can use 1.0.0-a as the upper bound.
-        [TestCase( "(,1.0)", "0.0.0-0[CI]", "Approx" )]
+        //      We (badly) approximate this with the lower bound... here it's the very first SemVer version.
+        [TestCase( "(,1.0)", "0.0.0-0", "Approx" )]
 
         // [1.0,2.0] -- 1.0 ≤ x ≤ 2.0 -- Exact range, inclusive
         //      We approximate this with the lower bound.
         //      
-        [TestCase( "[1.0,2.0]", "1.0.0[CI]", "Approx" )]
+        [TestCase( "[1.0,2.0]", "1.0.0", "Approx" )]
 
         // (1.0,2.0) -- 1.0 < x < 2.0 -- Exact range, exclusive
         //      We approximate this with the lower bound.
         //      
-        [TestCase( "(6,7)", "6.0.0[CI]", "Approx" )]
+        [TestCase( "(6,7)", "6.0.0", "Approx" )]
 
         // [1.0,2.0) -- 1.0 ≤ x < 2.0 -- Mixed inclusive minimum and exclusive maximum version
-        //      We approximate this with the lower bound.
-        //      In this special case, we can capture the intent of the user by locking the major,
-        //      the minor or the patch.
+        //      We generally approximate this with the lower bound, but in this special case,
+        //      we can capture the intent of the user by locking the major, the minor or the patch.
+        //
+        //      Note that Nuget is somehow buggy (https://github.com/NuGet/Home/issues/6434#issuecomment-546423937) since
+        //      this allows 1.0.0-pre to be satisfied!
+        //      The workaround is to use 1.0.0-0 as the upper bound... BUT beware: nuget.org forbids the -0 suffix :).
+        //      To overcome this, if CSemVer is used (or the first prerelease always used is a[lpha]), one can use 1.0.0-a as the upper bound.
+        //
+        //      Here we consider that IS to lock parts...
+        //
         [TestCase( "[1,2)", "1.0.0[LockMajor,CI]", "" )]
         [TestCase( "[1.2,1.3)", "1.2.0[LockMinor,CI]", "" )]
         [TestCase( "[1.2.3,1.2.4)", "1.2.3[LockPatch,CI]", "" )]
         [TestCase( "[1.2.3,2)", "1.2.3[LockMajor,CI]", "" )]
 
-        // However, when a prerelease is specified on the upper bound, we cannot be clever anymore...
-        [TestCase( "[1.2.3,2.0.0-alpha)", "1.2.3[CI]", "Approx" )]
+        //       To be consistent, if the upper bound is a -0 (oar -a) prerelease, we do the same (and, at least for -0,
+        //       this is perfect projection).
+        [TestCase( "[1.2.3,1.2.4-0)", "1.2.3[LockPatch,CI]", "" )]
+        [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
+        [TestCase( "[1.2.3,2.0.0-A)", "1.2.3[LockMajor,CI]", "" )]
 
-        [TestCase( "[5,12)", "5.0.0[CI]", "Approx" )]
+        // However, when a prerelease is specified on the upper bound, we cannot be clever anymore...
+        [TestCase( "[1.2.3,2.0.0-alpha)", "1.2.3", "Approx" )]
+
+        [TestCase( "[5,12)", "5.0.0", "Approx" )]
 
         public void parse_nuget_syntax( string p, string expected, string approximate )
         {
@@ -378,6 +387,22 @@ namespace CSemVer.Tests
             var r = SVersionBound.NugetTryParse( p );
             r.IsValid.Should().BeFalse();
             r.Error.Should().NotBeNull();
+        }
+
+
+        [TestCase( "v1.0.0-mmm", "1.0.0-mmm" )]
+        [TestCase( "v1.0.0-x[]", "1.0.0-x" )]
+        [TestCase( "v1.0.0-x[CI,LockedPatch]", "1.0.0-x[LockPatch,CI]" )]
+        [TestCase( "v1.2.3-xx [ LockMinor ] ", "1.2.3-xx[LockMinor,CI]" )]
+        [TestCase( " v1.2.3 [ Stable , LockMajor ] ", "1.2.3[LockMajor,Stable]" )]
+        [TestCase( " v1.2.3-xxx [ Preview , LockMajor ] ", "1.2.3-xxx[LockMajor,Preview]" )]
+        [TestCase( " v1.2.3-AAA [ Preview , Lock ] ", "1.2.3-AAA[Lock]" )]
+        [TestCase( " v1.2.3-AAA [ None , Locked ] ", "1.2.3-AAA[Lock]" )]
+        [TestCase( " v1.2.3-AAA [ None , None ] ", "1.2.3-AAA" )]
+        public void parse_SVersionBound( string p, string expected )
+        {
+            SVersionBound.TryParse( p, out var b ).Should().BeTrue();
+            b.ToString().Should().Be( expected );
         }
 
     }
