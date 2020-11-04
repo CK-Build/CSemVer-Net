@@ -58,9 +58,9 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Initializes a new filter by parsing a nullable string.
-        /// Throws an <see cref="ArgumentException"/> on invalid syntax (internally uses <see cref="TryParse(ReadOnlySpan{char}, out PackageQualityFilter)"/>).
-        /// to handle invalid syntax.
+        /// Initializes a new filter from a string.
+        /// Throws an <see cref="ArgumentException"/> on invalid syntax.
+        /// Simply uses <see cref="TryParse(ReadOnlySpan{char}, out PackageQualityFilter)"/>) to handle invalid syntax.
         /// </summary>
         /// <param name="s">The string.</param>
         public PackageQualityFilter( ReadOnlySpan<char> s )

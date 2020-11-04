@@ -24,7 +24,9 @@ namespace CSemVer
         /// <summary>
         /// All bound with no restriction: <see cref="Base"/> is <see cref="SVersion.ZeroVersion"/> and there is
         /// no restriction: <see cref="Satisfy(in SVersion)"/> is true for any valid version.
-        /// This bound is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation.
+        /// This bound is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the neutral element
+        /// of the <see cref="Intersect(in SVersionBound)"/>.
+        /// This is the <c>default</c> of this <see cref="SVersionBound"/> value type.
         /// </summary>
         public static readonly SVersionBound All = new SVersionBound();
 
@@ -32,7 +34,7 @@ namespace CSemVer
         /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
         /// the strongest possible (<see cref="SVersionLock.Lock"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion)"/> is
         /// true only for the last version.
-        /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation.
+        /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation and the absorbing element of the <see cref="Intersect(in SVersionBound)"/>.
         /// </summary>
         public static readonly SVersionBound None = new SVersionBound( SVersion.LastVersion, SVersionLock.Lock, PackageQuality.Stable );
 
