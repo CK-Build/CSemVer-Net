@@ -14,7 +14,7 @@ namespace CSemVer
         /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
         /// <param name="bound">The result. This is <see cref="SVersionBound.None"/> on error.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParse( ReadOnlySpan<char> head, out SVersionBound bound ) => TryParse( ref head, out bound );
+        public static bool TryParse( ReadOnlySpan<char> head, out SVersionBound bound, SVersionLock defaultLock = SVersionLock.None, PackageQuality defaultQuality = PackageQuality.None ) => TryParse( ref head, out bound, defaultLock, defaultQuality );
 
         /// <summary>
         /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool)"/> that may be
@@ -129,7 +129,7 @@ namespace CSemVer
             /// </summary>
             /// <param name="result">The version bound.</param>
             /// <param name="isApproximated">Whether the version bound is an approximation.</param>
-            public ParseResult( SVersionBound result, bool isApproximated, bool fourthPartLost = false )
+            public ParseResult( SVersionBound result, bool isApproximated, bool fourthPartLost )
             {
                 Result = result;
                 IsApproximated = isApproximated;
@@ -162,7 +162,7 @@ namespace CSemVer
             public ParseResult EnsureIsApproximated( bool setApproximated = true )
             {
                 return setApproximated && !IsApproximated
-                        ? new ParseResult( Result, true )
+                        ? new ParseResult( Result, true, FourthPartLost )
                         : this;
             }
 
@@ -182,7 +182,7 @@ namespace CSemVer
             internal ParseResult ClearApproximated()
             {
                 return IsApproximated
-                        ? new ParseResult( Result, false )
+                        ? new ParseResult( Result, false, FourthPartLost )
                         : this;
             }
 

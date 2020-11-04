@@ -147,64 +147,64 @@ namespace CSemVer.Tests
 
         // Syntax: "1.2.3 - 2.3" ==> ">=1.2.3 <2.4.0-0".
         //          We approximate this with 1.2.3. 
-        [TestCase( "1.2.3 - 2.3.4", "includePreRelease", "1.2.3", "Approx" )]
+        [TestCase( "1.2.3 - 2.3.4", "includePrerelease", "1.2.3", "Approx" )]
         [TestCase( "1.2.3 - 2.3.4", "", "1.2.3[Stable]", "Approx" )]
 
         [TestCase( "1.2 - 2.3.4", "", "1.2.0[Stable]", "Approx" )]
 
         // Syntax: "*" or "" is >=0.0.0 (Any version satisfies). 
-        //         No approximation here (when includePreRelease is true). 
+        //         No approximation here (when includePrerelease is true). 
         [TestCase( "*", "", "0.0.0[Stable]", "Approx" )]
-        [TestCase( "", "includePreRelease", "0.0.0", "" )]
+        [TestCase( "", "includePrerelease", "0.0.0", "" )]
 
         // Syntax: "1.x" is ">=1.0.0 <2.0.0-0" (Matching major version).
-        //         No approximation here (when includePreRelease is true). 
+        //         No approximation here (when includePrerelease is true). 
         [TestCase( "1.x", "", "1.0.0[LockMajor,Stable]", "Approx" )]
         [TestCase( "1.X", "", "1.0.0[LockMajor,Stable]", "Approx" )]
         [TestCase( "1.2.x", "", "1.2.0[LockMinor,Stable]", "Approx" )]
         [TestCase( "1.2.X", "", "1.2.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "1.X", "includePreRelease", "1.0.0[LockMajor,CI]", "" )]
-        [TestCase( "1.2.X", "includePreRelease", "1.2.0[LockMinor,CI]", "" )]
+        [TestCase( "1.X", "includePrerelease", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "1.2.X", "includePrerelease", "1.2.0[LockMinor,CI]", "" )]
 
         // Syntax: "A partial version range is treated as an X-Range, so the special character is in fact optional."
-        //         No approximation here (when includePreRelease is true). 
+        //         No approximation here (when includePrerelease is true). 
         [TestCase( "1", "", "1.0.0[LockMajor,Stable]", "Approx" )]
         [TestCase( "1.2", "", "1.2.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "1", "includePreRelease", "1.0.0[LockMajor,CI]", "" )]
-        [TestCase( "1.2", "includePreRelease", "1.2.0[LockMinor,CI]", "" )]
+        [TestCase( "1", "includePrerelease", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "1.2", "includePrerelease", "1.2.0[LockMinor,CI]", "" )]
 
         // Syntax: Tilde Ranges
         //         Allows patch-level changes if a minor version is specified on the comparator. Allows minor-level changes if not.
         //
         //         "~1.2.3" is ">=1.2.3 <1.(2+1).0", that is ">=1.2.3 <1.3.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the minor.
+        //         This is not an approximation (when includePrerelease is true): this locks the minor.
         [TestCase( "~1.2.3", "", "1.2.3[LockMinor,Stable]", "Approx" )]
-        [TestCase( "~1.2.3", "includePreRelease", "1.2.3[LockMinor,CI]", "" )]
+        [TestCase( "~1.2.3", "includePrerelease", "1.2.3[LockMinor,CI]", "" )]
 
         //         "~1.2" is ">=1.2.0 <1.(2+1).0", that is ">=1.2.0 <1.3.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the minor.
+        //         This is not an approximation (when includePrerelease is true): this locks the minor.
         [TestCase( "~1.2", "", "1.2.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "~1.2", "includePreRelease", "1.2.0[LockMinor,CI]", "" )]
+        [TestCase( "~1.2", "includePrerelease", "1.2.0[LockMinor,CI]", "" )]
 
         //         "~1" is ">=1.0.0 <(1+1).0.0" that is ">=1.0.0 <2.0.0-0" (Same as 1.x)
         //         This is not an approximation: this locks the major.
         [TestCase( "~1", "", "1.0.0[LockMajor,Stable]", "Approx" )]
-        [TestCase( "~1", "includePreRelease", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "~1", "includePrerelease", "1.0.0[LockMajor,CI]", "" )]
 
         //         "~0.2.3" is ">=0.2.3 <0.(2+1).0" that is ">=0.2.3 <0.3.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the minor.
+        //         This is not an approximation (when includePrerelease is true): this locks the minor.
         [TestCase( "~0.2.3", "", "0.2.3[LockMinor,Stable]", "Approx" )]
-        [TestCase( "~0.2.3", "includePreRelease", "0.2.3[LockMinor,CI]", "" )]
+        [TestCase( "~0.2.3", "includePrerelease", "0.2.3[LockMinor,CI]", "" )]
 
         //         "~0.2" is ">=0.2.0 <0.(2+1).0" that is ">=0.2.0 <0.3.0-0" (Same as 0.2.x)
         //         This is not an approximation: this locks the minor.
         [TestCase( "~0.2", "", "0.2.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "~0.2", "includePreRelease", "0.2.0[LockMinor,CI]", "" )]
+        [TestCase( "~0.2", "includePrerelease", "0.2.0[LockMinor,CI]", "" )]
 
         //         "~0" is ">=0.0.0 <(0+1).0.0" that is ">=0.0.0 <1.0.0-0" (Same as 0.x)
-        //         This is not an approximation (when includePreRelease is true): this locks the major.
+        //         This is not an approximation (when includePrerelease is true): this locks the major.
         [TestCase( "~0", "", "0.0.0[LockMajor,Stable]", "Approx" )]
-        [TestCase( "~0", "includePreRelease", "0.0.0[LockMajor,CI]", "" )]
+        [TestCase( "~0", "includePrerelease", "0.0.0[LockMajor,CI]", "" )]
 
         //         "~1.2.3-beta.2" is ">=1.2.3-beta.2 <1.3.0-0"
         //         This is NEVER an approximation!
@@ -224,72 +224,72 @@ namespace CSemVer.Tests
         // Syntax: Caret Ranges.
         //
         //         "^1.2.3" is ">=1.2.3 <2.0.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the major.
+        //         This is not an approximation (when includePrerelease is true): this locks the major.
         [TestCase( "^1.2.3", "", "1.2.3[LockMajor,Stable]", "Approx" )]
-        [TestCase( "^1.2.3", "includePreRelease", "1.2.3[LockMajor,CI]", "" )]
+        [TestCase( "^1.2.3", "includePrerelease", "1.2.3[LockMajor,CI]", "" )]
 
         //         "^0.2.3" is ">=0.2.3 <0.3.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the minor (because the major is 0).
+        //         This is not an approximation (when includePrerelease is true): this locks the minor (because the major is 0).
         [TestCase( "^0.2.3", "", "0.2.3[LockMinor,Stable]", "Approx" )]
-        [TestCase( "^0.2.3", "includePreRelease", "0.2.3[LockMinor,CI]", "" )]
+        [TestCase( "^0.2.3", "includePrerelease", "0.2.3[LockMinor,CI]", "" )]
 
         //         "^0.0.3" is ">=0.0.3 <0.0.4-0"
-        //         This is NEVER an approximation: this locks the whole version OR authorizes prerelease (when includePreRelease is true).
+        //         This is NEVER an approximation: this locks the whole version OR authorizes prerelease (when includePrerelease is true).
         [TestCase( "^0.0.3", "", "0.0.3[Lock]", "" )]
-        [TestCase( "^0.0.3", "includePreRelease", "0.0.3[LockPatch,CI]", "" )]
+        [TestCase( "^0.0.3", "includePrerelease", "0.0.3[LockPatch,CI]", "" )]
 
         //        "^1.2.3-beta.2" is ">=1.2.3-beta.2 <2.0.0-0"
-        //         This is not an approximation (when includePreRelease is true): this locks the major and allows CI build, but
-        //         this is still an approximation when includePreRelease is false because prereleases for a different [major, minor, patch]
+        //         This is not an approximation (when includePrerelease is true): this locks the major and allows CI build, but
+        //         this is still an approximation when includePrerelease is false because prereleases for a different [major, minor, patch]
         //         are fobidden by npm.
         [TestCase( "^1.2.3-beta.2", "", "1.2.3-beta.2[LockMajor,CI]", "Approx" )]
-        [TestCase( "^1.2.3-beta.2", "includePreRelease", "1.2.3-beta.2[LockMajor,CI]", "" )]
+        [TestCase( "^1.2.3-beta.2", "includePrerelease", "1.2.3-beta.2[LockMajor,CI]", "" )]
 
         //        "^0.0.3-beta" is ">=0.0.3-beta <0.0.4-0"
         //         This is NEVER an approximation.
         [TestCase( "^0.0.3-beta", "", "0.0.3-beta[LockPatch,CI]", "" )]
-        [TestCase( "^0.0.3-beta", "includePreRelease", "0.0.3-beta[LockPatch,CI]", "" )]
+        [TestCase( "^0.0.3-beta", "includePrerelease", "0.0.3-beta[LockPatch,CI]", "" )]
 
         //        "^1.2.x" is ">=1.2.0 <2.0.0-0"
-        //         This is not an approximation (when includePreRelease is true).
+        //         This is not an approximation (when includePrerelease is true).
         [TestCase( "^1.2.x", "", "1.2.0[LockMajor,Stable]", "Approx" )]
-        [TestCase( "^1.2.x", "includePreRelease", "1.2.0[LockMajor,CI]", "" )]
+        [TestCase( "^1.2.x", "includePrerelease", "1.2.0[LockMajor,CI]", "" )]
 
         //        "^0.0.x" is ">=0.0.0 <0.1.0-0"
         [TestCase( "^0.0.x", "", "0.0.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "^0.0.x", "includePreRelease", "0.0.0[LockMinor,CI]", "" )]
+        [TestCase( "^0.0.x", "includePrerelease", "0.0.0[LockMinor,CI]", "" )]
 
         //        "^0.0" is ">=0.0.0 <0.1.0-0"
         [TestCase( "^0.0", "", "0.0.0[LockMinor,Stable]", "Approx" )]
-        [TestCase( "^0.0", "includePreRelease", "0.0.0[LockMinor,CI]", "" )]
+        [TestCase( "^0.0", "includePrerelease", "0.0.0[LockMinor,CI]", "" )]
 
         //        "^1.x" is ">=1.0.0 <2.0.0-0"
         [TestCase( "^1.x", "", "1.0.0[LockMajor,Stable]", "Approx" )]
-        [TestCase( "^1.x", "includePreRelease", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "^1.x", "includePrerelease", "1.0.0[LockMajor,CI]", "" )]
 
         //        "^0.x" is ">=0.0.0 <1.0.0-0"
         [TestCase( "^0.x", "", "0.0.0[LockMajor,Stable]", "Approx" )]
-        [TestCase( "^0.x", "includePreRelease", "0.0.0[LockMajor,CI]", "" )]
+        [TestCase( "^0.x", "includePrerelease", "0.0.0[LockMajor,CI]", "" )]
 
         // Syntax: ">=1.2.9 <2.0.0" is approximated.
         [TestCase( ">=1.2.9 <2.0.0", "", "1.2.9[Stable]", "Approx" )]
-        [TestCase( ">=1.2.9 <2.0.0", "includePreRelease", "1.2.9", "Approx" )]
+        [TestCase( ">=1.2.9 <2.0.0", "includePrerelease", "1.2.9", "Approx" )]
 
         // Syntax: "1.2.7 || >=1.1.9 <2.0.0" is approximated.
         [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "", "1.1.9[Stable]", "Approx" )]
-        [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePreRelease", "1.1.9", "Approx" )]
+        [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePrerelease", "1.1.9", "Approx" )]
 
         // Syntax: "<1.2.7" is ignored.
         [TestCase( "<1.2.7", "", "0.0.0-0[Stable]", "Approx" )]
-        [TestCase( "<1.2.7", "includePreRelease", "0.0.0-0", "Approx" )]
+        [TestCase( "<1.2.7", "includePrerelease", "0.0.0-0", "Approx" )]
 
         // Syntax: "<=1.2.7" is like "=1.2.7".
         [TestCase( "<=1.2.7", "", "1.2.7[Lock]", "Approx" )]
-        [TestCase( "<=1.2.7", "includePreRelease", "1.2.7[Lock]", "Approx" )]
+        [TestCase( "<=1.2.7", "includePrerelease", "1.2.7[Lock]", "Approx" )]
 
-        public void parse_npm_syntax( string p, string includePreRelease, string expected, string approximate )
+        public void parse_npm_syntax( string p, string includePrerelease, string expected, string approximate )
         {
-            var r = SVersionBound.NpmTryParse( p, includePreRelease == "includePreRelease" );
+            var r = SVersionBound.NpmTryParse( p, includePrerelease == "includePrerelease" );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
@@ -305,6 +305,20 @@ namespace CSemVer.Tests
             r.IsValid.Should().BeFalse();
             r.Result.Should().Be( SVersionBound.None );
         }
+
+        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3" )]
+        [TestCase( "1.2.3.4-alpha - 3", "1.2.3" )]
+        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]" )]
+        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected )
+        {
+            ReadOnlySpan<char> head = p;
+            var r = SVersionBound.NpmTryParse( ref head );
+            r.Error.Should().BeNull();
+            r.Result.ToString().Should().Be( expected );
+            r.FourthPartLost.Should().BeTrue();
+            head.Length.Should().Be( 0 );
+        }
+
 
         // Syntax from: https://docs.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges.
 
@@ -390,8 +404,8 @@ namespace CSemVer.Tests
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
+            r.FourthPartLost.Should().BeFalse();
         }
-
 
         // (1.0) is invalid
         [TestCase( "(1.0)" )]
@@ -407,6 +421,18 @@ namespace CSemVer.Tests
         }
 
 
+        [TestCase( "[1.2.3.4]", "1.2.3[Lock]" )]
+        [TestCase( "1.2.3.4-alpha", "1.2.3" )]
+        [TestCase( "[1.2.3.4-alpha,2)", "1.2.3[LockMajor,CI]" )]
+        public void parse_nuget_with_fourth_part( string p, string expected )
+        {
+            var r = SVersionBound.NugetTryParse( p );
+            r.Error.Should().BeNull();
+            r.Result.ToString().Should().Be( expected );
+            r.IsApproximated.Should().BeFalse();
+            r.FourthPartLost.Should().BeTrue();
+        }
+
         [TestCase( "v1.0.0-mmm", "1.0.0-mmm" )]
         [TestCase( "v1.0.0-x[]", "1.0.0-x" )]
         [TestCase( "v1.0.0-x[CI,LockedPatch]", "1.0.0-x[LockPatch,CI]" )]
@@ -419,6 +445,23 @@ namespace CSemVer.Tests
         public void parse_SVersionBound( string p, string expected )
         {
             SVersionBound.TryParse( p, out var b ).Should().BeTrue();
+            b.ToString().Should().Be( expected );
+        }
+
+        [TestCase( "v1.0.0-mmm", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[None]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[None,None]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[None,CI]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[CI]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[CI,None]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[LockPatch]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[LockPatch,Exploratory]", "1.0.0-mmm[LockPatch,Exploratory]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[LockPatch,None]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        [TestCase( "v1.0.0-mmm[None,LockPatch]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
+        public void parse_SVersionBound_with_defaults( string p, string expected, SVersionLock defL, PackageQuality defQ )
+        {
+            SVersionBound.TryParse( p, out var b, defL, defQ ).Should().BeTrue();
             b.ToString().Should().Be( expected );
         }
 

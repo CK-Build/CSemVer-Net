@@ -15,17 +15,25 @@ namespace CSemVer
         /// </summary>
         /// <param name="s">The span to parse.</param>
         /// <returns>The result of the parse that can be invalid.</returns>
-        public static ParseResult NugetTryParse( ReadOnlySpan<char> s )
+        public static ParseResult NugetTryParse( ReadOnlySpan<char> s ) => NugetTryParse( ref s );
+
+        /// <summary>
+        /// Attempts to parse a nuget version range. See  https://docs.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges.
+        /// There is nothing really simple here. Check for instance: https://github.com/NuGet/Home/issues/6434#issuecomment-358782297 
+        /// </summary>
+        /// <param name="head">The span to parse.</param>
+        /// <returns>The result of the parse that can be invalid.</returns>
+        public static ParseResult NugetTryParse( ref ReadOnlySpan<char> head )
         {
             // Parsing syntaxically invalid version is not common: we analyze existing stuff that are supposed
             // to have already been parsed.
             // Instead of handling such errors explicitly, we trap any IndexOutOfRangeException that will eventually be raised.
-            var sSaved = s;
+            var sSaved = head;
             try
             {
-                if( Trim( ref s ).Length == 0 ) return new ParseResult( "Version range expected." );
-                bool begExclusive = TryMatch( ref s, '(' );
-                bool begInclusive = !begExclusive && TryMatch( ref s, '[' );
+                if( Trim( ref head ).Length == 0 ) return new ParseResult( "Version range expected." );
+                bool begExclusive = TryMatch( ref head, '(' );
+                bool begInclusive = !begExclusive && TryMatch( ref head, '[' );
                 if( begInclusive || begExclusive )
                 {
                     SVersion? v1 = null;
@@ -34,35 +42,35 @@ namespace CSemVer
                     bool v2FourthPartLost = false;
                     bool endInclusive;
 
-                    bool hasComma = TryMatch( ref s, ',' );
+                    bool hasComma = TryMatch( ref head, ',' );
                     if( !hasComma )
                     {
-                        if( s.Length == 0 ) return new ParseResult( "Expected nuget version." );
-                        v1 = TryParseVersion( ref s, out v1FourthPartLost );
+                        if( head.Length == 0 ) return new ParseResult( "Expected nuget version." );
+                        v1 = TryParseVersion( ref head, out v1FourthPartLost );
                         if( v1.ErrorMessage != null ) return new ParseResult( v1.ErrorMessage );
-                        if( s.Length > 0 )
+                        if( head.Length > 0 )
                         {
-                            hasComma = TryMatch( ref s, ',' );
+                            hasComma = TryMatch( ref head, ',' );
                         }
                     }
-                    if( s.Length == 0 ) return new ParseResult( "Unclosed nuget version range." );
+                    if( head.Length == 0 ) return new ParseResult( "Unclosed nuget version range." );
 
                     if( !hasComma && v1 != null )
                     {
-                        if( !begInclusive || !TryMatch( ref s, ']' ) )
+                        if( !begInclusive || !TryMatch( ref head, ']' ) )
                         {
                             return new ParseResult( "Invali singled version range. Must only be '[version]'." );
                         }
-                        return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false );
+                        return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false, v1FourthPartLost );
                     }
                     Debug.Assert( hasComma || v1 == null );
-                    endInclusive = TryMatch( ref s, ']' );
-                    if( !endInclusive && !TryMatch( ref s, ')' ) )
+                    endInclusive = TryMatch( ref head, ']' );
+                    if( !endInclusive && !TryMatch( ref head, ')' ) )
                     {
-                        v2 = TryParseVersion( ref s, out v2FourthPartLost );
+                        v2 = TryParseVersion( ref head, out v2FourthPartLost );
                         if( v2.ErrorMessage != null ) return new ParseResult( v2.ErrorMessage );
-                        if( s.Length == 0
-                            || ( !(endInclusive = TryMatch( ref s, ']' )) && !TryMatch( ref s, ')' ) ))
+                        if( head.Length == 0
+                            || ( !(endInclusive = TryMatch( ref head, ']' )) && !TryMatch( ref head, ')' ) ))
                         {
                             return new ParseResult( "Unclosed nuget version range." );
                         }
@@ -72,9 +80,9 @@ namespace CSemVer
                         return new ParseResult( "Invalid nuget version range." );
                     }
                     Debug.Assert( v1 != null || v2 != null );
-                    return CreateResult( begInclusive, v1, v2, endInclusive, v1FourthPartLost|v2FourthPartLost );
+                    return CreateResult( begInclusive, v1, v2, endInclusive, v1FourthPartLost || v2FourthPartLost );
                 }
-                return TryParseVersionResult( ref s, false );
+                return TryParseVersionResult( ref head, false );
             }
             catch( IndexOutOfRangeException )
             {
@@ -105,15 +113,15 @@ namespace CSemVer
             {
                 if( v1.Major + 1 == v2.Major && v2.Minor == 0 && v2.Patch == 0 )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMajor ), false );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMajor ), false, fourthPartLost );
                 }
                 if( v1.Major == v2.Major && v1.Minor + 1 == v2.Minor && v2.Patch == 0 )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMinor ), false );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMinor ), false, fourthPartLost );
                 }
                 if( v1.Major == v2.Major && v1.Minor == v2.Minor && v1.Patch + 1 == v2.Patch )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockPatch ), false );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockPatch ), false, fourthPartLost );
                 }
             }
             // Only if v2 is not null is this an approximation since we ignore the notion of "exclusive lower bound".
@@ -131,7 +139,12 @@ namespace CSemVer
             Debug.Assert( s.Length > 0 );
             fourthPartLost = false;
             var v = SVersion.TryParse( ref s );
-            if( !v.IsValid )
+            if( v.IsValid )
+            {
+                // If only the 3 first parts have been read...
+                fourthPartLost = SkipExtraPartsAndPrereleaseIfAny( ref s );
+            }
+            else
             {
                 if( TryMatchNonNegativeInt( ref s, out int major ) )
                 {
@@ -143,19 +156,33 @@ namespace CSemVer
                     {
                         return SVersion.Create( "Expected Nuget minor part.", null );
                     }
-                    // Try to save the fourth part.
+                    // Try to save the fourth part: in such case the patch is read.
+                    int patch = 0;
                     if( s.Length > 0 && TryMatch( ref s, '.' )
-                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int patch )
+                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out patch )
                         && s.Length > 0 && TryMatch( ref s, '.' )
                         && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) )
                     {
                         fourthPartLost = true;
-                        return SVersion.Create( major, minor, patch );
                     }
-                    return SVersion.Create( major, minor, 0 );
+                    return SVersion.Create( major, minor, patch );
                 }
             }
             return v;
+        }
+
+        static bool SkipExtraPartsAndPrereleaseIfAny( ref ReadOnlySpan<char> s )
+        {
+            bool fourthPartLost = false;
+            while( s.Length > 0 && TryMatch( ref s, '.' ) && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) ) fourthPartLost = true;
+            if( s.Length > 0 && TryMatch( ref s, '-' ) )
+            {
+                while( s.Length > 0 && s[0] < 127 && (Char.IsLetterOrDigit( s[0] ) || s[0] == '.' || s[0] == '+') )
+                {
+                    s = s.Slice( 1 );
+                }
+            }
+            return fourthPartLost;
         }
     }
 }

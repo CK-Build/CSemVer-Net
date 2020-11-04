@@ -326,7 +326,7 @@ namespace CSemVer
             return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax, true ).Item1;
         }
 
-        private static (SVersion,int) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool checkLength )
+        private static (SVersion V, int Length) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool checkLength )
         {
             if( string.IsNullOrEmpty( s ) ) return (new SVersion( "Null or empty version string.", s ), 0);
             Match m = _regExSVersion.Match( s );
