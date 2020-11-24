@@ -450,7 +450,7 @@ namespace CodeCake
         }
 
         /// <summary>
-        /// A SignatureVSTSFeed handles Stable, ReleaseCandidate, Preview and CI Azure feed views with
+        /// A SignatureVSTSFeed handles Stable, Latest, Preview and CI Azure feed views with
         /// package promotion based on the published version.
         /// The secret key name is built by <see cref="GetSecretKeyName"/>:
         /// "AZURE_FEED_" + Organization.ToUpperInvariant().Replace( '-', '_' ).Replace( ' ', '_' ) + "_PAT".
@@ -501,7 +501,7 @@ namespace CodeCake
             public string ProjectName { get; }
 
             /// <summary>
-            /// Implements Package promotion in @CI, @Exploratory, @Preview, @ReleaseCandidate and @Stable views.
+            /// Implements Package promotion in @CI, @Exploratory, @Preview, @Latest and @Stable views.
             /// </summary>
             /// <param name="ctx">The Cake context.</param>
             /// <param name="pushes">The set of artifacts to promote.</param>
