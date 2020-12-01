@@ -57,7 +57,7 @@ namespace CSemVer
                                        * (MaxPreReleaseNumber + 1L)
                                        * (MaxPreReleasePatch + 1L));
 
-        static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "prerelease", "rc" };
+        static readonly string[] _standardNames = new[] { "alpha", "beta", "delta", "epsilon", "gamma", "kappa", "preview", "rc" };
         static readonly string[] _standardNamesI = new[] { "a", "b", "d", "e", "g", "k", "p", "r" };
         static readonly char[] _standardNamesC = new[] { 'a', 'b', 'd', 'e', 'g', 'k', 'p', 'r' };
 
@@ -155,6 +155,7 @@ namespace CSemVer
 
         static long ComputeOrderedVersion( int major, int minor, int patch, int preReleaseNameIdx = -1, int preReleaseNumber = 0, int preReleaseFix = 0 )
         {
+            Debug.Assert( preReleaseNameIdx >= 0 || (preReleaseNumber == 0 && preReleaseFix == 0), "preReleaseNameIdx = -1 ==> preReleaseNumber = preReleaseFix = 0" );
             long v = MulMajor * major;
             v += MulMinor * minor;
             v += MulPatch * (patch + 1);
@@ -166,12 +167,12 @@ namespace CSemVer
                 v += preReleaseFix;
             }
             Debug.Assert( Create( v )._orderedVersion.Number == v );
-            Debug.Assert( preReleaseNameIdx >= 0 == ((v % MulPatch) != 0) );
+            Debug.Assert( (preReleaseNameIdx >= 0) == ((v % MulPatch) != 0) );
             Debug.Assert( major == (int)((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMajor) );
             Debug.Assert( minor == (int)(((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulMinor) - major * (MaxMinor + 1L)) );
             Debug.Assert( patch == (int)(((preReleaseNameIdx >= 0 ? v : v - MulPatch) / MulPatch) - (major * (MaxMinor + 1L) + minor) * (MaxPatch + 1L)) );
             Debug.Assert( preReleaseNameIdx == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) / MulName) : -1) );
-            Debug.Assert( preReleaseNumber == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) / MulNum - preReleaseNameIdx * MulNum) : 0) );
+            Debug.Assert( preReleaseNumber == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) % MulName) / MulNum : 0) );
             Debug.Assert( preReleaseFix == (preReleaseNameIdx >= 0 ? (int)(((v - 1L) % MulPatch) % MulNum) : 0) );
             return v;
         }

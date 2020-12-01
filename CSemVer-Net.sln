@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		RepositoryInfo.xml = RepositoryInfo.xml
 		Common\Shared.props = Common\Shared.props
+		Common\SimpleGitVersion.png = Common\SimpleGitVersion.png
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSemVer", "CSemVer\CSemVer.csproj", "{07FBD224-B043-44FE-874D-2DA6B28F5E1B}"

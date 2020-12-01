@@ -79,8 +79,8 @@ namespace CSemVer.Tests
         [TestCase( "3.0.1-epsilon.18.1", "3.0.1-e18-01", true )]
         [TestCase( "3.0.1-gamma.19", "3.0.1-g19", false )]
         [TestCase( "3.0.1-kappa.21", "3.0.1-k21", false )]
-        [TestCase( "3.0.1-prerelease.24", "3.0.1-p24", false )]
-        [TestCase( "3.0.1-prerelease.24.99", "3.0.1-p24-99", true )]
+        [TestCase( "3.0.1-preview.24", "3.0.1-p24", false )]
+        [TestCase( "3.0.1-preview.24.99", "3.0.1-p24-99", true )]
         [TestCase( "99999.49999.9999-rc.99", "99999.49999.9999-r99", false )]
         [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99", true )]
         public void pre_release_with_standard_names_nugetV2_mappings( string tag, string nuget, bool isPrereleasePatch )
@@ -104,7 +104,7 @@ namespace CSemVer.Tests
         [TestCase( "3.0.1-epsilon.18.2", "3.0.1-e18-02" )]
         [TestCase( "3.0.1-gamma.19.4", "3.0.1-g19-04" )]
         [TestCase( "3.0.1-kappa.1.5", "3.0.1-k01-05" )]
-        [TestCase( "3.0.1-prerelease.0.1", "3.0.1-p00-01" )]
+        [TestCase( "3.0.1-preview.0.1", "3.0.1-p00-01" )]
         [TestCase( "99999.49999.9999-rc.99.99", "99999.49999.9999-r99-99" )]
         public void pre_release_with_standard_names_and_fix_number_normalized_mappings( string longF, string shortF )
         {

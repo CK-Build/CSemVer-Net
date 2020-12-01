@@ -70,6 +70,7 @@ namespace CSemVer
             else
             {
                 Debug.Assert( f == CSVersionFormat.Normalized );
+                Debug.Assert( SVersion.Parse( ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, buildInfo ) ).PackageQuality == PackageQuality.CI );
                 return ComputeShortFormVersion( Major, Minor, Patch, PrereleaseNameIdx, PrereleaseNumber, PrereleasePatch, BuildMetaData, buildInfo );
             }
         }

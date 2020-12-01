@@ -13,44 +13,44 @@ namespace CSemVer
     /// When all 5 versions are null then <see cref="IsValid"/> is false: as long as at least a <see cref="CI"/> version
     /// is specified, this is valid.
     /// </summary>
-    public readonly struct PackageQualityVersions : IEnumerable<SVersion>
+    public readonly struct PackageQualityVector : IEnumerable<SVersion>
     {
         readonly SVersion? _sta;
-        readonly SVersion? _lat;
+        readonly SVersion? _rc;
         readonly SVersion? _pre;
         readonly SVersion? _exp;
         readonly SVersion? _ci;
 
         /// <summary>
-        /// Initializes a new <see cref="PackageQualityVersions"/> from a set of versions.
+        /// Initializes a new <see cref="PackageQualityVector"/> from a set of versions.
         /// </summary>
         /// <param name="versions">Set of available versions.</param>
-        /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.Release"/> has been met.</param>
-        public PackageQualityVersions( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
+        /// <param name="versionsAreOrdered">True to shortcut the work as soon as a <see cref="PackageQuality.Stable"/> has been met.</param>
+        public PackageQualityVector( IEnumerable<SVersion> versions, bool versionsAreOrdered = false )
         {
-            _ci = _exp = _pre = _lat = _sta = null;
+            _ci = _exp = _pre = _rc = _sta = null;
             foreach( var v in versions )
             {
-                Apply( v, ref _ci, ref _exp, ref _pre, ref _lat, ref _sta );
-                if( versionsAreOrdered && v.PackageQuality == PackageQuality.Release ) break;
+                Apply( v, ref _ci, ref _exp, ref _pre, ref _rc, ref _sta );
+                if( versionsAreOrdered && v.PackageQuality == PackageQuality.Stable ) break;
             }
         }
 
         /// <summary>
-        /// Initializes a new <see cref="PackageQualityVersions"/> with known best versions.
+        /// Initializes a new <see cref="PackageQualityVector"/> with known best versions.
         /// (this is a low level constructor that does not test/ensure anything).
         /// </summary>
         /// <param name="ci">The current best CI version.</param>
         /// <param name="exp">The current best Exploratory version.</param>
         /// <param name="pre">The current best Preview version.</param>
-        /// <param name="lat">The current best Latest version.</param>
+        /// <param name="rc">The current best ReleaseCandidate version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public PackageQualityVersions( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? lat, SVersion? sta )
+        public PackageQualityVector( SVersion? ci, SVersion? exp, SVersion? pre, SVersion? rc, SVersion? sta )
         {
             _ci = ci;
             _exp = exp;
             _pre = pre;
-            _lat = lat;
+            _rc = rc;
             _sta = sta;
         }
 
@@ -61,16 +61,16 @@ namespace CSemVer
         /// <param name="ci">The current best CI version.</param>
         /// <param name="exp">The current best Exploratory version.</param>
         /// <param name="pre">The current best Preview version.</param>
-        /// <param name="lat">The current best Latest version.</param>
+        /// <param name="rc">The current best ReleaseCandidate version.</param>
         /// <param name="sta">The current best Stable version.</param>
-        public static void Apply( SVersion v, [AllowNull]ref SVersion ci, ref SVersion? exp, ref SVersion? pre, ref SVersion? lat, ref SVersion? sta )
+        public static void Apply( SVersion v, [AllowNull]ref SVersion ci, ref SVersion? exp, ref SVersion? pre, ref SVersion? rc, ref SVersion? sta )
         {
             if( v != null && v.IsValid )
             {
                 switch( v.PackageQuality )
                 {
-                    case PackageQuality.Release: if( v > sta ) sta = v; goto case PackageQuality.ReleaseCandidate;
-                    case PackageQuality.ReleaseCandidate: if( v > lat ) lat = v; goto case PackageQuality.Preview;
+                    case PackageQuality.Stable: if( v > sta ) sta = v; goto case PackageQuality.ReleaseCandidate;
+                    case PackageQuality.ReleaseCandidate: if( v > rc ) rc = v; goto case PackageQuality.Preview;
                     case PackageQuality.Preview: if( v > pre ) pre = v; goto case PackageQuality.Exploratory;
                     case PackageQuality.Exploratory: if( v > exp ) exp = v; goto default;
                     default: if( v > ci ) ci = v; break;
@@ -78,19 +78,19 @@ namespace CSemVer
             }
         }
 
-        PackageQualityVersions( PackageQualityVersions q, SVersion v )
+        PackageQualityVector( PackageQualityVector q, SVersion v )
         {
             Debug.Assert( v?.IsValid ?? false, "v must be not null and valid." );
             _ci = q.CI;
             _exp = q.Exploratory;
             _pre = q.Preview;
-            _lat = q.Latest;
+            _rc = q.ReleaseCandidate;
             _sta = q.Stable;
-            Apply( v, ref _ci, ref _exp, ref _pre, ref _lat, ref _sta );
+            Apply( v, ref _ci, ref _exp, ref _pre, ref _rc, ref _sta );
         }
 
         /// <summary>
-        /// Gets whether this <see cref="PackageQualityVersions"/> is valid: at least <see cref="CI"/>
+        /// Gets whether this <see cref="PackageQualityVector"/> is valid: at least <see cref="CI"/>
         /// is available.
         /// </summary>
         public bool IsValid => CI != null;
@@ -104,8 +104,8 @@ namespace CSemVer
         {
             return quality switch
             {
-                PackageQuality.Release => Stable,
-                PackageQuality.ReleaseCandidate => Latest,
+                PackageQuality.Stable => Stable,
+                PackageQuality.ReleaseCandidate => ReleaseCandidate,
                 PackageQuality.Preview => Preview,
                 PackageQuality.Exploratory => Exploratory,
                 _ => CI,
@@ -113,28 +113,14 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Gets the best version for a given label or null if no such version exists.
-        /// </summary>
-        /// <param name="label">The required label.</param>
-        /// <returns>The best version or null if not found.</returns>
-        public SVersion? GetVersion( PackageLabel label ) => label switch
-        {
-            PackageLabel.Stable => Stable,
-            PackageLabel.Latest => Latest,
-            PackageLabel.Preview => Preview,
-            PackageLabel.Exploratory => Exploratory,
-            _ => CI,
-        };
-
-        /// <summary>
         /// Gets the best stable version or null if no such version exists.
         /// </summary>
         public SVersion? Stable => _sta;
 
         /// <summary>
-        /// Gets the best latest compatible version or null if no such version exists.
+        /// Gets the best ReleaseCandidate compatible version or null if no such version exists.
         /// </summary>
-        public SVersion? Latest => _lat;
+        public SVersion? ReleaseCandidate => _rc;
 
         /// <summary>
         /// Gets the best preview compatible version or null if no such version exists.
@@ -152,26 +138,26 @@ namespace CSemVer
         public SVersion? CI => _ci;
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVersions"/> or a new one that combines a new version.
+        /// Retuns this <see cref="PackageQualityVector"/> or a new one that combines a new version.
         /// </summary>
         /// <param name="v">Version to handle. May be null or invalid.</param>
         /// <returns>The QualityVersions.</returns>
-        public PackageQualityVersions WithVersion( SVersion v )
+        public PackageQualityVector WithVersion( SVersion v )
         {
             if( v == null || !v.IsValid ) return this;
-            return IsValid ? new PackageQualityVersions( this, v ) : new PackageQualityVersions( new[] { v } );
+            return IsValid ? new PackageQualityVector( this, v ) : new PackageQualityVector( new[] { v } );
         }
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVersions"/> or a new one combined with another one.
+        /// Retuns this <see cref="PackageQualityVector"/> or a new one combined with another one.
         /// </summary>
         /// <param name="other">Other versions to be combined.</param>
         /// <returns>The resulting QualityVersions.</returns>
-        public PackageQualityVersions With( PackageQualityVersions other )
+        public PackageQualityVector With( PackageQualityVector other )
         {
             if( !IsValid ) return other;
             if( !other.IsValid ) return this;
-            return new PackageQualityVersions( other.Concat( this ) );
+            return new PackageQualityVector( other.Concat( this ) );
         }
 
         /// <summary>
@@ -191,11 +177,11 @@ namespace CSemVer
             {
                 b.Append( " / " ).Append( Preview.ToString() );
             }
-            if( Latest != null && Latest != Preview )
+            if( ReleaseCandidate != null && ReleaseCandidate != Preview )
             {
-                b.Append( " / " ).Append( Latest.ToString() );
+                b.Append( " / " ).Append( ReleaseCandidate.ToString() );
             }
-            if( Stable != null && Stable != Latest )
+            if( Stable != null && Stable != ReleaseCandidate )
             {
                 b.Append( " / " ).Append( Stable.ToString() );
             }
@@ -203,7 +189,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Returns the distinct CI, Exploratory, Preview, Latest, Stable (in this order) as long as they are not null.
+        /// Returns the distinct CI, Exploratory, Preview, ReleaseCandidate, Stable (in this order) as long as they are not null.
         /// </summary>
         /// <returns>The set of distinct versions (empty if <see cref="IsValid"/> is false).</returns>
         public IEnumerator<SVersion> GetEnumerator()
@@ -217,10 +203,10 @@ namespace CSemVer
                     if( Preview != null )
                     {
                         if( Preview != Exploratory ) yield return Preview;
-                        if( Latest != null )
+                        if( ReleaseCandidate != null )
                         {
-                            if( Latest != Preview ) yield return Latest;
-                            if( Stable != null && Stable != Latest )
+                            if( ReleaseCandidate != Preview ) yield return ReleaseCandidate;
+                            if( Stable != null && Stable != ReleaseCandidate )
                             {
                                 yield return Stable;
                             }

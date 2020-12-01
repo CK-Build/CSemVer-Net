@@ -15,27 +15,22 @@ namespace CSemVer
     public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
         // It has to be here because of static initialization order.
-        static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
+        static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(view|release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
-        /// Gets the standard pre release name among <see cref="StandardPrereleaseNames"/>.
+        /// Gets the standard, normalized, pre release name among <see cref="StandardPrereleaseNames"/>.
         /// <see cref="string.Empty"/> when this is not a pre release version.
         /// </summary>
         public string PrereleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
 
         /// <summary>
-        /// Gets whether this is a pre release.
-        /// </summary>
-        public bool IsPrerelease => PrereleaseNameIdx >= 0;
-
-        /// <summary>
-        /// When <see cref="IsPrerelease"/> is true, the this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
+        /// When <see cref="SVersion.IsPrerelease"/> is true, this is between 0 ('alpha') and <see cref="MaxPreReleaseNameIdx"/> ('rc')
         /// otherwise this is -1.
         /// </summary>
         public readonly int PrereleaseNameIdx;
 
         /// <summary>
-        /// Meaningful only if <see cref="IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
+        /// Meaningful only if <see cref="SVersion.IsPrerelease"/> is true (0 when not in prerelease). Between 0 and <see cref="MaxPreReleaseNumber"/>. 
         /// </summary>
         public readonly int PrereleaseNumber;
 
@@ -52,7 +47,7 @@ namespace CSemVer
         public readonly bool IsLongForm;
 
         /// <summary>
-        /// Gets whether this is a pre release patch (<see cref="IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
+        /// Gets whether this is a pre release patch (<see cref="SVersion.IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
         /// </summary>
         public bool IsPreReleasePatch => PrereleasePatch > 0;
 
@@ -77,7 +72,7 @@ namespace CSemVer
         /// <summary>
         /// Gets the empty array singleton.
         /// </summary>
-        public static readonly CSVersion[] EmptyArray = Array.Empty<CSVersion>();
+        public static CSVersion[] EmptyArray => Array.Empty<CSVersion>();
 
         CSVersion( int major, int minor, int patch, string buildMetaData,
                    int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch,
@@ -147,7 +142,7 @@ namespace CSemVer
 
         /// <summary>
         /// Returns either this versions or the same version but expressed in long form.
-        /// Note that when <see cref="SVersion.IsValid"/> is false, this is returned unchanged.
+        /// Note that when <see cref="SVersion.IsValid"/> is false, this invalid version is returned unchanged.
         /// </summary>
         /// <returns>This version expressed in long form.</returns>
         public CSVersion ToLongForm()
@@ -158,7 +153,7 @@ namespace CSemVer
 
         /// <summary>
         /// Returns either this versions or the same version but expressed in short form (that is the default, normalized, form).
-        /// Note that when <see cref="SVersion.IsValid"/> is false, this is returned unchanged.
+        /// Note that when <see cref="SVersion.IsValid"/> is false, this invalid version is returned unchanged.
         /// </summary>
         /// <returns>This version expressed in short form.</returns>
         public CSVersion ToNormalizedForm()
@@ -189,7 +184,6 @@ namespace CSemVer
         /// <returns>Next possible versions.</returns>
         public IEnumerable<CSVersion> GetDirectSuccessors( bool patchesOnly = false )
         {
-            Debug.Assert( _standardNames[0] == "alpha" );
             if( IsValid )
             {
                 if( IsPrerelease )

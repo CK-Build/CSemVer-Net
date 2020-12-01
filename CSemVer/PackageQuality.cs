@@ -5,45 +5,55 @@ using System.Text;
 namespace CSemVer
 {
     /// <summary>
-    /// A package quality is associated to a <see cref="SVersion"/>.
-    /// The quality is functionally dependent on the version number whereas <see cref="PackageLabel"/>
-    /// denotes expected version ranges. 
+    /// A package quality is associated to a <see cref="SVersion"/> (quality is functionally dependent on the version number).
+    /// <para>
+    /// Numerical values of these 5 levels are ordered from the less restrictive (CI) to the most one (Release).
+    /// These values can also be used as bitflags (most restrictive values "cover" less restrictive ones). This brings nothing on
+    /// the table except that this express the fact that a Release version "superseds" a Preview that itself "superseds" a CI version:
+    /// see <see cref="PackageQualityExtension.GetAllQualities(PackageQuality)"/> extension method that provides the lower qualities.
+    /// </para>
     /// </summary>
-    public enum PackageQuality
+    [Flags]
+    public enum PackageQuality : byte
     {
         /// <summary>
         /// No quality level applies (invalid versions have None quality).
         /// </summary>
-        None,
+        None = 0,
 
         /// <summary>
-        /// Package produced without any explicit version (all <see cref="SVersion"/>
-        /// that are not <see cref="CSVersion"/> are CI quality).
+        /// Applies to any valid <see cref="SVersion"/> that are NOT <see cref="CSVersion"/> and
+        /// has a non empty <see cref="SVersion.Prerelease"/> that don't start with "alpha", "beta",
+        /// "delta", "epsilon", "gamma", "kappa", "pre" or "rc".
         /// </summary>
-        CI,
+        CI = 1,
 
         /// <summary>
-        /// A risky prerelease version ("alpha", "beta", "delta") that should not be used in production.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A risky prerelease version ("alpha", "beta", "delta", "epsilon", "gamma", "kappa") that should not be used in production.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with any of the above
+        /// strings (case insensitive) or a <see cref="CSVersion"/> that has the corresponding <see cref="CSVersion.PrereleaseName"/>.
         /// </summary>
-        Exploratory,
+        Exploratory = 2 | CI,
 
         /// <summary>
-        /// A usable prerelease version ("epsilon", "gamma" or "kappa").
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A usable prerelease version.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with "pre" (case insensitive, this typically
+        /// handles "preview" or "prerelease"), or a <see cref="CSVersion"/> with a <see cref="CSVersion.PrereleaseName"/> of "preview"
+        /// (<see cref="CSVersion.PrereleaseNameIdx"/> = 6).
         /// </summary>
-        Preview,
+        Preview = 4 | Exploratory,
 
         /// <summary>
-        /// A "-pre" (or -"prerelease") or "-rc" prerelease version.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A release candidate version is the last step before <see cref="Stable"/>.
+        /// This applies to any version with a <see cref="SVersion.Prerelease"/> that starts with "rc" (case insensitive)
+        /// or a <see cref="CSVersion"/> with a <see cref="CSVersion.PrereleaseName"/> of "rc" (<see cref="CSVersion.PrereleaseNameIdx"/> = 7).
         /// </summary>
-        ReleaseCandidate,
+        ReleaseCandidate = 8 | Preview,
 
         /// <summary>
-        /// An official release.
-        /// Applies only to <see cref="CSVersion"/>.
+        /// A stable, official, release.
+        /// This applies to any version with an empty <see cref="SVersion.Prerelease"/>.
         /// </summary>
-        Release
+        Stable = 16 | ReleaseCandidate
     }
 }

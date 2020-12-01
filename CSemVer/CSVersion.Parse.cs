@@ -25,11 +25,11 @@ namespace CSemVer
             if( prerelease.Length > 0 )
             {
                 Match m = _rRelaxed.Match( prerelease );
-                if( !m.Success )
-                {
-                    return "CSVersion prerelease name must match a|b|d|e|g|k|p|r|alpha|beta|delta|epsilon|gamma|kappa|pre(release)?|rc.";
-                }
                 prName = m.Groups[1].Value;
+                if( !m.Success || prName.Length == 0 )
+                {
+                    return "CSVersion prerelease name must match a|b|d|e|g|k|p|r|alpha|beta|delta|epsilon|gamma|kappa|pre(view|release)?|rc.";
+                }
                 longForm = prName.Length > 1;
                 prNameIdx = prName.Length == 0 ? -1 : Array.IndexOf( _standardNamesC, Char.ToLowerInvariant( prName[0] ) );
                 string sPRNum = m.Groups[2].Value;
