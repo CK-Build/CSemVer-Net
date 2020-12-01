@@ -52,7 +52,16 @@ namespace CSemVer
         /// </summary>
         /// <param name="this">This quality.</param>
         /// <returns>This quality followed by its lowest ones.</returns>
-        public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this ) => _map[(int)@this];
+        public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this )
+            => _map[@this switch
+                {
+                    PackageQuality.CI => 1,
+                    PackageQuality.Exploratory => 2,
+                    PackageQuality.Preview => 3,
+                    PackageQuality.ReleaseCandidate => 4,
+                    PackageQuality.Stable => 5,
+                    _ => 0
+                }];
 
         /// <summary>
         /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
