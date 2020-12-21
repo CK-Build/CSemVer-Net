@@ -505,7 +505,7 @@ namespace CSemVer
         /// mere SVersion. Use false to consider the long form instead.
         /// </param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        public int CSemVerCompareTo( SVersion other, bool useShortForm = true )
+        public int CSemVerCompareTo( SVersion? other, bool useShortForm = true )
         {
             if( other is null ) return 1;
             if( IsValid )
@@ -541,7 +541,7 @@ namespace CSemVer
         /// <param name="x">The left version to compare. Can be null.</param>
         /// <param name="y">The right version to compare. Can be null.</param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        static public int SafeCompare( SVersion x, SVersion y )
+        static public int SafeCompare( SVersion? x, SVersion? y )
         {
             if( x is null )
             {
@@ -562,7 +562,7 @@ namespace CSemVer
         /// mere SVersion. Use false to consider the long form instead.
         /// </param>
         /// <returns>Standard positive, negative or zero value.</returns>
-        static public int CSemVerSafeCompare( SVersion x, SVersion y, bool useShortForm = true )
+        static public int CSemVerSafeCompare( SVersion? x, SVersion? y, bool useShortForm = true )
         {
             if( x is null )
             {
@@ -574,7 +574,7 @@ namespace CSemVer
         // Fun with Span and alloc-free string parsing.
         // Using this https://github.com/dotnet/runtime/pull/295 (not yet available)
         // would require to change the algorithm since we need to know the number of
-        // slpitted parts: we stack allocate a big enough array of Range and fills it
+        // splitted parts: we stack allocate a big enough array of Range and fills it
         // with the splitted parts.
         // The magic is: the algorithm is the same as the one with the strings!
         static int ComparePreRelease( ReadOnlySpan<char> x, ReadOnlySpan<char> y )
@@ -648,7 +648,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>True if the specified object is equal to this instance; otherwise, false.</returns>
-        public override bool Equals( object obj )
+        public override bool Equals( object? obj )
         {
             if( obj is null ) return false;
             if( ReferenceEquals( this, obj ) ) return true;

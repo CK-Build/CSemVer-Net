@@ -11,6 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CK.Text" Version="9.0.0" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="4.0.3--0006-develop" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="5.0.0" />
   </ItemGroup>
 </Project>
