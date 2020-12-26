@@ -42,17 +42,19 @@ namespace CSemVer
                     bool v2FourthPartLost = false;
                     bool endInclusive;
 
+                    if( Trim( ref head ).Length == 0 ) return new ParseResult( "Expected comma or version." );
                     bool hasComma = TryMatch( ref head, ',' );
                     if( !hasComma )
                     {
                         if( head.Length == 0 ) return new ParseResult( "Expected nuget version." );
                         v1 = TryParseVersion( ref head, out v1FourthPartLost );
                         if( v1.ErrorMessage != null ) return new ParseResult( v1.ErrorMessage );
-                        if( head.Length > 0 )
+                        if( Trim( ref head ).Length > 0 )
                         {
                             hasComma = TryMatch( ref head, ',' );
                         }
                     }
+                    else Trim( ref head );
                     if( head.Length == 0 ) return new ParseResult( "Unclosed nuget version range." );
 
                     if( !hasComma && v1 != null )
@@ -69,7 +71,7 @@ namespace CSemVer
                     {
                         v2 = TryParseVersion( ref head, out v2FourthPartLost );
                         if( v2.ErrorMessage != null ) return new ParseResult( v2.ErrorMessage );
-                        if( head.Length == 0
+                        if( Trim( ref head ).Length == 0
                             || ( !(endInclusive = TryMatch( ref head, ']' )) && !TryMatch( ref head, ')' ) ))
                         {
                             return new ParseResult( "Unclosed nuget version range." );
