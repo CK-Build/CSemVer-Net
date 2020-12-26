@@ -15,7 +15,7 @@ namespace CSemVer
     public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
     {
         // It has to be here because of static initialization order.
-        static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(view|release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)?(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
+        static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(view|release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
         /// Gets the standard, normalized, pre release name among <see cref="StandardPrereleaseNames"/>.

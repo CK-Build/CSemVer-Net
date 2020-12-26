@@ -393,7 +393,7 @@ namespace CSemVer.Tests
 
         //      When no lower bound is specified and the upper bound is 1.0.0, this is not an approximation.
         [TestCase( "(,1)", "0.0.0-0[LockMajor,CI]", "" )]
-        [TestCase( "[,1)", "0.0.0-0[LockMajor,CI]", "" )]
+        [TestCase( " [ , 1 ) ", "0.0.0-0[LockMajor,CI]", "" )]
 
         // However, when a prerelease is specified on the upper bound, we cannot be clever anymore...
         [TestCase( "[1.2.3,2.0.0-alpha)", "1.2.3", "Approx" )]
@@ -409,10 +409,12 @@ namespace CSemVer.Tests
 
         // (1.0) is invalid
         [TestCase( "(1.0)" )]
-        [TestCase( "[ 1.0 ]" )]
         [TestCase( "[ 1.0," )]
         [TestCase( "(" )]
         [TestCase( "(," )]
+        [TestCase( "(,)" )]
+        [TestCase( "()" )]
+        [TestCase( "[]" )]
         public void parse_nuget_syntax_error( string p )
         {
             var r = SVersionBound.NugetTryParse( p );
