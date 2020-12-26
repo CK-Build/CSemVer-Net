@@ -333,6 +333,7 @@ namespace CSemVer.Tests
         //      We ignore the notion of "exclusive lower bound" (see below): this is not an approximation.
 
         [TestCase( "(1.0.0,)", "1.0.0", "" )]
+        [TestCase( " ( 1.0.0, ) ", "1.0.0", "" )]
 
         // [1.0] -- x == 1.0 -- Exact version match
         //      This is a locked version.
@@ -415,6 +416,7 @@ namespace CSemVer.Tests
         [TestCase( "(,)" )]
         [TestCase( "()" )]
         [TestCase( "[]" )]
+        [TestCase( "" )]
         public void parse_nuget_syntax_error( string p )
         {
             var r = SVersionBound.NugetTryParse( p );
