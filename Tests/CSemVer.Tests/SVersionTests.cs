@@ -108,5 +108,20 @@ namespace CSemVer.Tests
                 default: throw new ArgumentException( nameof( op ) );
             }
         }
+
+        [TestCase( "1.0.0-beta2 after", "1.0.0-beta2" )]
+        [TestCase( "1.0.0-AZE,after", "1.0.0-AZE" )]
+        [TestCase( "0.0.0,after", "0.0.0" )]
+        [TestCase( "0.0.0-rc.1.2,after", "0.0.0-rc.1.2" )]
+        public void parsing_works_on_prefix_and_ParsedText_covers_the_version( string t, string parsedText )
+        {
+            var v = SVersion.TryParse( t, allowSuffix: true );
+            v.IsValid.Should().BeTrue();
+            v.ErrorMessage.Should().BeNull();
+            v.ParsedText.Should().Be( parsedText );
+            t.Should().StartWith( v.ParsedText );
+        }
+
+
     }
 }

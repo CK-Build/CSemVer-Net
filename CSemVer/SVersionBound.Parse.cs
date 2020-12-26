@@ -13,6 +13,8 @@ namespace CSemVer
         /// </summary>
         /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
         /// <param name="bound">The result. This is <see cref="SVersionBound.None"/> on error.</param>
+        /// <param name="defaultLock">The <see cref="SVersionLock"/> to use when no lock appears in the string to parse.</param>
+        /// <param name="defaultQuality">The <see cref="PackageQuality"/> to use when no lock appears in the string to parse.</param>
         /// <returns>True on success, false otherwise.</returns>
         public static bool TryParse( ReadOnlySpan<char> head, out SVersionBound bound, SVersionLock defaultLock = SVersionLock.None, PackageQuality defaultQuality = PackageQuality.None ) => TryParse( ref head, out bound, defaultLock, defaultQuality );
 
@@ -129,6 +131,7 @@ namespace CSemVer
             /// </summary>
             /// <param name="result">The version bound.</param>
             /// <param name="isApproximated">Whether the version bound is an approximation.</param>
+            /// <param name="fourthPartLost">Whether a 4th (or more) part (like in "1.2.3.4") has been ignored.</param>
             public ParseResult( SVersionBound result, bool isApproximated, bool fourthPartLost )
             {
                 Result = result;

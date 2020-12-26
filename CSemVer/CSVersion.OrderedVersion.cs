@@ -305,7 +305,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="obj">Other release version.</param>
         /// <returns>True if obj is a version that has the same OrderedVersion as this.</returns>
-        public override bool Equals( object obj ) => Equals( obj as CSVersion );
+        public override bool Equals( object? obj ) => Equals( obj as CSVersion );
 
         /// <summary>
         /// Versions are equal it their <see cref="OrderedVersion"/> are equals.

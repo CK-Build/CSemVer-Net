@@ -303,9 +303,13 @@ namespace CSemVer
         {
             // Note: Waiting for .Net 5. Regex will support ReadOnlySpan<char> and so this will be the real
             //       implementation and the string version will call it.
-            var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, false );
-            s = s.Slice( r.Item2 );
-            return r.Item1;
+            var r = TryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, allowSuffix: true );
+            if( r.IsValid )
+            {
+                Debug.Assert( r.ParsedText != null );
+                s = s.Slice( r.ParsedText.Length );
+            }
+            return r;
         }
 
         /// <summary>
@@ -320,31 +324,31 @@ namespace CSemVer
         /// This should be used in rare scenario where the normalization of a <see cref="CSVersion"/> (standardization
         /// of prerelease names) must not be done.
         /// </param>
+        /// <param name="allowSuffix">
+        /// When set to true, the parsed string can be longer than the version: a starting version can be successfully parsed and
+        /// on success, the exact parsed version length is given by the <see cref="SVersion.ParsedText"/>'s length.
+        /// </param>
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
-        public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true, bool allowSuffix = false )
         {
-            return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax, true ).Item1;
-        }
-
-        private static (SVersion V, int Length) DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool checkLength )
-        {
-            if( string.IsNullOrEmpty( s ) ) return (new SVersion( "Null or empty version string.", s ), 0);
+            if( string.IsNullOrEmpty( s ) ) return new SVersion( "Null or empty version string.", s );
             Match m = _regExSVersion.Match( s );
-            // Checking the end of the pattern (^ equivalent). ReadOnlySpan implementation will not rely on ^
-            // since we want to be able to parse a prefix.
-            if( !m.Success || (checkLength && s.Length > m.Length) ) return (new SVersion( "Pattern not matched.", s ), 0);
+            // On success, the actual parsed length is the length of the parsed text.
+            bool isLonger;
+            if( !m.Success || ((isLonger = s.Length > m.Length) && !allowSuffix) ) return new SVersion( m.Success ? "Unexpected characters after version." : "Pattern not matched.", s );
+            if( isLonger ) s = s.Substring( 0, m.Length );
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;
-            if( !int.TryParse( sMajor, out int major ) ) return (new SVersion( "Invalid Major.", s ), 0);
-            if( !int.TryParse( sMinor, out int minor ) ) return (new SVersion( "Invalid Major.", s ), 0);
-            if( !int.TryParse( sPatch, out int patch ) ) return (new SVersion( "Invalid Patch.", s ), 0);
-            return (DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax ), m.Length );
+            if( !int.TryParse( sMajor, out int major ) ) return new SVersion( "Invalid Major.", s );
+            if( !int.TryParse( sMinor, out int minor ) ) return new SVersion( "Invalid Major.", s );
+            if( !int.TryParse( sPatch, out int patch ) ) return new SVersion( "Invalid Patch.", s );
+            return DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
         /// Standard TryParse pattern that returns a boolean rather than the resulting <see cref="SVersion"/>.
-        /// See <see cref="TryParse(string,bool,bool)"/>.
+        /// See <see cref="TryParse(string,bool,bool,bool)"/>.
         /// </summary>
         /// <param name="s">String to parse.</param>
         /// <param name="v">Resulting version.</param>
