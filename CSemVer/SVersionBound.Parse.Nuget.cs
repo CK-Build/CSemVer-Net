@@ -54,8 +54,7 @@ namespace CSemVer
                             hasComma = TryMatch( ref head, ',' );
                         }
                     }
-                    else Trim( ref head );
-                    if( head.Length == 0 ) return new ParseResult( "Unclosed nuget version range." );
+                    if( Trim( ref head ).Length == 0 ) return new ParseResult( "Unclosed nuget version range." );
 
                     if( !hasComma && v1 != null )
                     {
