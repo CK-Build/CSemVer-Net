@@ -150,6 +150,14 @@ namespace CSemVer.Tests
             CSVersion.Parse( tag ).NormalizedText.Should().Be( finalForm );
         }
 
+        [TestCase( "1.0.0-rc0002" )]
+        public void this_is_not_a_csversion( string t )
+        {
+            var v = SVersion.Parse( t );
+            v.AsCSVersion.Should().BeNull();
+            v.ToNormalizedString().Should().Be( t );
+        }
+
         [TestCase( "v0.0.0-alpha", 0, 0, 0, 1 )]
         [TestCase( "v0.0.0-alpha.0.1", 0, 0, 0, 2 )]
         [TestCase( "v0.0.0-alpha.0.2", 0, 0, 0, 3 )]
