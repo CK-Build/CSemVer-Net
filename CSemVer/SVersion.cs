@@ -287,10 +287,10 @@ namespace CSemVer
         public static SVersion Create( string error, string? parsedText ) => new SVersion( error, parsedText );
 
         /// <summary>
-        /// Parses the specified string to a semantic version and returns a <see cref="SVersion"/> that 
-        /// may not be <see cref="IsValid"/>.
+        /// Forwards a head if a semantic version is found and returns a <see cref="SVersion"/> that 
+        /// may not be <see cref="IsValid"/>. When the returned version is not valid, the head is not forwarded.
         /// </summary>
-        /// <param name="s">The string to parse.</param>
+        /// <param name="s">The parse head.</param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
         /// <param name="handleCSVersion">
         /// False to skip <see cref="CSVersion"/> conformance lookup. The resulting version
@@ -298,12 +298,16 @@ namespace CSemVer
         /// This should be used in rare scenario where the normalization of a <see cref="CSVersion"/> (standardization
         /// of prerelease names) must not be done.
         /// </param>
+        /// <param name="allowPrefixParse">
+        /// When set to true (the default), the parsed string can be longer than the version. Note that on success, the exact
+        /// parsed version length is given by the <see cref="SVersion.ParsedText"/>'s length.
+        /// </param>
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
-        public static SVersion TryParse( ref ReadOnlySpan<char> s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static SVersion TryParse( ref ReadOnlySpan<char> s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true, bool allowPrefixParse = true )
         {
             // Note: Waiting for .Net 5. Regex will support ReadOnlySpan<char> and so this will be the real
             //       implementation and the string version will call it.
-            var r = TryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, allowSuffix: true );
+            var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, allowPrefixParse );
             if( r.IsValid )
             {
                 Debug.Assert( r.ParsedText != null );
@@ -324,18 +328,19 @@ namespace CSemVer
         /// This should be used in rare scenario where the normalization of a <see cref="CSVersion"/> (standardization
         /// of prerelease names) must not be done.
         /// </param>
-        /// <param name="allowSuffix">
-        /// When set to true, the parsed string can be longer than the version: a starting version can be successfully parsed and
-        /// on success, the exact parsed version length is given by the <see cref="SVersion.ParsedText"/>'s length.
-        /// </param>
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
-        public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true, bool allowSuffix = false )
+        public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
             if( string.IsNullOrEmpty( s ) ) return new SVersion( "Null or empty version string.", s );
+            return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax, allowPrefixParse: false );
+        }
+
+        static SVersion DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool allowPrefixParse )
+        {
             Match m = _regExSVersion.Match( s );
             // On success, the actual parsed length is the length of the parsed text.
             bool isLonger;
-            if( !m.Success || ((isLonger = s.Length > m.Length) && !allowSuffix) ) return new SVersion( m.Success ? "Unexpected characters after version." : "Pattern not matched.", s );
+            if( !m.Success || ((isLonger = s.Length > m.Length) && !allowPrefixParse) ) return new SVersion( m.Success ? "Unexpected characters after version." : "Pattern not matched.", s );
             if( isLonger ) s = s.Substring( 0, m.Length );
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
@@ -348,7 +353,7 @@ namespace CSemVer
 
         /// <summary>
         /// Standard TryParse pattern that returns a boolean rather than the resulting <see cref="SVersion"/>.
-        /// See <see cref="TryParse(string,bool,bool,bool)"/>.
+        /// See <see cref="TryParse(string,bool,bool)"/>.
         /// </summary>
         /// <param name="s">String to parse.</param>
         /// <param name="v">Resulting version.</param>

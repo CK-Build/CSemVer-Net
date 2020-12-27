@@ -19,7 +19,7 @@ namespace CSemVer
         public static bool TryParse( ReadOnlySpan<char> head, out SVersionBound bound, SVersionLock defaultLock = SVersionLock.None, PackageQuality defaultQuality = PackageQuality.None ) => TryParse( ref head, out bound, defaultLock, defaultQuality );
 
         /// <summary>
-        /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool)"/> that may be
+        /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool, bool)"/> that may be
         /// followed by an optional bracketed "[<see cref="TryParseLockAndMinQuality"/>]".
         /// The head is forwarded right after the match: on success, the head may be on any kind of character.
         /// </summary>
@@ -42,7 +42,7 @@ namespace CSemVer
             PackageQuality q = PackageQuality.None;
             if( Trim( ref head ).Length > 0 && TryMatch( ref head, '[' ) )
             {
-                // Allows empty [].
+                // Allows empty []. Note that TryParseLockAndMinQuality calls Trim.
                 TryParseLockAndMinQuality( ref head, out l, out q );
                 // Match the closing ] if it's here. Ignores it if it's not here.
                 if( Trim( ref head ).Length > 0 ) TryMatch( ref head, ']' );
