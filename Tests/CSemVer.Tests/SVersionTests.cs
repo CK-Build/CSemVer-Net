@@ -115,7 +115,8 @@ namespace CSemVer.Tests
         [TestCase( "0.0.0-rc.1.2,after", "0.0.0-rc.1.2" )]
         public void parsing_works_on_prefix_and_ParsedText_covers_the_version( string t, string parsedText )
         {
-            var v = SVersion.TryParse( t, allowSuffix: true );
+            var head = t.AsSpan();
+            var v = SVersion.TryParse( ref head );
             v.IsValid.Should().BeTrue();
             v.ErrorMessage.Should().BeNull();
             v.ParsedText.Should().Be( parsedText );
