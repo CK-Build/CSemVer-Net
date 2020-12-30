@@ -8,7 +8,7 @@ namespace CSemVer
     public readonly partial struct SVersionBound
     {
         /// <summary>
-        /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool)"/> that may be
+        /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool, bool)"/> that may be
         /// followed by an optional bracketed "[<see cref="TryParseLockAndMinQuality"/>]".
         /// </summary>
         /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
