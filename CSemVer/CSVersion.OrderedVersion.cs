@@ -46,7 +46,7 @@ namespace CSemVer
         /// </summary>
         public const int MaxPreReleaseNumber = 99;
         /// <summary>
-        /// The maximum number of fixes to a pre-release.
+        /// The maximum number of fixes to a prerelease.
         /// </summary>
         public const int MaxPreReleasePatch = 99;
 
@@ -219,7 +219,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="other">Other release tag (can be null).</param>
         /// <returns>A signed number indicating the relative values of this instance and <paramref name="other"/>.</returns>
-        public int CompareTo( CSVersion other )
+        public int CompareTo( CSVersion? other )
         {
             if( other == null ) return 1;
             return _orderedVersion.Number.CompareTo( other._orderedVersion.Number );

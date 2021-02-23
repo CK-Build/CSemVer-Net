@@ -25,7 +25,7 @@ namespace CSemVer
         /// <returns>The result of the parse that can be invalid.</returns>
         public static ParseResult NugetTryParse( ref ReadOnlySpan<char> head )
         {
-            // Parsing syntaxically invalid version is not common: we analyze existing stuff that are supposed
+            // Parsing syntactically invalid version is not common: we analyze existing stuff that are supposed
             // to have already been parsed.
             // Instead of handling such errors explicitly, we trap any IndexOutOfRangeException that will eventually be raised.
             var sSaved = head;
@@ -60,7 +60,7 @@ namespace CSemVer
                     {
                         if( !begInclusive || !TryMatch( ref head, ']' ) )
                         {
-                            return new ParseResult( "Invali singled version range. Must only be '[version]'." );
+                            return new ParseResult( "Invalid singled version range. Must only be '[version]'." );
                         }
                         return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false, v1FourthPartLost );
                     }
@@ -106,9 +106,9 @@ namespace CSemVer
             // minor or patch) to be satisfied!
             //
             // About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
-            // that depends on a package "A" (so you necessarily use a given verision of it: "vBase") and say: "I can't work with the
+            // that depends on a package "A" (so you necessarily use a given version of it: "vBase") and say: "I can't work with the
             // package "A" is version "vBase". I need a future version... Funny isn't it?
-            // So, we deliberately foget the "begInclusive" parameter. It stil appears in the parameters of this method for the sake of completness. 
+            // So, we deliberately forget the "begInclusive" parameter. It still appears in the parameters of this method for the sake of completeness. 
             //
             if( v2 != null && !endInclusive && (!v2.IsPrerelease || v2.Prerelease == "0" || v2.Prerelease == "a" || v2.Prerelease == "A") )
             {

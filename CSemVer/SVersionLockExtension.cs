@@ -20,7 +20,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Intersects this lock with another one: the strogest wins, merging <see cref="SVersionLock.LockMinor"/> with <see cref="SVersionLock.Lock"/>
+        /// Intersects this lock with another one: the strongest wins, merging <see cref="SVersionLock.LockMinor"/> with <see cref="SVersionLock.Lock"/>
         /// results in <see cref="SVersionLock.Lock"/>.
         /// </summary>
         /// <param name="this">This lock.</param>

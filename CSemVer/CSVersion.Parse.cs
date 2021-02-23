@@ -36,7 +36,7 @@ namespace CSemVer
                 string sPRFix = m.Groups[3].Value;
                 if( sPRFix.Length > 0 ) prPatch = Int32.Parse( sPRFix );
                 if( sPRNum.Length > 0 ) prNum = Int32.Parse( sPRNum );
-                if( prPatch == 0 && prNum == 0 && sPRNum.Length > 0 ) return String.Format( "Incorrect '.0' Release Number version. 0 can appear only to fix the first pre release (ie. '.0.F' where F is between 1 and {0}).", MaxPreReleasePatch );
+                if( prPatch == 0 && prNum == 0 && sPRNum.Length > 0 ) return String.Format( "Incorrect '.0' Release Number version. 0 can appear only to fix the first prerelease (for instance '.0.F' where F is between 1 and {0}).", MaxPreReleasePatch );
             }
             return null;
         }

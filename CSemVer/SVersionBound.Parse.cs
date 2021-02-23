@@ -220,7 +220,7 @@ namespace CSemVer
 
                 var c = Result.Union( other.Result );
                 // The result IsApproximate if any of the 2 is an approximation.
-                // If both are exact, then the unioned result is exact only if one covers the other.
+                // If both are exact, then the union-ed result is exact only if one covers the other.
                 return SetResult( c )
                         .EnsureFourtPartLost( other.FourthPartLost )
                         // Testing IsApproximated here shortcuts the Contains evaluation when true.
@@ -240,7 +240,7 @@ namespace CSemVer
 
                 var c = Result.Intersect( other.Result );
                 // The result IsApproximate if any of the 2 is an approximation.
-                // If both are exact, then the unioned result is exact only if one covers the other.
+                // If both are exact, then the union-ed result is exact only if one covers the other.
                 return SetResult( c )
                         .EnsureFourtPartLost( other.FourthPartLost )
                         // Testing IsApproximated here shortcuts the Contains evaluation when true.

@@ -12,7 +12,7 @@ namespace CSemVer
 
         static (SVersion? Version, int FMajor, int FMinor, string? Error, bool FourtPartLost) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
         {
-            // Handling the marvellous "" (empty string), that is like '*'.
+            // Handling the marvelous "" (empty string), that is like '*'.
             if( s.Length == 0 ) return (null, -1, 0, null, false);
             var version = SVersion.TryParse( ref s );
             if( version.IsValid )
@@ -90,7 +90,7 @@ namespace CSemVer
 
         static ParseResult TryMatchHeadRange( ref ReadOnlySpan<char> s, bool includePrerelease )
         {
-            // Handling the marvellous "" (empty string), that is like '*'.
+            // Handling the marvelous "" (empty string), that is like '*'.
             if( s.Length == 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, includePrerelease ? PackageQuality.None : PackageQuality.Stable ), isApproximated: !includePrerelease, false );
 
             if( TryMatch( ref s, '>' ) )
@@ -226,7 +226,7 @@ namespace CSemVer
         /// <returns>The result of the parse that can be invalid.</returns>
         public static ParseResult NpmTryParse( ref ReadOnlySpan<char> s, bool includePrerelease = true )
         {
-            // Parsing syntaxically invalid version is not common: we analyze existing stuff that are supposed
+            // Parsing syntactically invalid version is not common: we analyze existing stuff that are supposed
             // to have already been parsed.
             // Instead of handling such errors explicitly, we trap any IndexOutOfRangeException that will eventually be raised.
             var sSaved = s;

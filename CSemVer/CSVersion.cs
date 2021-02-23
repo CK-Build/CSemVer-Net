@@ -12,14 +12,14 @@ namespace CSemVer
     /// This is a semantic version, this is the version associated to a commit in the repository: a CI-Build version
     /// is a SemVer <see cref="SVersion"/> but not a CSemVer version.
     /// </summary>
-    public sealed partial class CSVersion : SVersion, IEquatable<CSVersion>, IComparable<CSVersion>
+    public sealed partial class CSVersion : SVersion, IEquatable<CSVersion?>, IComparable<CSVersion?>
     {
         // It has to be here because of static initialization order.
         static readonly Regex _rRelaxed = new Regex( @"^(?<1>a(lpha)?|b(eta)?|d(elta)?|e(psilon)?|g(amma)?|k(appa)?|p(re(view|release)?)?|rc?)(\.|-)?((?<2>[0-9]?[0-9])((\.|-)(?<3>[0-9]?[0-9]))?)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase );
 
         /// <summary>
-        /// Gets the standard, normalized, pre release name among <see cref="StandardPrereleaseNames"/>.
-        /// <see cref="string.Empty"/> when this is not a pre release version.
+        /// Gets the standard, normalized, prerelease name among <see cref="StandardPrereleaseNames"/>.
+        /// <see cref="string.Empty"/> when this is not a prerelease version.
         /// </summary>
         public string PrereleaseName => IsPrerelease ? _standardNames[PrereleaseNameIdx] : string.Empty;
 
@@ -47,7 +47,7 @@ namespace CSemVer
         public readonly bool IsLongForm;
 
         /// <summary>
-        /// Gets whether this is a pre release patch (<see cref="SVersion.IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
+        /// Gets whether this is a prerelease patch (<see cref="SVersion.IsPrerelease"/> is necessarily true): <see cref="PrereleasePatch"/> number is greater than 0.
         /// </summary>
         public bool IsPreReleasePatch => PrereleasePatch > 0;
 
@@ -163,7 +163,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Returns a new <see cref="CSVersion"/> with a potentialy new <see cref="SVersion.BuildMetaData"/>.
+        /// Returns a new <see cref="CSVersion"/> with a potentially new <see cref="SVersion.BuildMetaData"/>.
         /// </summary>
         /// <param name="buildMetaData">The build meta data.</param>
         /// <returns>The version.</returns>
@@ -214,7 +214,7 @@ namespace CSemVer
                 }
                 if( !IsPrerelease || Major == 0 )
                 {
-                    // A pre release version can not reach the next patch... Except the 0 major.
+                    // A prerelease version can not reach the next patch... Except the 0 major.
                     int nextPatch = Patch + 1;
                     if( nextPatch <= MaxPatch )
                     {
@@ -288,7 +288,7 @@ namespace CSemVer
 
         /// <summary>
         /// This static version handles null <paramref name="version"/> (the next versions are always <see cref="FirstPossibleVersions"/>).
-        /// If the version is not valid or it it is <see cref="VeryLastVersion"/>, the list is empty.
+        /// If the version is not valid or is the <see cref="VeryLastVersion"/>, the list is empty.
         /// </summary>
         /// <param name="version">Any version (can be null).</param>
         /// <param name="patchesOnly">True to obtain only patches to the version. False to generate the full list of valid successors (up to 43 successors).</param>
