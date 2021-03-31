@@ -38,7 +38,7 @@ namespace CSemVer
         /// </para>
         /// <para>
         /// Note that until https://github.com/NuGet/NuGetGallery/issues/6948 is resolved, the "-0" trick cannot be used
-        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelase
+        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelease
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X+1.0.0-a)". 
         /// </para>
         /// </summary>
@@ -61,7 +61,7 @@ namespace CSemVer
         /// </para>
         /// <para>
         /// Note that until https://github.com/NuGet/NuGetGallery/issues/6948 is resolved, the "-0" trick cannot be used
-        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelase
+        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelease
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y+1.0-a)". 
         /// </para>
         /// </summary>
@@ -80,7 +80,7 @@ namespace CSemVer
         /// </para>
         /// <para>
         /// Note that until https://github.com/NuGet/NuGetGallery/issues/6948 is resolved, the "-0" trick cannot be used
-        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelase
+        /// on https://nuget.org. As long as CSemVer is used (or the -alpha convention is respected for the first prerelease
         /// version), "-a" must be used instead of "-0". The pattern becomes: "[X.Y.Z,X.Y.Z+1-a)" (nuget, just like CSemVer, is case insensitive). 
         /// </para>
         /// </summary>

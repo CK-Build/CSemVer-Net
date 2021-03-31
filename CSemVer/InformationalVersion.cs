@@ -121,8 +121,8 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Gets whether <see cref="OriginalInformationalVersion"/> has been sucessfully parsed:
-        /// <see cref="Version"/> is syntaxically valid, the <see cref="CommitSha"/> is a 40 hexadecimal string
+        /// Gets whether <see cref="OriginalInformationalVersion"/> has been successfully parsed:
+        /// <see cref="Version"/> is syntactically valid, the <see cref="CommitSha"/> is a 40 hexadecimal string
         /// and <see cref="CommitDate"/> has been successfully parsed.
         /// </summary>
         public bool IsValidSyntax { get; }
@@ -218,7 +218,7 @@ namespace CSemVer
         /// reads the <see cref="InformationalVersion"/> from a loaded assembly: its <see cref="AssemblyInformationalVersionAttribute"/>
         /// is used.
         /// </summary>
-        /// <param name="a">The assemblmy. Must not be null.</param>
+        /// <param name="a">The assembly. Must not be null.</param>
         /// <returns>The informational version that may be invalid.</returns>
         static public InformationalVersion ReadFromAssembly( Assembly a )
         {

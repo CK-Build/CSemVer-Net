@@ -73,10 +73,10 @@ namespace CSemVer
 
         /// <summary>
         /// Creates the ZeroTimed short form version string. It uses a base 36 alphabet (case insensitive) and consider the number
-        /// of seconds from 1st of january 2015: this fits into 7 characters.
+        /// of seconds from 1st of January 2015: this fits into 7 characters.
         /// </summary>
         /// <param name="ciBuildName">The BuildName string (typically "develop"). Must not be null, empty or longer than 8 characters.</param>
-        /// <param name="timeRelease">The utc date time of the release.</param>
+        /// <param name="timeRelease">The Utc date time of the release.</param>
         /// <returns>A short form version string like "O.O.O--009iJKg-develop".</returns>
         public static string CreateShortFormZeroTimed( string ciBuildName, DateTime timeRelease )
         {
@@ -112,7 +112,7 @@ namespace CSemVer
 
         static string ToBase36( long number )
         {
-            // Naïve implementation that does the job.
+            // Naive implementation that does the job.
             var alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
             Debug.Assert( alphabet.Length == 36 );
             var n = number;

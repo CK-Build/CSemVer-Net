@@ -48,6 +48,7 @@ namespace CSemVer.Tests
 
         [TestCase( " nop", "invalid", " nop" )]
         [TestCase( " -nop", "invalid", " -nop" )]
+        [TestCase( "r", "invalid", "r" )]
         public void PackageQualityFilter_tests( string form1, string form2, string remainder )
         {
             ReadOnlySpan<char> head = form1;

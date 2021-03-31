@@ -8,8 +8,8 @@ namespace CSemVer
     /// A package quality is associated to a <see cref="SVersion"/> (quality is functionally dependent on the version number).
     /// <para>
     /// Numerical values of these 5 levels are ordered from the less restrictive (CI) to the most one (Release).
-    /// These values can also be used as bitflags (most restrictive values "cover" less restrictive ones). This brings nothing on
-    /// the table except that this express the fact that a Release version "superseds" a Preview that itself "superseds" a CI version:
+    /// These values can also be used as bit flags (most restrictive values "cover" less restrictive ones). This brings nothing on
+    /// the table except that this express the fact that a Release version "supersedes" a Preview that itself "supersedes" a CI version:
     /// see <see cref="PackageQualityExtension.GetAllQualities(PackageQuality)"/> extension method that provides the lower qualities.
     /// </para>
     /// </summary>

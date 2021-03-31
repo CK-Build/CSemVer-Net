@@ -137,10 +137,10 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Checks whether this version bound superseds another one.
+        /// Checks whether this version bound supersedes another one.
         /// </summary>
         /// <param name="other">The other bound.</param>
-        /// <returns>True if this version bound superseds the other one.</returns>
+        /// <returns>True if this version bound supersedes the other one.</returns>
         public bool Contains( in SVersionBound other )
         {
             // If the other.Base version doesn't satisfy this bound, it's over.

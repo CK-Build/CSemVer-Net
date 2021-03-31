@@ -9,8 +9,8 @@ namespace CSemVer
         /// Normalized semantic version format.
         /// It is the same as <see cref="SVersion.ToString()"/> when no <see cref="CIBuildDescriptor"/> is provided.
         /// It is short, readable even when a CIBuildDescriptor is provided and compatible with any version of NuGet (or
-        /// other basic, non conformant, implementation of Semantic Versionning).
-        /// The prerelease short name is the standard one (ie. 'p' for any unknown name).
+        /// other basic, non conformant, implementation of Semantic Versioning).
+        /// The prerelease short name is the standard one (for instance 'p' for any unknown name).
         /// This is the default.
         /// </summary>
         Normalized,

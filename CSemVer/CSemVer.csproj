@@ -7,13 +7,7 @@
     <Nullable>enable</Nullable>
     <Description>Implements SVersion to handle strict SemVer 2.0 versions (the whole specification is implemented), a CSVersion class that handles all aspects of a CSemVer (http://csemver.org) version.
 This also implements InformationalVersion to help generating and parsing CSemVer standardized InformationalVersionAttribute value, PackageQuality support and SVersionBound that is a sound (and simple) way to express constraints on versions.</Description>
-    <PackageIcon>SimpleGitVersion.png</PackageIcon>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>Versioning, SemVer, NuGet, CSemVer, InformationalVersion</PackageTags>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="../Common/SimpleGitVersion.png" Pack="true" PackagePath="" Visible="false" />
-  </ItemGroup>
   
 </Project>

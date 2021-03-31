@@ -157,7 +157,7 @@ namespace CSemVer
         public override bool Equals( object obj ) => obj is PackageQualityFilter f && Equals( f );
 
         /// <summary>
-        /// Overriden to match <see cref="Equals(PackageQualityFilter)"/>.
+        /// Overridden to match <see cref="Equals(PackageQualityFilter)"/>.
         /// </summary>
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => (HasMin ? ((int)Min << 8) : 0) | (HasMax ? (int)Max : 0);

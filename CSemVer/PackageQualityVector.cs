@@ -138,7 +138,7 @@ namespace CSemVer
         public SVersion? CI => _ci;
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVector"/> or a new one that combines a new version.
+        /// Returns this <see cref="PackageQualityVector"/> or a new one that combines a new version.
         /// </summary>
         /// <param name="v">Version to handle. May be null or invalid.</param>
         /// <returns>The QualityVersions.</returns>
@@ -149,7 +149,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Retuns this <see cref="PackageQualityVector"/> or a new one combined with another one.
+        /// Returns this <see cref="PackageQualityVector"/> or a new one combined with another one.
         /// </summary>
         /// <param name="other">Other versions to be combined.</param>
         /// <returns>The resulting QualityVersions.</returns>

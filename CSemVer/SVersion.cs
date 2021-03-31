@@ -10,7 +10,7 @@ namespace CSemVer
     /// Strictly conforms to http://semver.org/ v2.0.0 (with a capture of the <see cref="ErrorMessage"/>
     /// when <see cref="IsValid"/> is false) except that the 'v' prefix is allowed and handled transparently.
     /// </summary>
-    public class SVersion : IEquatable<SVersion>, IComparable<SVersion>
+    public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
     {
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
@@ -25,14 +25,14 @@ namespace CSemVer
         readonly CSVersion? _csVersion;
 
         /// <summary>
-        /// The zero version is "0.0.0-0". It is syntaxically valid and 
-        /// its precedence is greater than null and lower than any other syntaxically valid <see cref="SVersion"/>.
+        /// The zero version is "0.0.0-0". It is syntactically valid and 
+        /// its precedence is greater than null and lower than any other syntactically valid <see cref="SVersion"/>.
         /// </summary>
         static public readonly SVersion ZeroVersion = new SVersion( null, 0, 0, 0, "0", String.Empty, null );
 
         /// <summary>
         /// The last SemVer version possible has <see cref="int.MaxValue"/> as its Major, Minor and Patch and has no prerelease.
-        /// It is syntaxically valid and its precedence is greater than any other <see cref="SVersion"/>.
+        /// It is syntactically valid and its precedence is greater than any other <see cref="SVersion"/>.
         /// </summary>
         static public readonly SVersion LastVersion = new SVersion( null, int.MaxValue, int.MaxValue, int.MaxValue, prerelease: String.Empty, buildMetaData: String.Empty, csVersion: null );
 
@@ -123,7 +123,7 @@ namespace CSemVer
         public int Patch { get; }
 
         /// <summary>
-        /// Gets the pre-release tag without the leading '-'.
+        /// Gets the prerelease tag without the leading '-'.
         /// Normalized to the empty string when this is a Stable release or when <see cref="IsValid"/> is false.
         /// </summary>
         public string Prerelease { get; }
@@ -151,7 +151,7 @@ namespace CSemVer
         public string? ErrorMessage { get; }
 
         /// <summary>
-        /// Gets whether this <see cref="SVersion"/> has no <see cref="ErrorMessage"/> (ie. ErrorMessage is null).
+        /// Gets whether this <see cref="SVersion"/> has no <see cref="ErrorMessage"/> (for instance ErrorMessage is null).
         /// </summary>
         public bool IsValid => ErrorMessage == null;
 
@@ -207,7 +207,7 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the parsed text. Available even if <see cref="IsValid"/> is false.
-        /// It is null if the original parsed string was null or this version has been explicitely created and not parsed.
+        /// It is null if the original parsed string was null or this version has been explicitly created and not parsed.
         /// </summary>
         public string? ParsedText { get; }
 
@@ -223,7 +223,7 @@ namespace CSemVer
         public CSVersion? AsCSVersion => _csVersion;
 
         /// <summary>
-        /// Manages to return the normalized form of this version, whathever it is:
+        /// Manages to return the normalized form of this version, whatever it is:
         /// first, on error, returns the <see cref="ErrorMessage"/>, then if <see cref="AsCSVersion"/> is not null
         /// the <see cref="CSVersion.ToString(CSVersionFormat, CIBuildDescriptor)"/> with <see cref="CSVersionFormat.Normalized"/> format 
         /// or fallbacks to the <see cref="NormalizedText"/>.
@@ -504,7 +504,7 @@ namespace CSemVer
         /// <summary>
         /// Compares this with another <see cref="SVersion"/>, handling potential <see cref="CSVersion"/>.
         /// Note that as with <see cref="CompareTo"/>, null is lower than any version and an invalid version is lower than any valid version.
-        /// With this comprison method, "1.0.0-a" is equal to "1.0.0-alpha".
+        /// With this comparison method, "1.0.0-a" is equal to "1.0.0-alpha".
         /// When this version or the other one is NOT a CSemVer version, the long form (<see cref="CSVersionFormat.Normalized"/>) is used
         /// by default.
         /// </summary>
@@ -580,11 +580,11 @@ namespace CSemVer
             return x.CSemVerCompareTo( y, useShortForm );
         }
 
-        // Fun with Span and alloc-free string parsing.
+        // Fun with Span and allocation-free string parsing.
         // Using this https://github.com/dotnet/runtime/pull/295 (not yet available)
         // would require to change the algorithm since we need to know the number of
-        // splitted parts: we stack allocate a big enough array of Range and fills it
-        // with the splitted parts.
+        // split parts: we stack allocate a big enough array of Range and fills it
+        // with the split parts.
         // The magic is: the algorithm is the same as the one with the strings!
         static int ComparePreRelease( ReadOnlySpan<char> x, ReadOnlySpan<char> y )
         {
