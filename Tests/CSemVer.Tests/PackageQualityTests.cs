@@ -73,11 +73,11 @@ namespace CSemVer.Tests
         public void PackageQuality_GetAllQualities()
         {
             PackageQuality.None.GetAllQualities().Should().BeEquivalentTo( Array.Empty<PackageQuality>() );
-            PackageQuality.CI.GetAllQualities().Should().BeEquivalentTo( PackageQuality.CI );
-            PackageQuality.Exploratory.GetAllQualities().Should().BeEquivalentTo( PackageQuality.Exploratory, PackageQuality.CI );
-            PackageQuality.Preview.GetAllQualities().Should().BeEquivalentTo( PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI );
-            PackageQuality.ReleaseCandidate.GetAllQualities().Should().BeEquivalentTo( PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI );
-            PackageQuality.Stable.GetAllQualities().Should().BeEquivalentTo( PackageQuality.Stable, PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI );
+            PackageQuality.CI.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.CI } );
+            PackageQuality.Exploratory.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.Exploratory, PackageQuality.CI } );
+            PackageQuality.Preview.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI } );
+            PackageQuality.ReleaseCandidate.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI } );
+            PackageQuality.Stable.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.Stable, PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI } );
         }
 
 
