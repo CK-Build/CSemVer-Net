@@ -237,9 +237,9 @@ namespace CSemVer
         /// Returns a new <see cref="SVersion"/> with a potentially new <see cref="BuildMetaData"/>.
         /// <see cref="IsValid"/> must be true otherwise an <see cref="InvalidOperationException"/> is thrown.
         /// </summary>
-        /// <param name="buildMetaData">The build meta data.</param>
+        /// <param name="buildMetaData">The new build meta data or null to remove it.</param>
         /// <returns>The version.</returns>
-        public SVersion WithBuildMetaData( string buildMetaData )
+        public SVersion WithBuildMetaData( string? buildMetaData )
         {
             if( buildMetaData == null ) buildMetaData = String.Empty;
             return buildMetaData == BuildMetaData ? this : DoWithBuildMetaData( buildMetaData );
@@ -250,7 +250,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="buildMetaData">The build meta data.</param>
         /// <returns>The new version.</returns>
-        protected virtual SVersion DoWithBuildMetaData( string buildMetaData )
+        private protected virtual SVersion DoWithBuildMetaData( string buildMetaData )
         {
             Debug.Assert( buildMetaData != null );
             Debug.Assert( _csVersion != this, "Virtual/override routing did its job." );

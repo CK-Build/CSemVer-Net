@@ -95,8 +95,8 @@ namespace CSemVer
             PrereleaseNameIdx = -1;
         }
 
-        CSVersion( CSVersion other, string buildMetaData )
-            : base( other, buildMetaData, null )
+        CSVersion( CSVersion other, string? buildMetaData )
+            : base( other, buildMetaData ?? String.Empty, null )
         {
             PrereleaseNameIdx = other.PrereleaseNameIdx;
             PrereleaseNumber = other.PrereleaseNumber;
@@ -165,16 +165,16 @@ namespace CSemVer
         /// <summary>
         /// Returns a new <see cref="CSVersion"/> with a potentially new <see cref="SVersion.BuildMetaData"/>.
         /// </summary>
-        /// <param name="buildMetaData">The build meta data.</param>
+        /// <param name="buildMetaData">The new build meta data or null to remove it.</param>
         /// <returns>The version.</returns>
-        public new CSVersion WithBuildMetaData( string buildMetaData ) => (CSVersion)base.WithBuildMetaData( buildMetaData );
+        public new CSVersion WithBuildMetaData( string? buildMetaData ) => (CSVersion)base.WithBuildMetaData( buildMetaData );
 
         /// <summary>
         /// Hidden overridable implementation.
         /// </summary>
-        /// <param name="buildMetaData">The build meta data.</param>
+        /// <param name="buildMetaData">The new build meta data or null to remove it.</param>
         /// <returns>The new version.</returns>
-        protected override SVersion DoWithBuildMetaData( string buildMetaData ) => new CSVersion( this, buildMetaData );
+        private protected override SVersion DoWithBuildMetaData( string? buildMetaData ) => new CSVersion( this, buildMetaData );
 
         /// <summary>
         /// Computes the next possible ordered versions, from the closest one to the biggest possible bump.
