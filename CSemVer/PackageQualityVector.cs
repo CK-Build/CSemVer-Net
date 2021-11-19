@@ -161,7 +161,7 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Overridden to return the non null versions separated by /.
+        /// Overridden to return the non null versions separated by / from CI to Stable.
         /// </summary>
         /// <returns>A readable string.</returns>
         public override string ToString()
