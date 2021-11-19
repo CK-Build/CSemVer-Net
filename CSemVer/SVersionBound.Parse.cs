@@ -99,7 +99,6 @@ namespace CSemVer
         }
 
 
-
         /// <summary>
         /// Captures the result of a parse from other syntaxes that can be invalid or <see cref="IsApproximated"/>.
         /// </summary>
@@ -279,16 +278,6 @@ namespace CSemVer
             return false;
         }
 
-        static bool TryMatchXStarInt( ref ReadOnlySpan<char> s, out int i )
-        {
-            if( s[0] == '*' || s[0] == 'x' || s[0] == 'X' )
-            {
-                s = s.Slice( 1 );
-                i = -1;
-                return true;
-            }
-            return TryMatchNonNegativeInt( ref s, out i );
-        }
 
     }
 }

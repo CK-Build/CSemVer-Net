@@ -198,6 +198,17 @@ namespace CSemVer
             }
         }
 
+        static bool TryMatchXStarInt( ref ReadOnlySpan<char> s, out int i )
+        {
+            if( s[0] == '*' || s[0] == 'x' || s[0] == 'X' )
+            {
+                s = s.Slice( 1 );
+                i = -1;
+                return true;
+            }
+            return TryMatchNonNegativeInt( ref s, out i );
+        }
+
         /// <summary>
         /// Attempts to parse a npm version range. See  https://github.com/npm/node-semver and https://semver.npmjs.com/.
         /// </summary>

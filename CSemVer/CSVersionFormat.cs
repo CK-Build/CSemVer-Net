@@ -25,8 +25,10 @@ namespace CSemVer
         /// <summary>
         /// Long form. This format is the original one that was supposed to be "best" representation.
         /// It appeared that this long form was less readable than the short one (the <see cref="Normalized"/> format).
-        /// Since version 6.0.0 this long form is no more the default one.
         /// </summary>
+        /// <remarks>
+        /// Since version CSemVer v6.0.0 this long form is no more the default one.
+        /// </remarks>
         LongForm,
     }
 }

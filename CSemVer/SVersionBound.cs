@@ -15,6 +15,15 @@ namespace CSemVer
     /// and <see cref="All"/> is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the lowest element
     /// of the set.
     /// </para>
+    /// <para>
+    /// The text format (<see cref="ToString"/> method) is the "Base" version alone or "Base[Lock]", "Base[MinQuality]" or "Base[Lock,MinQuality]":
+    /// "13.0.2", "1.2.3[Stable]", "1.0.0[LockMinor]", "15.0.5[LockMajor,Preview]". <see cref="TryParse(ReadOnlySpan{char}, out SVersionBound, SVersionLock, PackageQuality)"/>
+    /// methods parse them back.
+    /// </para>
+    /// <para>
+    /// Npm and Nuget version range syntax can be parsed with <see cref="NpmTryParse(ReadOnlySpan{char}, bool)"/> or <see cref="NugetTryParse(ReadOnlySpan{char})"/> 
+    /// methods: they return a <see cref="ParseResult"/> that can be invalid or <see cref="ParseResult.IsApproximated"/>.
+    /// </para>
     /// </summary>
     public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     {

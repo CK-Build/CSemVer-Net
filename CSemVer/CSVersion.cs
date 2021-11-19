@@ -63,6 +63,7 @@ namespace CSemVer
         /// </summary>
         public bool IsMarkedInvalid => StringComparer.OrdinalIgnoreCase.Equals( BuildMetaData, "invalid" );
 
+
         /// <summary>
         /// Gets the strength of this version: an invalid version has a strength of 0, valid ones have 1
         /// and ultimately, a <see cref="IsMarkedInvalid"/> wins with 2.
