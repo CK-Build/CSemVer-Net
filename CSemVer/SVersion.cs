@@ -38,7 +38,7 @@ namespace CSemVer
 
         /// <summary>
         /// Protected straight constructor for valid versions.
-        /// No checks are done here.
+        /// No checks are done here except that buildMetaData must not start with '+'.
         /// </summary>
         /// <param name="parsedText">The parsed text. Null if not parsed.</param>
         /// <param name="major">The major.</param>
@@ -71,11 +71,11 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Protected constructor for invalid constructor.
+        /// Initializes a new invalid instance.
         /// </summary>
-        /// <param name="error">Error message. Must not be null nor empty.</param>
-        /// <param name="parsedText">Can be null.</param>
-        protected SVersion( string error, string? parsedText )
+        /// <param name="error">Error message. Must not be null, empty or whitespace.</param>
+        /// <param name="parsedText">Optional parsed text.</param>
+        public SVersion( string error, string? parsedText )
         {
             if( String.IsNullOrWhiteSpace( error ) ) throw new ArgumentNullException( nameof( error ) );
             ErrorMessage = error;
@@ -151,7 +151,7 @@ namespace CSemVer
         public string? ErrorMessage { get; }
 
         /// <summary>
-        /// Gets whether this <see cref="SVersion"/> has no <see cref="ErrorMessage"/> (for instance ErrorMessage is null).
+        /// Gets whether this <see cref="SVersion"/> has a null <see cref="ErrorMessage"/>.
         /// </summary>
         public bool IsValid => ErrorMessage == null;
 
@@ -268,23 +268,24 @@ namespace CSemVer
         /// <param name="buildMetaData">The build meta data.</param>
         /// <param name="handleCSVersion">
         /// False to skip <see cref="CSVersion"/> conformance lookup. The resulting version
-        /// will be a <see cref="SVersion"/> even if it is a valid <see cref="CSVersion"/>.
+        /// will be a <see cref="SVersion"/> even if it is a valid CSemVer pattern.
         /// This should be used in rare scenario where the normalization of a <see cref="CSVersion"/> (standardization
         /// of prerelease names) must not be done.
         /// </param>
+        /// <param name="parsedText">Optional parsed text.</param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
         /// <returns>The <see cref="SVersion"/>.</returns>
-        public static SVersion Create( int major, int minor, int patch, string? prerelease = null, string? buildMetaData = null, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static SVersion Create( int major,
+                                       int minor,
+                                       int patch,
+                                       string? prerelease = null,
+                                       string? buildMetaData = null,
+                                       bool handleCSVersion = true,
+                                       bool checkBuildMetaDataSyntax = true,
+                                       string? parsedText = null )
         {
-            return DoCreate( null, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
+            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
         }
-
-        /// <summary>
-        /// Creates a new SVersion on error.
-        /// </summary>
-        /// <param name="error">Error message. Must not be null nor empty.</param>
-        /// <param name="parsedText">Can be null.</param>
-        public static SVersion Create( string error, string? parsedText ) => new SVersion( error, parsedText );
 
         /// <summary>
         /// Forwards a head if a semantic version is found and returns a <see cref="SVersion"/> that 

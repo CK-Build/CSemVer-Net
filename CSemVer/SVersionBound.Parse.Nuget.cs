@@ -155,7 +155,7 @@ namespace CSemVer
                     }
                     if( !TryMatchNonNegativeInt( ref s, out int minor ) )
                     {
-                        return SVersion.Create( "Expected Nuget minor part.", null );
+                        return new SVersion( "Expected Nuget minor part.", null );
                     }
                     // Try to save the fourth part: in such case the patch is read.
                     int patch = 0;

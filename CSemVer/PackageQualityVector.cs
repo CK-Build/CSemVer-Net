@@ -189,7 +189,42 @@ namespace CSemVer
         }
 
         /// <summary>
+        /// Gets the number of different versions: it is the length of the <see cref="GetEnumerator()"/>
+        /// and the number of versions that <see cref="ToString()"/> displays.
+        /// This is 0 if <see cref="IsValid"/> is false, up to 5 otherwise.
+        /// </summary>
+        public int ActualCount
+        {
+            get
+            {
+                int c = 0;
+                if( CI != null )
+                {
+                    c = 1;
+                    if( Exploratory != null )
+                    {
+                        if( Exploratory != CI ) c = 2;
+                        if( Preview != null )
+                        {
+                            if( Preview != Exploratory ) ++c;
+                            if( ReleaseCandidate != null )
+                            {
+                                if( ReleaseCandidate != Preview ) ++c;
+                                if( Stable != null && Stable != ReleaseCandidate )
+                                {
+                                    ++c;
+                                }
+                            }
+                        }
+                    }
+                }
+                return c;
+            }
+        }
+
+        /// <summary>
         /// Returns the distinct CI, Exploratory, Preview, ReleaseCandidate, Stable (in this order) as long as they are not null.
+        /// The actual count is <see cref="ActualCount"/>.
         /// </summary>
         /// <returns>The set of distinct versions (empty if <see cref="IsValid"/> is false).</returns>
         public IEnumerator<SVersion> GetEnumerator()
