@@ -90,7 +90,16 @@ namespace CSemVer
             InlineAssertInvariants( this );
         }
 
-        CSVersion( string error, string? parsedText )
+        /// <summary>
+        /// Initializes a new invalid instance.
+        /// <para>
+        /// To instantiate a new valid version, use <see cref="Create(long, bool, string?, string?)"/>
+        /// or one of the parse methods.
+        /// </para>
+        /// </summary>
+        /// <param name="error">Error message. Must not be null, empty or whitespace.</param>
+        /// <param name="parsedText">Optional parsed text.</param>
+        public CSVersion( string error, string? parsedText )
             : base( error, parsedText )
         {
             PrereleaseNameIdx = -1;

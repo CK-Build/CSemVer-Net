@@ -114,14 +114,19 @@ namespace CSemVer
 
         /// <summary>
         /// Creates a new version from an ordered version that must be between 0 (invalid version) and <see cref="VeryLastVersion"/>.<see cref="OrderedVersion"/>.
+        /// <para>
+        /// This can be used to fully restore a valid instance (if <paramref name="v"/> is 0, a new "Invalid CSVersion." is returned).
+        /// </para>
         /// </summary>
         /// <param name="v">The ordered version.</param>
-        /// <param name="longForm">True to create a <see cref="CSVersion.IsLongForm"/> version.</param>
+        /// <param name="longForm">True to create a <see cref="IsLongForm"/> version.</param>
+        /// <param name="buildMetaData">Optional <see cref="SVersion.BuildMetaData"/>. Must not start with '+'.</param>
+        /// <param name="parsedText">Optional original parsed text.</param>
         /// <returns>The version.</returns>
-        public static CSVersion Create( long v, bool longForm = false )
+        public static CSVersion Create( long v, bool longForm = false, string? buildMetaData = null, string? parsedText = null )
         {
             if( v < 0 || v > MaxOrderedVersion ) throw new ArgumentException( "Must be between 0 and VeryLastVersion.OrderedVersion." );
-            if( v == 0 ) return new CSVersion( "Invalid CSVersion.", null );
+            if( v == 0 ) return new CSVersion( "Invalid CSVersion.", parsedText );
 
             long dV = v;
             int prNameIdx;
@@ -150,7 +155,7 @@ namespace CSemVer
             dV -= minor * MulMinor;
             int patch = (int)(dV / MulPatch);
 
-            return new CSVersion( major, minor, patch, String.Empty, prNameIdx, prNumber, prPatch, longForm, v );
+            return new CSVersion( major, minor, patch, buildMetaData ?? String.Empty, prNameIdx, prNumber, prPatch, longForm, v, parsedText );
         }
 
         static long ComputeOrderedVersion( int major, int minor, int patch, int preReleaseNameIdx = -1, int preReleaseNumber = 0, int preReleaseFix = 0 )
