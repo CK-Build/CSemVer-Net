@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace CSemVer.Tests
 {
     [TestFixture]
-    public class PackageQualityVersionsTests
+    public class PackageQualityVectorTests
     {
         [TestCase( "1.0.0, 1.0.1", "1.0.1" )]
         [TestCase( "1.0.0-a, 1.0.1-a", "1.0.1-a" )]
@@ -19,8 +19,19 @@ namespace CSemVer.Tests
         public void collecting_best_version( string versions, string result )
         {
             var v = versions.Split( ',' ).Select( x => SVersion.Parse( x.Trim() ) ).ToArray();
-            var q = new PackageQualityVector(v, false);
+            var q = new PackageQualityVector( v, false );
             q.ToString().Should().Be( result );
+            q.IsValid.Should().Be( result.Length > 0 );
+            q.ActualCount.Should().Be( result.Length > 0 ? 1 : 0 );
+        }
+
+        [Test]
+        public void no_version()
+        {
+            var q = new PackageQualityVector( Enumerable.Empty<SVersion>(), false );
+            q.ToString().Should().Be( "" );
+            q.IsValid.Should().BeFalse();
+            q.ActualCount.Should().Be( 0 );
         }
 
         [TestCase( "1.0.0-a, 0.0.1-r02-01, 0.0.1-r, 0.0.1-r02, 1.0.0-b01, 1.0.0-b",
@@ -39,6 +50,7 @@ namespace CSemVer.Tests
             var v = versions.Split( ',' ).Select( x => SVersion.Parse( x.Trim() ) ).ToArray();
             var q = new PackageQualityVector( v, false );
             q.ToString().Should().Be( result );
+            q.ActualCount.Should().Be( result.Count( c => c == '/' ) + 1 );
         }
 
 
