@@ -284,7 +284,7 @@ namespace CSemVer
                                        bool checkBuildMetaDataSyntax = true,
                                        string? parsedText = null )
         {
-            return DoCreate( null, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
+            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
