@@ -120,22 +120,14 @@ namespace CSemVer
             public readonly bool IsApproximated;
 
             /// <summary>
-            /// True if the parsed version had a 4th (or more) part like "1.2.3.4". Those parts are ignored, this
-            /// supports legacy package versions (npm and nuget both accept these - and ignores them).
-            /// </summary>
-            public readonly bool FourthPartLost;
-
-            /// <summary>
             /// Initializes a new valid <see cref="ParseResult"/>.
             /// </summary>
             /// <param name="result">The version bound.</param>
             /// <param name="isApproximated">Whether the version bound is an approximation.</param>
-            /// <param name="fourthPartLost">Whether a 4th (or more) part (like in "1.2.3.4") has been ignored.</param>
-            public ParseResult( SVersionBound result, bool isApproximated, bool fourthPartLost )
+            public ParseResult( SVersionBound result, bool isApproximated )
             {
                 Result = result;
                 IsApproximated = isApproximated;
-                FourthPartLost = fourthPartLost;
                 Error = null;
             }
 
@@ -146,7 +138,7 @@ namespace CSemVer
             public ParseResult( string error )
             {
                 Result = SVersionBound.None;
-                IsApproximated = FourthPartLost = false;
+                IsApproximated = false;
                 Error = error ?? throw new ArgumentNullException( nameof( error ) );
             }
 
@@ -164,27 +156,15 @@ namespace CSemVer
             public ParseResult EnsureIsApproximated( bool setApproximated = true )
             {
                 return setApproximated && !IsApproximated
-                        ? new ParseResult( Result, true, FourthPartLost )
+                        ? new ParseResult( Result, true )
                         : this;
             }
 
-            /// <summary>
-            /// Ensures that this result's <see cref="FourthPartLost"/> is true if <paramref name="setFourtPartLost"/> is true
-            /// and returns this or a new result.
-            /// </summary>
-            /// <param name="setFourtPartLost">True to ensures that the flag is set. When false, nothing is done.</param>
-            /// <returns>This or a new result.</returns>
-            public ParseResult EnsureFourtPartLost( bool setFourtPartLost = true )
-            {
-                return setFourtPartLost && !FourthPartLost
-                        ? new ParseResult( Result, IsApproximated, true )
-                        : this;
-            }
 
             internal ParseResult ClearApproximated()
             {
                 return IsApproximated
-                        ? new ParseResult( Result, false, FourthPartLost )
+                        ? new ParseResult( Result, false )
                         : this;
             }
 
@@ -195,7 +175,7 @@ namespace CSemVer
             /// <returns>This or a new result.</returns>
             public ParseResult SetResult( SVersionBound result ) => result.Equals( Result )
                                                                         ? this
-                                                                        : new ParseResult( result, IsApproximated, FourthPartLost );
+                                                                        : new ParseResult( result, IsApproximated );
 
             /// <summary>
             /// Sets or concatenates a new <see cref="Error"/> line and returns this or a new result.
@@ -208,7 +188,7 @@ namespace CSemVer
 
             /// <summary>
             /// Merges another <see cref="ParseResult"/> with this and returns this or a new result.
-            /// Note that error wins and <see cref="IsApproximated"/> and <see cref="FourthPartLost"/> are propagated.
+            /// Note that error wins and <see cref="IsApproximated"/> is propagated.
             /// </summary>
             /// <param name="other">The other result.</param>
             /// <returns>This or a new result.</returns>
@@ -221,8 +201,6 @@ namespace CSemVer
                 // The result IsApproximate if any of the 2 is an approximation.
                 // If both are exact, then the union-ed result is exact only if one covers the other.
                 return SetResult( c )
-                        .EnsureFourtPartLost( other.FourthPartLost )
-                        // Testing IsApproximated here shortcuts the Contains evaluation when true.
                         .EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
             }
 
@@ -241,8 +219,6 @@ namespace CSemVer
                 // The result IsApproximate if any of the 2 is an approximation.
                 // If both are exact, then the union-ed result is exact only if one covers the other.
                 return SetResult( c )
-                        .EnsureFourtPartLost( other.FourthPartLost )
-                        // Testing IsApproximated here shortcuts the Contains evaluation when true.
                         .EnsureIsApproximated( IsApproximated || other.IsApproximated || !(c.Contains( Result ) || c.Contains( other.Result )) );
             }
         }

@@ -315,7 +315,7 @@ namespace CSemVer.Tests
             var r = SVersionBound.NpmTryParse( ref head );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
-            r.FourthPartLost.Should().BeTrue();
+            r.Result.Base.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
             head.Length.Should().Be( 0 );
         }
 
@@ -405,7 +405,7 @@ namespace CSemVer.Tests
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
-            r.FourthPartLost.Should().BeFalse();
+            r.Result.Base.FourthPart.Should().Be( -1 );
         }
 
         // (1.0) is invalid
@@ -434,7 +434,7 @@ namespace CSemVer.Tests
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().BeFalse();
-            r.FourthPartLost.Should().BeTrue();
+            r.Result.Base.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
         }
 
         [TestCase( "v1.0.0-mmm", "1.0.0-mmm" )]
