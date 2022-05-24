@@ -14,7 +14,7 @@ namespace CSemVer
     {
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
-            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\-(?<4>[0-9A-Za-z\-\.]+))?(\+(?<5>[0-9A-Za-z\-\.]+))?",
+            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?(\-(?<5>[0-9A-Za-z\-\.]+))?(\+(?<6>[0-9A-Za-z\-\.]+))?",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         // This applies to PreRelease and BuildMetaData.
@@ -47,7 +47,8 @@ namespace CSemVer
         /// <param name="prerelease">The prerelease. Can be null (normalized to the empty string).</param>
         /// <param name="buildMetaData">The build meta data. Can be null (normalized to the empty string).</param>
         /// <param name="csVersion">Companion CSVersion.</param>
-        protected SVersion( string? parsedText, int major, int minor, int patch, string? prerelease, string? buildMetaData, CSVersion? csVersion )
+        /// <param name="fourthPart">The fourth part <see cref="FourthPart"/></param>
+        protected SVersion( string? parsedText, int major, int minor, int patch, string? prerelease, string? buildMetaData, CSVersion? csVersion, int fourthPart = -1 )
         {
             prerelease ??= String.Empty;
             buildMetaData ??= String.Empty;
@@ -56,15 +57,17 @@ namespace CSemVer
             Major = major;
             Minor = minor;
             Patch = patch;
+            FourthPart = fourthPart;
             Prerelease = prerelease;
             BuildMetaData = buildMetaData;
             ParsedText = parsedText;
-            NormalizedText = ComputeNormalizedText( major, minor, patch, prerelease, buildMetaData );
+            NormalizedText = ComputeNormalizedText( major, minor, patch, FourthPart, prerelease, buildMetaData );
         }
 
-        static string ComputeNormalizedText( int major, int minor, int patch, string prerelease, string buildMetaData )
+        static string ComputeNormalizedText( int major, int minor, int patch, int fourthPart, string prerelease, string buildMetaData )
         {
-            var t = String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", major, minor, patch );
+            var t = fourthPart == -1 ? String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", major, minor, patch )
+                                      : String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}.{3}", major, minor, patch, fourthPart );
             if( prerelease.Length > 0 ) t += '-' + prerelease;
             if( buildMetaData.Length > 0 ) t += '+' + buildMetaData;
             return t;
@@ -79,7 +82,7 @@ namespace CSemVer
         {
             if( String.IsNullOrWhiteSpace( error ) ) throw new ArgumentNullException( nameof( error ) );
             ErrorMessage = error;
-            Major = Minor = Patch = -1;
+            Major = Minor = Patch = FourthPart = -1;
             Prerelease = String.Empty;
             BuildMetaData = String.Empty;
             ParsedText = parsedText;
@@ -99,9 +102,10 @@ namespace CSemVer
             Major = other.Major;
             Minor = other.Minor;
             Patch = other.Patch;
+            FourthPart = other.FourthPart;
             Prerelease = other.Prerelease;
-            BuildMetaData = buildMetaData ?? throw new ArgumentNullException( nameof(buildMetaData) );
-            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, Prerelease, buildMetaData );
+            BuildMetaData = buildMetaData ?? throw new ArgumentNullException( nameof( buildMetaData ) );
+            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, FourthPart, Prerelease, buildMetaData );
         }
 
         /// <summary>
@@ -121,6 +125,10 @@ namespace CSemVer
         /// When <see cref="IsValid"/> is true, necessarily greater or equal to 0, otherwise -1.
         /// </summary>
         public int Patch { get; }
+
+        /// This unfortunate property handles the deviant use of a 4th part after the minor.
+        /// Its default value is -1 (for true SemVer version).
+        public int FourthPart { get; }
 
         /// <summary>
         /// Gets the prerelease tag without the leading '-'.
@@ -282,9 +290,11 @@ namespace CSemVer
                                        string? buildMetaData = null,
                                        bool handleCSVersion = true,
                                        bool checkBuildMetaDataSyntax = true,
-                                       string? parsedText = null )
+                                       string? parsedText = null,
+                                       int fourthPart = -1
+                                       )
         {
-            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
+            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax, fourthPart );
         }
 
         /// <summary>
@@ -346,10 +356,18 @@ namespace CSemVer
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;
+            string sFourthPart = m.Groups[4].Value;
             if( !int.TryParse( sMajor, out int major ) ) return new SVersion( "Invalid Major.", s );
             if( !int.TryParse( sMinor, out int minor ) ) return new SVersion( "Invalid Major.", s );
             if( !int.TryParse( sPatch, out int patch ) ) return new SVersion( "Invalid Patch.", s );
-            return DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax );
+
+            int fourthPart = -1;
+            if( !string.IsNullOrEmpty( sFourthPart ) )
+            {
+                if( !int.TryParse( sFourthPart, out fourthPart ) ) return new SVersion( "Invalid FourthPart.", s );
+            }
+
+            return DoCreate( s, major, minor, patch, m.Groups[5].Value, m.Groups[6].Value, handleCSVersion, checkBuildMetaDataSyntax, fourthPart );
         }
 
         /// <summary>
@@ -393,7 +411,7 @@ namespace CSemVer
             return v;
         }
 
-        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax )
+        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax, int fourthPart )
         {
             Debug.Assert( prerelease != null && buildMetaData != null );
             if( major < 0 || minor < 0 || patch < 0 ) return new SVersion( "Major, minor and patch must positive or 0.", parsedText );
@@ -413,7 +431,7 @@ namespace CSemVer
                 var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
                 if( error != null ) return new SVersion( error, parsedText );
             }
-            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c );
+            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c, fourthPart );
         }
 
         static string? ValidateDottedIdentifiers( string s, string partName )
