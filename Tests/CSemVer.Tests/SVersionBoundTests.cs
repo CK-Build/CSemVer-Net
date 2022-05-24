@@ -306,16 +306,16 @@ namespace CSemVer.Tests
             r.Result.Should().Be( SVersionBound.None );
         }
 
-        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3" )]
-        [TestCase( "1.2.3.4-alpha - 3", "1.2.3" )]
-        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]" )]
-        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected )
+        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4",4 )]
+        [TestCase( "1.2.3.4-alpha - 3", "1.2.3.4-alpha",4 )]
+        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]",-1 )]
+        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected, int fourthPartExcepted )
         {
             ReadOnlySpan<char> head = p;
             var r = SVersionBound.NpmTryParse( ref head );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
-            r.Result.Base.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
+            r.Result.Base.FourthPart.Should().Be( fourthPartExcepted );
             head.Length.Should().Be( 0 );
         }
 
@@ -425,9 +425,9 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "[1.2.3.4]", "1.2.3[Lock]" )]
-        [TestCase( "1.2.3.4-alpha", "1.2.3" )]
-        [TestCase( "[1.2.3.4-alpha,2)", "1.2.3[LockMajor,CI]" )]
+        [TestCase( "[1.2.3.4]", "1.2.3.4[Lock]" )]
+        [TestCase( "1.2.3.4-alpha", "1.2.3.4-alpha" )]
+        [TestCase( "[1.2.3.4-alpha,2)", "1.2.3.4-alpha[LockMajor,CI]" )]
         public void parse_nuget_with_fourth_part( string p, string expected )
         {
             var r = SVersionBound.NugetTryParse( p );

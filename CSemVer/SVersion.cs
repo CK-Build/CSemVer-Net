@@ -294,7 +294,7 @@ namespace CSemVer
                                        int fourthPart = -1
                                        )
         {
-            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax, fourthPart );
+            return DoCreate( parsedText, major, minor, patch, fourthPart, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
@@ -367,7 +367,7 @@ namespace CSemVer
                 if( !int.TryParse( sFourthPart, out fourthPart ) ) return new SVersion( "Invalid FourthPart.", s );
             }
 
-            return DoCreate( s, major, minor, patch, m.Groups[5].Value, m.Groups[6].Value, handleCSVersion, checkBuildMetaDataSyntax, fourthPart );
+            return DoCreate( s, major, minor, patch, fourthPart, m.Groups[5].Value, m.Groups[6].Value, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
@@ -411,7 +411,7 @@ namespace CSemVer
             return v;
         }
 
-        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax, int fourthPart )
+        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, int fourthPart, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax )
         {
             Debug.Assert( prerelease != null && buildMetaData != null );
             if( major < 0 || minor < 0 || patch < 0 ) return new SVersion( "Major, minor and patch must positive or 0.", parsedText );
@@ -422,16 +422,21 @@ namespace CSemVer
                 if( error != null ) return new SVersion( error, parsedText );
             }
             // Try CSVersion first.
-            CSVersion? c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
-            if( handleCSVersion && c != null ) return c;
-            // If it is not a CSVersion, validate the prerelease.
-            // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
-            if( c == null && prerelease.Length > 0 )
+
+            if( fourthPart < 0 )
             {
-                var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
-                if( error != null ) return new SVersion( error, parsedText );
+                CSVersion? c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
+                if( handleCSVersion && c != null ) return c;
+                // If it is not a CSVersion, validate the prerelease.
+                // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
+                if( c == null && prerelease.Length > 0 )
+                {
+                    var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
+                    if( error != null ) return new SVersion( error, parsedText );
+                }
+                return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c, fourthPart );
             }
-            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c, fourthPart );
+            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, null, fourthPart );
         }
 
         static string? ValidateDottedIdentifiers( string s, string partName )
