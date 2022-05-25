@@ -306,16 +306,16 @@ namespace CSemVer.Tests
             r.Result.Should().Be( SVersionBound.None );
         }
 
-        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4",4 )]
-        [TestCase( "1.2.3.4-alpha - 3", "1.2.3.4-alpha",4 )]
-        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]",-1 )]
-        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected, int fourthPartExcepted )
+        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4", 4 )]
+        [TestCase( "1.2.3.4-alpha - 3", "1.2.3.4-alpha", 4 )]
+        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]", -1 )]
+        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected, int fourthPartExpected )
         {
             ReadOnlySpan<char> head = p;
             var r = SVersionBound.NpmTryParse( ref head );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
-            r.Result.Base.FourthPart.Should().Be( fourthPartExcepted );
+            r.Result.Base.FourthPart.Should().Be( fourthPartExpected );
             head.Length.Should().Be( 0 );
         }
 

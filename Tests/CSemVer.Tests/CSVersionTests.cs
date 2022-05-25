@@ -517,6 +517,15 @@ namespace CSemVer.Tests
             Assert.That( v > null );
             Assert.That( v < null, Is.False );
         }
+
+
+        [TestCase( "1.2.3.4" )]
+        [TestCase( "0.0.0.0" )]
+        [TestCase( "1.2.3.4-alpha" )]
+        public void parsing_fourth_part_should_throws( string csv )
+        {
+            Assert.Throws<ArgumentException>( () => CSVersion.Parse( csv ));
+        }
     }
 }
 

@@ -123,6 +123,29 @@ namespace CSemVer.Tests
             t.Should().StartWith( v.ParsedText );
         }
 
+        [TestCase( "1.2.3.4" )]
+        [TestCase( "0.0.0.0" )]
+        [TestCase( "1.2.3.4-alpha" )]
+        public void parsing_fourth_part_should_be_positive_when_fourth_part_is_here( string sv )
+        {
+            var head = sv.AsSpan();
+            var v = SVersion.TryParse( ref head );
+            v.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
+            v.AsCSVersion.Should().BeNull();
 
+        }
+
+
+        [TestCase( "1.2.3" )]
+        [TestCase( "0.0.0" )]
+        [TestCase( "1.2.3-alpha" )]
+        public void parsing_fourth_part_should_be_negative_when_fourth_part_is_not_here( string sv )
+        {
+            var head = sv.AsSpan();
+            var v = SVersion.TryParse( ref head );
+            v.FourthPart.Should().BeNegative();
+            v.AsCSVersion.Should().NotBeNull();
+
+        }
     }
 }
