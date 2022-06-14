@@ -339,6 +339,13 @@ namespace CSemVer.Tests
         //      This is a locked version.
         [TestCase( "[1.0.0]", "1.0.0[Lock]", "" )]
 
+        // [1.0.0,1.0.0] 
+        // [1.0.0,1.0.0)
+        //      This is a locked version.
+        [TestCase( "[1.0,1.0]", "1.0.0[Lock]", "" )]
+        [TestCase( "[1.0,1.0)", "1.0.0[Lock]", "" )]
+        [TestCase( "(1.0,1.0)", "1.0.0[Lock]", "" )]
+
         // (,1.0] -- x ≤ 2.0 -- Maximum version, inclusive
         //      We (badly) approximate this with the lower bound... here it's the very first SemVer version.
         [TestCase( "(,2.0]", "0.0.0-0", "Approx" )]
@@ -379,8 +386,8 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
         [TestCase( "[1.2.3,2.0.0-A)", "1.2.3[LockMajor,CI]", "" )]
 
-        //      About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
-        //      that depends on a package "A" (so you necessarily use a given verision of it: "vBase") and say: "I can't work with the
+        //      About exclusive lower bound: this doesn't make a lot of sense... That would mean that you release a package
+        //      that depends on a package "A" (so you necessarily use a given version of it: "vBase") and say: "I can't work with the
         //      package "A" in version "vBase". I need a future version... Funny isn't it?
         //      ==> We decide to consider '(' as being '[': all that applies before works and we consider that this is NOT an approximation. 
         //      

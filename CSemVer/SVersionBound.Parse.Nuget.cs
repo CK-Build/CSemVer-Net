@@ -93,6 +93,12 @@ namespace CSemVer
         static ParseResult CreateResult( bool begInclusive, SVersion? v1, SVersion? v2, bool endInclusive )
         {
             if( v1 == null ) v1 = SVersion.ZeroVersion;
+
+            // Special case for [x,x] or [x,x). This is a locked version.
+            if( v1 == v2 )
+            {
+                return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false );
+            }
             // Currently, we have no way to handle exclusive bounds.
             // The only non approximative projections are:
             //   - [Major.Minor.Patch[-whatever],(Major+1).0.0) => LockMajor
@@ -103,7 +109,7 @@ namespace CSemVer
             // captures the real intent behind the range: we clearly don't want any prerelease of the next major (or
             // minor or patch) to be satisfied!
             //
-            // About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
+            // About exclusive lower bound: this doesn't make a lot of sense... That would mean that you release a package
             // that depends on a package "A" (so you necessarily use a given version of it: "vBase") and say: "I can't work with the
             // package "A" is version "vBase". I need a future version... Funny isn't it?
             // So, we deliberately forget the "begInclusive" parameter. It still appears in the parameters of this method for the sake of completeness. 
