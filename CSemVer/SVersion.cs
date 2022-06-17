@@ -14,7 +14,7 @@ namespace CSemVer
     {
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
-            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\-(?<4>[0-9A-Za-z\-\.]+))?(\+(?<5>[0-9A-Za-z\-\.]+))?",
+            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?(\-(?<5>[0-9A-Za-z\-\.]+))?(\+(?<6>[0-9A-Za-z\-\.]+))?",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         // This applies to PreRelease and BuildMetaData.
@@ -47,7 +47,8 @@ namespace CSemVer
         /// <param name="prerelease">The prerelease. Can be null (normalized to the empty string).</param>
         /// <param name="buildMetaData">The build meta data. Can be null (normalized to the empty string).</param>
         /// <param name="csVersion">Companion CSVersion.</param>
-        protected SVersion( string? parsedText, int major, int minor, int patch, string? prerelease, string? buildMetaData, CSVersion? csVersion )
+        /// <param name="fourthPart">The fourth part <see cref="FourthPart"/></param>
+        private protected SVersion( string? parsedText, int major, int minor, int patch, string? prerelease, string? buildMetaData, CSVersion? csVersion, int fourthPart = -1 )
         {
             prerelease ??= String.Empty;
             buildMetaData ??= String.Empty;
@@ -56,15 +57,17 @@ namespace CSemVer
             Major = major;
             Minor = minor;
             Patch = patch;
+            FourthPart = fourthPart;
             Prerelease = prerelease;
             BuildMetaData = buildMetaData;
             ParsedText = parsedText;
-            NormalizedText = ComputeNormalizedText( major, minor, patch, prerelease, buildMetaData );
+            NormalizedText = ComputeNormalizedText( major, minor, patch, fourthPart, prerelease, buildMetaData );
         }
 
-        static string ComputeNormalizedText( int major, int minor, int patch, string prerelease, string buildMetaData )
+        static string ComputeNormalizedText( int major, int minor, int patch, int fourthPart, string prerelease, string buildMetaData )
         {
-            var t = String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", major, minor, patch );
+            var t = fourthPart == -1 ? String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}", major, minor, patch )
+                                      : String.Format( CultureInfo.InvariantCulture, "{0}.{1}.{2}.{3}", major, minor, patch, fourthPart );
             if( prerelease.Length > 0 ) t += '-' + prerelease;
             if( buildMetaData.Length > 0 ) t += '+' + buildMetaData;
             return t;
@@ -79,7 +82,7 @@ namespace CSemVer
         {
             if( String.IsNullOrWhiteSpace( error ) ) throw new ArgumentNullException( nameof( error ) );
             ErrorMessage = error;
-            Major = Minor = Patch = -1;
+            Major = Minor = Patch = FourthPart = -1;
             Prerelease = String.Empty;
             BuildMetaData = String.Empty;
             ParsedText = parsedText;
@@ -99,9 +102,10 @@ namespace CSemVer
             Major = other.Major;
             Minor = other.Minor;
             Patch = other.Patch;
+            FourthPart = other.FourthPart;
             Prerelease = other.Prerelease;
-            BuildMetaData = buildMetaData ?? throw new ArgumentNullException( nameof(buildMetaData) );
-            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, Prerelease, buildMetaData );
+            BuildMetaData = buildMetaData ?? throw new ArgumentNullException( nameof( buildMetaData ) );
+            NormalizedText = ComputeNormalizedText( Major, Minor, Patch, FourthPart, Prerelease, buildMetaData );
         }
 
         /// <summary>
@@ -121,6 +125,12 @@ namespace CSemVer
         /// When <see cref="IsValid"/> is true, necessarily greater or equal to 0, otherwise -1.
         /// </summary>
         public int Patch { get; }
+
+        /// <summary>
+        /// This unfortunate property handles the deviant use of a 4th part after the minor.
+        /// Its default value is -1 (for true SemVer version).
+        /// </summary>
+        public int FourthPart { get; }
 
         /// <summary>
         /// Gets the prerelease tag without the leading '-'.
@@ -274,6 +284,7 @@ namespace CSemVer
         /// </param>
         /// <param name="parsedText">Optional parsed text.</param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
+        /// <param name="fourthPart">Optional, non standard, fourth version part.</param>
         /// <returns>The <see cref="SVersion"/>.</returns>
         public static SVersion Create( int major,
                                        int minor,
@@ -282,9 +293,10 @@ namespace CSemVer
                                        string? buildMetaData = null,
                                        bool handleCSVersion = true,
                                        bool checkBuildMetaDataSyntax = true,
-                                       string? parsedText = null )
+                                       string? parsedText = null,
+                                       int fourthPart = -1 )
         {
-            return DoCreate( parsedText, major, minor, patch, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
+            return DoCreate( parsedText, major, minor, patch, fourthPart, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
@@ -306,7 +318,7 @@ namespace CSemVer
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
         public static SVersion TryParse( ref ReadOnlySpan<char> s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true, bool allowPrefixParse = true )
         {
-            // Note: Waiting for .Net 5. Regex will support ReadOnlySpan<char> and so this will be the real
+            // Note: Waiting for .Net 7. Regex will support ReadOnlySpan<char> and so this will be the real
             //       implementation and the string version will call it.
             var r = DoTryParse( new string( s ), handleCSVersion, checkBuildMetaDataSyntax, allowPrefixParse );
             if( r.IsValid )
@@ -346,10 +358,18 @@ namespace CSemVer
             string sMajor = m.Groups[1].Value;
             string sMinor = m.Groups[2].Value;
             string sPatch = m.Groups[3].Value;
+            string sFourthPart = m.Groups[4].Value;
             if( !int.TryParse( sMajor, out int major ) ) return new SVersion( "Invalid Major.", s );
             if( !int.TryParse( sMinor, out int minor ) ) return new SVersion( "Invalid Major.", s );
             if( !int.TryParse( sPatch, out int patch ) ) return new SVersion( "Invalid Patch.", s );
-            return DoCreate( s, major, minor, patch, m.Groups[4].Value, m.Groups[5].Value, handleCSVersion, checkBuildMetaDataSyntax );
+
+            int fourthPart = -1;
+            if( !string.IsNullOrEmpty( sFourthPart ) )
+            {
+                if( !int.TryParse( sFourthPart, out fourthPart ) ) return new SVersion( "Invalid FourthPart.", s );
+            }
+
+            return DoCreate( s, major, minor, patch, fourthPart, m.Groups[5].Value, m.Groups[6].Value, handleCSVersion, checkBuildMetaDataSyntax );
         }
 
         /// <summary>
@@ -393,7 +413,15 @@ namespace CSemVer
             return v;
         }
 
-        static SVersion DoCreate( string? parsedText, int major, int minor, int patch, string prerelease, string buildMetaData, bool handleCSVersion, bool checkBuildMetaDataSyntax )
+        static SVersion DoCreate( string? parsedText,
+                                  int major,
+                                  int minor,
+                                  int patch,
+                                  int fourthPart,
+                                  string prerelease,
+                                  string buildMetaData,
+                                  bool handleCSVersion,
+                                  bool checkBuildMetaDataSyntax )
         {
             Debug.Assert( prerelease != null && buildMetaData != null );
             if( major < 0 || minor < 0 || patch < 0 ) return new SVersion( "Major, minor and patch must positive or 0.", parsedText );
@@ -403,17 +431,21 @@ namespace CSemVer
                 var error = ValidateDottedIdentifiers( buildMetaData, "build metadata" );
                 if( error != null ) return new SVersion( error, parsedText );
             }
-            // Try CSVersion first.
-            CSVersion? c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
-            if( handleCSVersion && c != null ) return c;
-            // If it is not a CSVersion, validate the prerelease.
-            // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
-            if( c == null && prerelease.Length > 0 )
+            if( fourthPart < 0 )
             {
-                var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
-                if( error != null ) return new SVersion( error, parsedText );
+                // Try CSVersion first.
+                CSVersion? c = CSVersion.FromSVersion( parsedText, major, minor, patch, prerelease, buildMetaData );
+                if( handleCSVersion && c != null ) return c;
+                // If it is not a CSVersion, validate the prerelease.
+                // A Stable is not necessarily a CSVersion (too big Major/Minor/Patch).
+                if( c == null && prerelease.Length > 0 )
+                {
+                    var error = ValidateDottedIdentifiers( prerelease, "pre-release" );
+                    if( error != null ) return new SVersion( error, parsedText );
+                }
+                return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c, fourthPart );
             }
-            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, c );
+            return new SVersion( parsedText, major, minor, patch, prerelease, buildMetaData, null, fourthPart );
         }
 
         static string? ValidateDottedIdentifiers( string s, string partName )
