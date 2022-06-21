@@ -10,16 +10,16 @@ namespace CSemVer
     {
         static readonly SVersion _000Version = SVersion.Create( 0, 0, 0 );
 
-        static (SVersion? Version, int FMajor, int FMinor, string? Error, bool FourtPartLost) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
+        static (SVersion? Version, int FMajor, int FMinor, string? Error) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
         {
             // Handling the marvelous "" (empty string), that is like '*'.
-            if( s.Length == 0 ) return (null, -1, 0, null, false);
+            if( s.Length == 0 ) return (null, -1, 0, null);
             var version = SVersion.TryParse( ref s );
             if( version.IsValid )
             {
                 // If only the 3 first parts have been read: launch SkipExtraPartsAndPrereleaseIfAny on the head to skip
                 // potential extra parts and prerelease.
-                return (version, 0, 0, null, SkipExtraPartsAndPrereleaseIfAny( ref s ));
+                return (version, 0, 0, null);
             }
             int major, minor = -1;
             if( TryMatchXStarInt( ref s, out major ) )
@@ -30,14 +30,14 @@ namespace CSemVer
                     {
                         if( s.Length == 0 || !TryMatchXStarInt( ref s, out minor ) )
                         {
-                            return (null, 0, 0, "Expecting minor number or *.", false);
+                            return (null, 0, 0, "Expecting minor number or *.");
                         }
                         if( minor >= 0 )
                         {
                             // If a fourth part caused the version parse to fail, handle it here.
                             if( s.Length > 0 && TryMatch( ref s, '.' ) && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int patch ) )
                             {
-                                return (SVersion.Create( major, minor, patch ), 0, 0, null, SkipExtraPartsAndPrereleaseIfAny( ref s ));
+                                return (SVersion.Create( major, minor, patch ), 0, 0, null);
                             }
                         }
                     }
@@ -45,10 +45,9 @@ namespace CSemVer
                 else minor = 0;
                 // Forgetting any trailing "X.Y.*" since it is like "X.Y".
                 // Even if the npm grammar allows "3.*-alpha" or "3.1.*+meta", we ignores this: https://semver.npmjs.com/ selects nothing.
-                // We consider this stupid trail as being FourthPartLost.
-                return (null, major, minor, null, SkipExtraPartsAndPrereleaseIfAny( ref s ) );
+                return (null, major, minor, null);
             }
-            return (null, 0, 0, version.ErrorMessage, false);
+            return (null, 0, 0, version.ErrorMessage);
         }
 
         static (ParseResult Result, bool IsFloatingMinor) TryMatchRangeAlone( ref ReadOnlySpan<char> s, SVersionLock defaultBound, bool includePrerelease )
@@ -81,17 +80,17 @@ namespace CSemVer
                         isApproximated = false;
                     }
                 }
-                return (new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated, r.FourtPartLost ), false );
+                return (new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated ), false );
             }
-            if( r.FMajor < 0 ) return (new ParseResult( new SVersionBound( _000Version, SVersionLock.None, quality ), isApproximated: !includePrerelease, false), false );
-            if( r.FMinor < 0 ) return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, 0, 0 ), SVersionLock.LockMajor, quality ), isApproximated: !includePrerelease, false), true );
-            return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, r.FMinor, 0 ), SVersionLock.LockMinor, quality ), isApproximated: !includePrerelease, false ), false );
+            if( r.FMajor < 0 ) return (new ParseResult( new SVersionBound( _000Version, SVersionLock.None, quality ), isApproximated: !includePrerelease), false );
+            if( r.FMinor < 0 ) return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, 0, 0 ), SVersionLock.LockMajor, quality ), isApproximated: !includePrerelease), true );
+            return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, r.FMinor, 0 ), SVersionLock.LockMinor, quality ), isApproximated: !includePrerelease ), false );
         }
 
         static ParseResult TryMatchHeadRange( ref ReadOnlySpan<char> s, bool includePrerelease )
         {
             // Handling the marvelous "" (empty string), that is like '*'.
-            if( s.Length == 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, includePrerelease ? PackageQuality.None : PackageQuality.Stable ), isApproximated: !includePrerelease, false );
+            if( s.Length == 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, includePrerelease ? PackageQuality.None : PackageQuality.Stable ), isApproximated: !includePrerelease );
 
             if( TryMatch( ref s, '>' ) )
             {
@@ -106,7 +105,7 @@ namespace CSemVer
                 }
                 // We totally ignore any '<'...
                 var forget = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePrerelease ).Result;
-                return forget.Error != null ? forget : new ParseResult( SVersionBound.All.SetMinQuality( includePrerelease ? PackageQuality.CI : PackageQuality.Stable ), true, forget.FourthPartLost );
+                return forget.Error != null ? forget : new ParseResult( All.SetMinQuality( includePrerelease ? PackageQuality.CI : PackageQuality.Stable ), true );
             }
             if( TryMatch( ref s, '~' ) )
             {

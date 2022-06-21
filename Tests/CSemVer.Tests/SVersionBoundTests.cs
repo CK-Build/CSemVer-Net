@@ -306,16 +306,16 @@ namespace CSemVer.Tests
             r.Result.Should().Be( SVersionBound.None );
         }
 
-        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3" )]
-        [TestCase( "1.2.3.4-alpha - 3", "1.2.3" )]
-        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]" )]
-        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected )
+        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4", 4 )]
+        [TestCase( "1.2.3.4-alpha - 3", "1.2.3.4-alpha", 4 )]
+        [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]", -1 )]
+        public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected, int fourthPartExpected )
         {
             ReadOnlySpan<char> head = p;
             var r = SVersionBound.NpmTryParse( ref head );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
-            r.FourthPartLost.Should().BeTrue();
+            r.Result.Base.FourthPart.Should().Be( fourthPartExpected );
             head.Length.Should().Be( 0 );
         }
 
@@ -338,6 +338,13 @@ namespace CSemVer.Tests
         // [1.0] -- x == 1.0 -- Exact version match
         //      This is a locked version.
         [TestCase( "[1.0.0]", "1.0.0[Lock]", "" )]
+
+        // [1.0.0,1.0.0] 
+        // [1.0.0,1.0.0)
+        //      This is a locked version.
+        [TestCase( "[1.0,1.0]", "1.0.0[Lock]", "" )]
+        [TestCase( "[1.0,1.0)", "1.0.0[Lock]", "" )]
+        [TestCase( "(1.0,1.0)", "1.0.0[Lock]", "" )]
 
         // (,1.0] -- x ≤ 2.0 -- Maximum version, inclusive
         //      We (badly) approximate this with the lower bound... here it's the very first SemVer version.
@@ -379,8 +386,8 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
         [TestCase( "[1.2.3,2.0.0-A)", "1.2.3[LockMajor,CI]", "" )]
 
-        //      About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
-        //      that depends on a package "A" (so you necessarily use a given verision of it: "vBase") and say: "I can't work with the
+        //      About exclusive lower bound: this doesn't make a lot of sense... That would mean that you release a package
+        //      that depends on a package "A" (so you necessarily use a given version of it: "vBase") and say: "I can't work with the
         //      package "A" in version "vBase". I need a future version... Funny isn't it?
         //      ==> We decide to consider '(' as being '[': all that applies before works and we consider that this is NOT an approximation. 
         //      
@@ -405,7 +412,7 @@ namespace CSemVer.Tests
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
-            r.FourthPartLost.Should().BeFalse();
+            r.Result.Base.FourthPart.Should().Be( -1 );
         }
 
         // (1.0) is invalid
@@ -425,16 +432,16 @@ namespace CSemVer.Tests
         }
 
 
-        [TestCase( "[1.2.3.4]", "1.2.3[Lock]" )]
-        [TestCase( "1.2.3.4-alpha", "1.2.3" )]
-        [TestCase( "[1.2.3.4-alpha,2)", "1.2.3[LockMajor,CI]" )]
+        [TestCase( "[1.2.3.4]", "1.2.3.4[Lock]" )]
+        [TestCase( "1.2.3.4-alpha", "1.2.3.4-alpha" )]
+        [TestCase( "[1.2.3.4-alpha,2)", "1.2.3.4-alpha[LockMajor,CI]" )]
         public void parse_nuget_with_fourth_part( string p, string expected )
         {
             var r = SVersionBound.NugetTryParse( p );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().BeFalse();
-            r.FourthPartLost.Should().BeTrue();
+            r.Result.Base.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
         }
 
         [TestCase( "v1.0.0-mmm", "1.0.0-mmm" )]

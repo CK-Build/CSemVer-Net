@@ -38,8 +38,6 @@ namespace CSemVer
                 {
                     SVersion? v1 = null;
                     SVersion? v2 = null;
-                    bool v1FourthPartLost = false;
-                    bool v2FourthPartLost = false;
                     bool endInclusive;
 
                     if( Trim( ref head ).Length == 0 ) return new ParseResult( "Expected comma or version." );
@@ -47,7 +45,7 @@ namespace CSemVer
                     if( !hasComma )
                     {
                         if( head.Length == 0 ) return new ParseResult( "Expected nuget version." );
-                        v1 = TryParseVersion( ref head, out v1FourthPartLost );
+                        v1 = TryParseVersion( ref head );
                         if( v1.ErrorMessage != null ) return new ParseResult( v1.ErrorMessage );
                         if( Trim( ref head ).Length > 0 )
                         {
@@ -62,13 +60,13 @@ namespace CSemVer
                         {
                             return new ParseResult( "Invalid singled version range. Must only be '[version]'." );
                         }
-                        return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false, v1FourthPartLost );
+                        return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false );
                     }
                     Debug.Assert( hasComma || v1 == null );
                     endInclusive = TryMatch( ref head, ']' );
                     if( !endInclusive && !TryMatch( ref head, ')' ) )
                     {
-                        v2 = TryParseVersion( ref head, out v2FourthPartLost );
+                        v2 = TryParseVersion( ref head );
                         if( v2.ErrorMessage != null ) return new ParseResult( v2.ErrorMessage );
                         if( Trim( ref head ).Length == 0
                             || ( !(endInclusive = TryMatch( ref head, ']' )) && !TryMatch( ref head, ')' ) ))
@@ -81,7 +79,7 @@ namespace CSemVer
                         return new ParseResult( "Invalid nuget version range." );
                     }
                     Debug.Assert( v1 != null || v2 != null );
-                    return CreateResult( begInclusive, v1, v2, endInclusive, v1FourthPartLost || v2FourthPartLost );
+                    return CreateResult( begInclusive, v1, v2, endInclusive );
                 }
                 return TryParseVersionResult( ref head, false );
             }
@@ -92,9 +90,15 @@ namespace CSemVer
 
         }
 
-        static ParseResult CreateResult( bool begInclusive, SVersion? v1, SVersion? v2, bool endInclusive, bool fourthPartLost )
+        static ParseResult CreateResult( bool begInclusive, SVersion? v1, SVersion? v2, bool endInclusive )
         {
             if( v1 == null ) v1 = SVersion.ZeroVersion;
+
+            // Special case for [x,x] or [x,x). This is a locked version.
+            if( v1 == v2 )
+            {
+                return new ParseResult( new SVersionBound( v1, SVersionLock.Lock ), false );
+            }
             // Currently, we have no way to handle exclusive bounds.
             // The only non approximative projections are:
             //   - [Major.Minor.Patch[-whatever],(Major+1).0.0) => LockMajor
@@ -105,7 +109,7 @@ namespace CSemVer
             // captures the real intent behind the range: we clearly don't want any prerelease of the next major (or
             // minor or patch) to be satisfied!
             //
-            // About exclusive lower bound: this doesn't make a lot of sense... That would mean that yo release a package
+            // About exclusive lower bound: this doesn't make a lot of sense... That would mean that you release a package
             // that depends on a package "A" (so you necessarily use a given version of it: "vBase") and say: "I can't work with the
             // package "A" is version "vBase". I need a future version... Funny isn't it?
             // So, we deliberately forget the "begInclusive" parameter. It still appears in the parameters of this method for the sake of completeness. 
@@ -114,38 +118,32 @@ namespace CSemVer
             {
                 if( v1.Major + 1 == v2.Major && v2.Minor == 0 && v2.Patch == 0 )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMajor ), false, fourthPartLost );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMajor ), false );
                 }
                 if( v1.Major == v2.Major && v1.Minor + 1 == v2.Minor && v2.Patch == 0 )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMinor ), false, fourthPartLost );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockMinor ), false );
                 }
                 if( v1.Major == v2.Major && v1.Minor == v2.Minor && v1.Patch + 1 == v2.Patch )
                 {
-                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockPatch ), false, fourthPartLost );
+                    return new ParseResult( new SVersionBound( v1, SVersionLock.LockPatch ), false );
                 }
             }
             // Only if v2 is not null is this an approximation since we ignore the notion of "exclusive lower bound".
-            return new ParseResult( new SVersionBound( v1 ), v2 != null, fourthPartLost );
+            return new ParseResult( new SVersionBound( v1 ), v2 != null );
         }
 
         static ParseResult TryParseVersionResult( ref ReadOnlySpan<char> s, bool isApproximate )
         {
-            var v = TryParseVersion( ref s, out bool fourthPartLost );
-            return v.ErrorMessage == null ? new ParseResult( new SVersionBound( v ), isApproximate, fourthPartLost ) : new ParseResult( v.ErrorMessage );
+            var v = TryParseVersion( ref s );
+            return v.ErrorMessage == null ? new ParseResult( new SVersionBound( v ), isApproximate ) : new ParseResult( v.ErrorMessage );
         }
 
-        static SVersion TryParseVersion( ref ReadOnlySpan<char> s, out bool fourthPartLost )
+        static SVersion TryParseVersion( ref ReadOnlySpan<char> s )
         {
             Debug.Assert( s.Length > 0 );
-            fourthPartLost = false;
             var v = SVersion.TryParse( ref s );
-            if( v.IsValid )
-            {
-                // If only the 3 first parts have been read...
-                fourthPartLost = SkipExtraPartsAndPrereleaseIfAny( ref s );
-            }
-            else
+            if(!v.IsValid)
             {
                 if( TryMatchNonNegativeInt( ref s, out int major ) )
                 {
@@ -159,31 +157,12 @@ namespace CSemVer
                     }
                     // Try to save the fourth part: in such case the patch is read.
                     int patch = 0;
-                    if( s.Length > 0 && TryMatch( ref s, '.' )
-                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out patch )
-                        && s.Length > 0 && TryMatch( ref s, '.' )
-                        && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) )
-                    {
-                        fourthPartLost = true;
-                    }
+  
                     return SVersion.Create( major, minor, patch );
                 }
             }
             return v;
         }
 
-        static bool SkipExtraPartsAndPrereleaseIfAny( ref ReadOnlySpan<char> s )
-        {
-            bool fourthPartLost = false;
-            while( s.Length > 0 && TryMatch( ref s, '.' ) && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int _ ) ) fourthPartLost = true;
-            if( s.Length > 0 && TryMatch( ref s, '-' ) )
-            {
-                while( s.Length > 0 && s[0] < 127 && (Char.IsLetterOrDigit( s[0] ) || s[0] == '.' || s[0] == '+') )
-                {
-                    s = s.Slice( 1 );
-                }
-            }
-            return fourthPartLost;
-        }
     }
 }
