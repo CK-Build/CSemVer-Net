@@ -342,7 +342,7 @@ namespace CSemVer
         /// of prerelease names) must not be done.
         /// </param>
         /// <returns>The SVersion object that may not be <see cref="IsValid"/>.</returns>
-        public static SVersion TryParse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static SVersion TryParse( string? s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
             if( string.IsNullOrEmpty( s ) ) return new SVersion( "Null or empty version string.", s );
             return DoTryParse( s, handleCSVersion, checkBuildMetaDataSyntax, allowPrefixParse: false );
@@ -386,7 +386,7 @@ namespace CSemVer
         /// </param>
         /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryParse( string s, out SVersion v, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+        public static bool TryParse( string? s, out SVersion v, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
         {
             v = TryParse( s, handleCSVersion, checkBuildMetaDataSyntax );
             return v.IsValid;
