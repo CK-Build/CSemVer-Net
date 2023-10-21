@@ -40,12 +40,12 @@ namespace CSemVer
             }
             SVersionLock l = SVersionLock.None;
             PackageQuality q = PackageQuality.None;
-            if( Trim( ref head ).Length > 0 && TryMatch( ref head, '[' ) )
+            if( TryMatch( ref Trim( ref head ), '[' ) )
             {
                 // Allows empty []. Note that TryParseLockAndMinQuality calls Trim.
-                TryParseLockAndMinQuality( ref head, out l, out q );
+                TryParseLockAndMinQuality( ref Trim( ref head ), out l, out q );
                 // Match the closing ] if it's here. Ignores it if it's not here.
-                if( Trim( ref head ).Length > 0 ) TryMatch( ref head, ']' );
+                TryMatch( ref Trim( ref head ), ']' );
             }
             if( l == SVersionLock.None ) l = defaultLock;
             if( q == PackageQuality.None ) q = defaultQuality;
@@ -155,7 +155,7 @@ namespace CSemVer
             /// <returns>This or a new result.</returns>
             public ParseResult EnsureIsApproximated( bool setApproximated = true )
             {
-                return setApproximated && !IsApproximated
+                return setApproximated && IsValid && !IsApproximated
                         ? new ParseResult( Result, true )
                         : this;
             }
@@ -227,7 +227,7 @@ namespace CSemVer
 
         static bool TryMatch( ref ReadOnlySpan<char> s, char c )
         {
-            if( s[0] == c )
+            if( s.Length > 0 && s[0] == c )
             {
                 s = s.Slice( 1 );
                 return true;
@@ -238,18 +238,21 @@ namespace CSemVer
         static bool TryMatchNonNegativeInt( ref ReadOnlySpan<char> s, out int i )
         {
             i = 0;
-            int v = s[0] - '0';
-            if( v >= 0 && v <= 9 )
+            if( s.Length > 0 )
             {
-                do
+                int v = s[0] - '0';
+                if( v >= 0 && v <= 9 )
                 {
-                    i = i * 10 + v;
-                    s = s.Slice( 1 );
-                    if( s.Length == 0 ) break;
-                    v = s[0] - '0';
+                    do
+                    {
+                        i = i * 10 + v;
+                        s = s.Slice( 1 );
+                        if( s.Length == 0 ) break;
+                        v = s[0] - '0';
+                    }
+                    while( v >= 0 && v <= 9 );
+                    return true;
                 }
-                while( v >= 0 && v <= 9 );
-                return true;
             }
             return false;
         }

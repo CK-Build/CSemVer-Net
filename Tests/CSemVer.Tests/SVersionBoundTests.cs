@@ -1,10 +1,13 @@
 using FluentAssertions;
 using NUnit.Framework;
+using NUnit.Framework.Internal.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+#pragma warning disable IDE1006 // Naming Styles
 
 namespace CSemVer.Tests
 {
@@ -15,12 +18,8 @@ namespace CSemVer.Tests
         static readonly SVersion V101 = SVersion.Create( 1, 0, 1 );
         static readonly SVersion V110 = SVersion.Create( 1, 1, 0 );
         static readonly SVersion V111 = SVersion.Create( 1, 1, 1 );
-        static readonly SVersion V120 = SVersion.Create( 1, 2, 0 );
-        static readonly SVersion V121 = SVersion.Create( 1, 2, 1 );
         static readonly SVersion V200 = SVersion.Create( 2, 0, 0 );
-        static readonly SVersion V201 = SVersion.Create( 2, 0, 1 );
         static readonly SVersion V210 = SVersion.Create( 2, 1, 0 );
-        static readonly SVersion V211 = SVersion.Create( 2, 1, 1 );
 
         [Test]
         public void basic_union_operations()
@@ -280,7 +279,7 @@ namespace CSemVer.Tests
         [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePrerelease", "1.1.9", "Approx" )]
 
         // Syntax: "<1.2.7" is ignored.
-        [TestCase( "<1.2.7", "", "0.0.0-0[Stable]", "Approx" )]
+        [TestCase( "<1.2.7", "", "0.0.0[Stable]", "Approx" )]
         [TestCase( "<1.2.7", "includePrerelease", "0.0.0-0", "Approx" )]
 
         // Syntax: "<=1.2.7" is like "=1.2.7".
@@ -370,7 +369,7 @@ namespace CSemVer.Tests
         //
         //      Note that Nuget is somehow buggy (https://github.com/NuGet/Home/issues/6434#issuecomment-546423937) since
         //      this allows 1.0.0-pre to be satisfied!
-        //      The workaround is to use 1.0.0-0 as the upper bound... BUT beware: nuget.org forbids the -0 suffix :).
+        //      The workaround is to use 1.0.0-0 as the upper bound... (nuget.org used to forbid the -0 suffix but this has been fixed).
         //      To overcome this, if CSemVer is used (or the first prerelease always used is a[lpha]), one can use 1.0.0-a as the upper bound.
         //
         //      Here we consider that the answer IS to lock parts...
@@ -380,7 +379,7 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,1.2.4)", "1.2.3[LockPatch,CI]", "" )]
         [TestCase( "[1.2.3,2)", "1.2.3[LockMajor,CI]", "" )]
 
-        //       To be consistent, if the upper bound is a -0 (oar -a) prerelease, we do the same (and, at least for -0,
+        //       To be consistent, if the upper bound is a -0 (or -a) prerelease, we do the same (and, at least for -0,
         //       this is perfect projection).
         [TestCase( "[1.2.3,1.2.4-0)", "1.2.3[LockPatch,CI]", "" )]
         [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
@@ -407,6 +406,25 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,2.0.0-alpha)", "1.2.3", "Approx" )]
 
         public void parse_nuget_syntax( string p, string expected, string approximate )
+        {
+            var r = SVersionBound.NugetTryParse( p );
+            r.Error.Should().BeNull();
+            r.Result.ToString().Should().Be( expected );
+            r.IsApproximated.Should().Be( approximate == "Approx" );
+            r.Result.Base.FourthPart.Should().Be( -1 );
+        }
+
+        // Wildcard patterns: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#floating-version-resolutions
+        // The "*" is for Stable only.
+        [TestCase( "*", "0.0.0[Stable]", "" )]
+        // The "*-*" is all versions.
+        [TestCase( "*-*", "0.0.0-0", "" )]
+        [TestCase( "1.*", "1.0.0[LockMajor,Stable]", "" )]
+        [TestCase( "1.*-*", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "1.1.*", "1.1.0[LockMinor,Stable]", "" )]
+        [TestCase( "1.1.*-*", "1.1.0[LockMinor,CI]", "" )]
+        [TestCase( "1.2.3-*", "1.2.3[LockPatch,CI]", "" )]
+        public void parse_nuget_syntax_with_wildcard( string p, string expected, string approximate )
         {
             var r = SVersionBound.NugetTryParse( p );
             r.Error.Should().BeNull();
@@ -476,5 +494,22 @@ namespace CSemVer.Tests
             b.ToString().Should().Be( expected );
         }
 
+        [TestCase( "*", "0.0.0[Stable]" )]
+        [TestCase( "*-*", "0.0.0-0" )]
+        [TestCase( "5.*", "5.0.0[LockMajor,Stable]" )]
+        [TestCase( "5.*-*", "5.0.0[LockMajor,CI]" )]
+        [TestCase( "5.2.*", "5.2.0[LockMinor,Stable]" )]
+        [TestCase( "5.2.*-*", "5.2.0[LockMinor,CI]" )]
+        [TestCase( "5.2.1", "5.2.1" )]
+        [TestCase( "5.2.1-*", "5.2.1[LockPatch,CI]" )]
+        public void roundtripable_nuget_versions( string nuget, string bound )
+        {
+            SVersionBound.TryParse( bound, out var vBound );
+            vBound.ToNuGetString().Should().Be( nuget );
+
+            var rNuGet = SVersionBound.NugetTryParse( nuget );
+            rNuGet.IsValid.Should().BeTrue();
+            rNuGet.Result.Should().Be( vBound );
+        }
     }
 }

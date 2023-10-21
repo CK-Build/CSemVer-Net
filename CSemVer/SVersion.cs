@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -14,7 +15,7 @@ namespace CSemVer
     {
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
-            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?(\-(?<5>[0-9A-Za-z\-\.]+))?(\+(?<6>[0-9A-Za-z\-\.]+))?",
+            new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?((?!-)|(\-(?<5>[0-9A-Za-z\-\.]+)))(\+(?<6>[0-9A-Za-z\-\.]+))?",
             RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
         // This applies to PreRelease and BuildMetaData.
@@ -163,6 +164,7 @@ namespace CSemVer
         /// <summary>
         /// Gets whether this <see cref="SVersion"/> has a null <see cref="ErrorMessage"/>.
         /// </summary>
+        // [MemberNotNullWhen( false, nameof( ErrorMessage ) )]
         public bool IsValid => ErrorMessage == null;
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
@@ -45,7 +46,7 @@ namespace CSemVer
                     if( !hasComma )
                     {
                         if( head.Length == 0 ) return new ParseResult( "Expected nuget version." );
-                        v1 = TryParseVersion( ref head );
+                        v1 = TryParseLoosyVersion( ref head );
                         if( v1.ErrorMessage != null ) return new ParseResult( v1.ErrorMessage );
                         if( Trim( ref head ).Length > 0 )
                         {
@@ -66,7 +67,7 @@ namespace CSemVer
                     endInclusive = TryMatch( ref head, ']' );
                     if( !endInclusive && !TryMatch( ref head, ')' ) )
                     {
-                        v2 = TryParseVersion( ref head );
+                        v2 = TryParseLoosyVersion( ref head );
                         if( v2.ErrorMessage != null ) return new ParseResult( v2.ErrorMessage );
                         if( Trim( ref head ).Length == 0
                             || ( !(endInclusive = TryMatch( ref head, ']' )) && !TryMatch( ref head, ')' ) ))
@@ -81,7 +82,7 @@ namespace CSemVer
                     Debug.Assert( v1 != null || v2 != null );
                     return CreateResult( begInclusive, v1, v2, endInclusive );
                 }
-                return TryParseVersionResult( ref head, false );
+                return TryParseVersionWithWildcards( ref head );
             }
             catch( IndexOutOfRangeException )
             {
@@ -133,13 +134,99 @@ namespace CSemVer
             return new ParseResult( new SVersionBound( v1 ), v2 != null );
         }
 
-        static ParseResult TryParseVersionResult( ref ReadOnlySpan<char> s, bool isApproximate )
+        static ParseResult TryParseVersionWithWildcards( ref ReadOnlySpan<char> s )
         {
-            var v = TryParseVersion( ref s );
-            return v.ErrorMessage == null ? new ParseResult( new SVersionBound( v ), isApproximate ) : new ParseResult( v.ErrorMessage );
+            Debug.Assert( s.Length > 0 );
+            var v = SVersion.TryParse( ref s );
+            if( v.IsValid ) 
+            {
+                return new ParseResult( new SVersionBound( v ), false );
+            }
+            Debug.Assert( v.ErrorMessage != null, "Missing [MemberNotNullWhen] in netstandard2.1" );
+            // The version is NOT a valid SVersion: there may be wildcards or a "shorten" version (like "1" or "1.2").
+            // In NuGet, "1.0" is not the same as "1.0.*":
+            //  - 1.0 => 1.0.0 (Minimum version, inclusive)
+            //  - 1.0.* => 1.1.0[LockMinor,Stable]
+            //  - 1.0.*-* => 1.1.0[LockMinor,CI]
+            // We allow 'x' or '*' for the wildcard (even if 'x' won't appear in a NuGet version range). 
+            if( !TryMatchXStarInt( ref s, out var major ) )
+            {
+                // No major nor wildcard. This is definitly invalid.
+                return new ParseResult( v.ErrorMessage );
+            }
+            if( major == -1 )
+            {
+                // Skips ".minor.patch" if any.
+                var skip = TryMatch( ref s, '.' )
+                            && TryMatchXStarInt( ref s, out var _ )
+                            && TryMatch( ref s, '.' )
+                            && TryMatchXStarInt( ref s, out var _ );
+                // "*-*" is all versions. 
+                if( TryMatch( ref s ,'-') && TryMatch( ref s, '*' ) )
+                {
+                    return new ParseResult( SVersionBound.All, false );
+                }
+                // "*" alone implies only Stable versions.
+                return new ParseResult( SVersionBound.All.SetMinQuality( PackageQuality.Stable ), false );
+            }
+            Debug.Assert( major >= 0 );
+            bool expectNextPart = TryMatch( ref s, '.' );
+            if( !expectNextPart )
+            {
+                // "Major" only: (Minimum version, inclusive)
+                var bound = new SVersionBound( SVersion.Create( major, 0, 0 ) );
+                return new ParseResult( bound, false );
+            }
+            bool hasNextPart;
+            if( ((hasNextPart = TryMatchXStarInt( ref s, out var minor )) && minor == -1) )
+            {
+                // Skips any ".patch".
+                var skip = TryMatch( ref s, '.' )
+                           && TryMatchXStarInt( ref s, out var _ );
+
+                var minQuality = TryMatch( ref s, '-' ) && TryMatch( ref s, '*' )
+                                    ? PackageQuality.None
+                                    : PackageQuality.Stable;
+                var bound = new SVersionBound( SVersion.Create( major, 0, 0 ), SVersionLock.LockMajor, minQuality );
+                return new ParseResult( bound, false );
+            }
+            if( !hasNextPart )
+            {
+                return new ParseResult( "Missing expected Minor." );
+            }
+            Debug.Assert( major >= 0 && minor >= 0 );
+            expectNextPart = TryMatch( ref s, '.' );
+            if( !expectNextPart )
+            {
+                // "Major.Minor" only: (Minimum version, inclusive)
+                var bound = new SVersionBound( SVersion.Create( major, minor, 0 ) );
+                return new ParseResult( bound, false );
+            }
+            if( (hasNextPart = TryMatchXStarInt( ref s, out var patch )) && patch == -1 )
+            {
+                var minQuality = TryMatch( ref s, '-' ) && TryMatch( ref s, '*' )
+                                 ? PackageQuality.None
+                                 : PackageQuality.Stable;
+                var bound = new SVersionBound( SVersion.Create( major, minor, 0 ), SVersionLock.LockMinor, minQuality );
+                return new ParseResult( bound, false );
+            }
+            if( !hasNextPart )
+            {
+                return new ParseResult( "Missing expected Patch." );
+            }
+            Debug.Assert( major >= 0 && minor >= 0 && patch >= 0 );
+            // We have a Major.Minor.Patch here but it has failed to be parsed.
+            // The single possibility to be valid is the "-*" pattern:
+            // this is a [LockPatch, CI].
+            if( TryMatch( ref s, '-' ) && TryMatch( ref s, '*' ) )
+            {
+                var bound = new SVersionBound( SVersion.Create( major, minor, patch ), SVersionLock.LockPatch, PackageQuality.CI );
+                return new ParseResult( bound, false );
+            }
+            return new ParseResult( v.ErrorMessage );
         }
 
-        static SVersion TryParseVersion( ref ReadOnlySpan<char> s )
+        static SVersion TryParseLoosyVersion( ref ReadOnlySpan<char> s )
         {
             Debug.Assert( s.Length > 0 );
             var v = SVersion.TryParse( ref s );
