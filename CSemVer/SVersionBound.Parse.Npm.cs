@@ -217,31 +217,17 @@ namespace CSemVer
         }
 
         /// <summary>
-        /// Attempts to parse a npm version range. See  https://github.com/npm/node-semver and https://semver.npmjs.com/.
-        /// </summary>
-        /// <param name="s">The span to parse.</param>
-        /// <param name="includePrerelease">
-        /// See https://github.com/npm/node-semver#prerelease-tags: setting this to true "treats all prerelease versions
-        /// as if they were normal versions, for the purpose of range matching".
-        /// When this is false, then <see cref="ParseResult.IsApproximated"/> is always true since fro npm, prerelease
-        /// specification is valid only for the same [major, minor, patch] when this "incldePreRelease" flag is not specified... But for us,
-        /// this is the default.
-        /// </param>
-        /// <returns>The result of the parse that can be invalid.</returns>
-        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = true ) => NpmTryParse( ref s, includePrerelease );
-
-        /// <summary>
         /// Attempts to parse a npm version range. See https://github.com/npm/node-semver and https://semver.npmjs.com/.
         /// </summary>
         /// <param name="s">The span to parse.</param>
         /// <param name="includePrerelease">
         /// See https://github.com/npm/node-semver#prerelease-tags: setting this to true "treats all prerelease versions
-        /// as if they were normal versions, for the purpose of range matching".
-        /// When this is false, then <see cref="ParseResult.IsApproximated"/> is always true since fro npm, prerelease
-        /// specification is valid only for the same [major, minor, patch] when this "includePrerelease" flag is not specified... But for us,
-        /// this is the default.
+        /// as if they were normal versions, for the purpose of range matching". For us, this is the default.
         /// </param>
         /// <returns>The result of the parse that can be invalid.</returns>
+        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = true ) => NpmTryParse( ref s, includePrerelease );
+
+        /// <inheritdoc cref="NpmTryParse(ReadOnlySpan{char}, bool)"/>>
         public static ParseResult NpmTryParse( ref ReadOnlySpan<char> s, bool includePrerelease = true )
         {
             // Parsing syntactically invalid version is not common: we analyze existing stuff that are supposed

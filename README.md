@@ -4,6 +4,11 @@
 This package (netstandard2.1, no dependencies) implements https://csemver.org/
 that defines a subset of https://semver.org/ (v2.0.0).
 
+## About versioning
+TODO
+https://iscinumpy.dev/post/bound-version-constraints/
+
+
 ## Questions and answers
 ### Why working on a subset?
 To be able to reason about versions. The semver specification is great but working 
