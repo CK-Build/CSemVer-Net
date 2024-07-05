@@ -26,16 +26,16 @@ namespace CSemVer
             {
                 if( major >= 0 )
                 {
-                    if( s.Length > 0 && TryMatch( ref s, '.' ) )
+                    if( TryMatch( ref s, '.' ) )
                     {
-                        if( s.Length == 0 || !TryMatchXStarInt( ref s, out minor ) )
+                        if( !TryMatchXStarInt( ref s, out minor ) )
                         {
                             return (null, 0, 0, "Expecting minor number or *.");
                         }
                         if( minor >= 0 )
                         {
                             // If a fourth part caused the version parse to fail, handle it here.
-                            if( s.Length > 0 && TryMatch( ref s, '.' ) && s.Length > 0 && TryMatchNonNegativeInt( ref s, out int patch ) )
+                            if( TryMatch( ref s, '.' ) && TryMatchNonNegativeInt( ref s, out int patch ) )
                             {
                                 return (SVersion.Create( major, minor, patch ), 0, 0, null);
                             }
@@ -99,13 +99,19 @@ namespace CSemVer
             }
             if( TryMatch( ref s, '<' ) )
             {
+                // We don't handle really '<'...
+                // We allow the all versions with a lock when possible.
                 if( TryMatch( ref s, '=' ) )
                 {
                     return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.Lock, includePrerelease ).Result.EnsureIsApproximated( true );
                 }
-                // We totally ignore any '<'...
-                var forget = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePrerelease ).Result;
-                return forget.Error != null ? forget : new ParseResult( All.SetMinQuality( includePrerelease ? PackageQuality.CI : PackageQuality.Stable ), true );
+                // Is '<' alone valid? We don't want to consider it as '<0.0.0'.
+                Trim( ref s );
+                if( s.Length == 0 ) return new ParseResult( "Invalid '<' range" );
+                var forget = TryMatchRangeAlone( ref s, SVersionLock.None, includePrerelease ).Result;
+                return forget.IsValid
+                        ? new ParseResult( All.SetMinQuality( includePrerelease ? PackageQuality.CI : PackageQuality.Stable ), true )
+                        : forget;
             }
             if( TryMatch( ref s, '~' ) )
             {
@@ -199,28 +205,16 @@ namespace CSemVer
 
         static bool TryMatchXStarInt( ref ReadOnlySpan<char> s, out int i )
         {
-            if( s[0] == '*' || s[0] == 'x' || s[0] == 'X' )
+            if( TryMatchNonNegativeInt( ref s, out i ) ) return true;
+            if( s.Length > 0
+                && (s[0] == '*' || s[0] == 'x' || s[0] == 'X') )
             {
                 s = s.Slice( 1 );
                 i = -1;
                 return true;
             }
-            return TryMatchNonNegativeInt( ref s, out i );
+            return false;
         }
-
-        /// <summary>
-        /// Attempts to parse a npm version range. See  https://github.com/npm/node-semver and https://semver.npmjs.com/.
-        /// </summary>
-        /// <param name="s">The span to parse.</param>
-        /// <param name="includePrerelease">
-        /// See https://github.com/npm/node-semver#prerelease-tags: setting this to true "treats all prerelease versions
-        /// as if they were normal versions, for the purpose of range matching".
-        /// When this is false, then <see cref="ParseResult.IsApproximated"/> is always true since fro npm, prerelease
-        /// specification is valid only for the same [major, minor, patch] when this "incldePreRelease" flag is not specified... But for us,
-        /// this is the default.
-        /// </param>
-        /// <returns>The result of the parse that can be invalid.</returns>
-        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = true ) => NpmTryParse( ref s, includePrerelease );
 
         /// <summary>
         /// Attempts to parse a npm version range. See https://github.com/npm/node-semver and https://semver.npmjs.com/.
@@ -228,12 +222,12 @@ namespace CSemVer
         /// <param name="s">The span to parse.</param>
         /// <param name="includePrerelease">
         /// See https://github.com/npm/node-semver#prerelease-tags: setting this to true "treats all prerelease versions
-        /// as if they were normal versions, for the purpose of range matching".
-        /// When this is false, then <see cref="ParseResult.IsApproximated"/> is always true since fro npm, prerelease
-        /// specification is valid only for the same [major, minor, patch] when this "includePrerelease" flag is not specified... But for us,
-        /// this is the default.
+        /// as if they were normal versions, for the purpose of range matching". For us, this is the default.
         /// </param>
         /// <returns>The result of the parse that can be invalid.</returns>
+        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = true ) => NpmTryParse( ref s, includePrerelease );
+
+        /// <inheritdoc cref="NpmTryParse(ReadOnlySpan{char}, bool)"/>>
         public static ParseResult NpmTryParse( ref ReadOnlySpan<char> s, bool includePrerelease = true )
         {
             // Parsing syntactically invalid version is not common: we analyze existing stuff that are supposed

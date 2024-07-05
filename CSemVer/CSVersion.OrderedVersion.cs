@@ -92,7 +92,7 @@ namespace CSemVer
         public static readonly IReadOnlyList<CSVersion> FirstPossibleVersions = BuildFirstPossibleVersions();
 
         /// <summary>
-        /// Gets the very last possible version.
+        /// Gets the very last possible version (99999.49999.9999).
         /// </summary>
         public static readonly CSVersion VeryLastVersion = new CSVersion( MaxMajor, MaxMinor, MaxPatch, String.Empty, -1, 0, 0, false, MaxOrderedVersion );
 

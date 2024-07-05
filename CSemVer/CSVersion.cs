@@ -63,7 +63,6 @@ namespace CSemVer
         /// </summary>
         public bool IsMarkedInvalid => StringComparer.OrdinalIgnoreCase.Equals( BuildMetaData, "invalid" );
 
-
         /// <summary>
         /// Gets the strength of this version: an invalid version has a strength of 0, valid ones have 1
         /// and ultimately, a <see cref="IsMarkedInvalid"/> wins with 2.
@@ -73,7 +72,7 @@ namespace CSemVer
         /// <summary>
         /// Gets the empty array singleton.
         /// </summary>
-        public static CSVersion[] EmptyArray => Array.Empty<CSVersion>();
+        public static CSVersion[] EmptyArray => [];
 
         CSVersion( int major, int minor, int patch, string buildMetaData,
                    int preReleaseNameIdx, int preReleaseNumber, int preReleasePatch,

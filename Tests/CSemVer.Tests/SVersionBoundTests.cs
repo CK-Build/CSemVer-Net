@@ -1,10 +1,14 @@
 using FluentAssertions;
 using NUnit.Framework;
+using NUnit.Framework.Internal.Commands;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+#pragma warning disable IDE1006 // Naming Styles
 
 namespace CSemVer.Tests
 {
@@ -15,12 +19,8 @@ namespace CSemVer.Tests
         static readonly SVersion V101 = SVersion.Create( 1, 0, 1 );
         static readonly SVersion V110 = SVersion.Create( 1, 1, 0 );
         static readonly SVersion V111 = SVersion.Create( 1, 1, 1 );
-        static readonly SVersion V120 = SVersion.Create( 1, 2, 0 );
-        static readonly SVersion V121 = SVersion.Create( 1, 2, 1 );
         static readonly SVersion V200 = SVersion.Create( 2, 0, 0 );
-        static readonly SVersion V201 = SVersion.Create( 2, 0, 1 );
         static readonly SVersion V210 = SVersion.Create( 2, 1, 0 );
-        static readonly SVersion V211 = SVersion.Create( 2, 1, 1 );
 
         [Test]
         public void basic_union_operations()
@@ -43,6 +43,8 @@ namespace CSemVer.Tests
 
             b1.Union( b2 ).Should().Be( b1 );
             b2.Union( b1 ).Should().Be( b1 );
+
+            CheckRoundTrippableToStringParse( SVersionBound.None, SVersionBound.All, b1, b2 );
         }
 
         [Test]
@@ -69,6 +71,8 @@ namespace CSemVer.Tests
 
             b1.Intersect( b2 ).Should().Be( b2 );
             b2.Intersect( b1 ).Should().Be( b2 );
+
+            CheckRoundTrippableToStringParse( b1, b2 );
         }
 
         [Test]
@@ -90,6 +94,8 @@ namespace CSemVer.Tests
             b11.Intersect( b1 ).Should().Be( i );
             i.Contains( b1 ).Should().BeFalse();
             i.Contains( b11 ).Should().BeFalse();
+
+            CheckRoundTrippableToStringParse( b1, b11, u, i );
         }
 
         [Test]
@@ -114,6 +120,8 @@ namespace CSemVer.Tests
             var b2 = new SVersionBound( V200, SVersionLock.Lock, PackageQuality.None );
             b1LockMinor.Contains( b2 ).Should().BeFalse();
             b1LockMajor.Contains( b2 ).Should().BeFalse();
+
+            CheckRoundTrippableToStringParse( b1LockMinor, b1LockMajor, b11, b2 );
         }
 
         [Test]
@@ -140,6 +148,8 @@ namespace CSemVer.Tests
             u2.Base.Should().Be( SVersion.Create( 1, 1, 0 ) );
             u2.Lock.Should().Be( SVersionLock.LockMajor );
             u2.MinQuality.Should().Be( PackageQuality.Exploratory );
+
+            CheckRoundTrippableToStringParse( b10, b11, u, b21, u2 );
         }
 
         // Based on: https://github.com/npm/node-semver#advanced-range-syntax.
@@ -221,7 +231,7 @@ namespace CSemVer.Tests
         [TestCase( "~1.2.3-beta.2", "", "1.2.3-beta.2[LockPatch,CI]", "" )]
         [TestCase( "~1.2.3-beta.2", "includePrerelease", "1.2.3-beta.2[LockPatch,CI]", "" )]
 
-        // Syntax: Caret Ranges.
+        // Syntax: Caret Ranges
         //
         //         "^1.2.3" is ">=1.2.3 <2.0.0-0"
         //         This is not an approximation (when includePrerelease is true): this locks the major.
@@ -235,7 +245,7 @@ namespace CSemVer.Tests
 
         //         "^0.0.3" is ">=0.0.3 <0.0.4-0"
         //         This is NEVER an approximation: this locks the whole version OR authorizes prerelease (when includePrerelease is true).
-        [TestCase( "^0.0.3", "", "0.0.3[Lock]", "" )]
+        [TestCase( "^0.0.3", "", "0.0.3[Lock,Stable]", "" )]
         [TestCase( "^0.0.3", "includePrerelease", "0.0.3[LockPatch,CI]", "" )]
 
         //        "^1.2.3-beta.2" is ">=1.2.3-beta.2 <2.0.0-0"
@@ -268,8 +278,15 @@ namespace CSemVer.Tests
         [TestCase( "^1.x", "includePrerelease", "1.0.0[LockMajor,CI]", "" )]
 
         //        "^0.x" is ">=0.0.0 <1.0.0-0"
+        //        Same as "^0".
         [TestCase( "^0.x", "", "0.0.0[LockMajor,Stable]", "Approx" )]
         [TestCase( "^0.x", "includePrerelease", "0.0.0[LockMajor,CI]", "" )]
+        [TestCase( "^0", "", "0.0.0[LockMajor,Stable]", "Approx" )]
+        [TestCase( "^0", "includePrerelease", "0.0.0[LockMajor,CI]", "" )]
+
+        // 
+        [TestCase( "^0.0.0", "", "0.0.0[Lock,Stable]", "" )]
+        [TestCase( "^0.0.0", "includePrerelease", "0.0.0[LockPatch,CI]", "" )]
 
         // Syntax: ">=1.2.9 <2.0.0" is approximated.
         [TestCase( ">=1.2.9 <2.0.0", "", "1.2.9[Stable]", "Approx" )]
@@ -280,19 +297,24 @@ namespace CSemVer.Tests
         [TestCase( "1.2.7 || >=1.1.9 <2.0.0", "includePrerelease", "1.1.9", "Approx" )]
 
         // Syntax: "<1.2.7" is ignored.
-        [TestCase( "<1.2.7", "", "0.0.0-0[Stable]", "Approx" )]
+        [TestCase( "<1.2.7", "", "0.0.0[Stable]", "Approx" )]
         [TestCase( "<1.2.7", "includePrerelease", "0.0.0-0", "Approx" )]
 
         // Syntax: "<=1.2.7" is like "=1.2.7".
-        [TestCase( "<=1.2.7", "", "1.2.7[Lock]", "Approx" )]
+        [TestCase( "<=1.2.7", "", "1.2.7[Lock,Stable]", "Approx" )]
         [TestCase( "<=1.2.7", "includePrerelease", "1.2.7[Lock]", "Approx" )]
 
+        [TestCase( "1.2.3", "", "1.2.3[Lock,Stable]", "Approx" )]
+        [TestCase( "=1.2.3", "", "1.2.3[Lock,Stable]", "Approx" )]
+        [TestCase( "1.2.3", "includePrerelease", "1.2.3[Lock]", "" )]
         public void parse_npm_syntax( string p, string includePrerelease, string expected, string approximate )
         {
             var r = SVersionBound.NpmTryParse( p, includePrerelease == "includePrerelease" );
             r.Error.Should().BeNull();
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
+
+            CheckRoundTrippableToStringParse( r.Result );
         }
 
         [TestCase( "nimp" )]
@@ -317,6 +339,8 @@ namespace CSemVer.Tests
             r.Result.ToString().Should().Be( expected );
             r.Result.Base.FourthPart.Should().Be( fourthPartExpected );
             head.Length.Should().Be( 0 );
+
+            CheckRoundTrippableToStringParse( r.Result );
         }
 
 
@@ -370,7 +394,7 @@ namespace CSemVer.Tests
         //
         //      Note that Nuget is somehow buggy (https://github.com/NuGet/Home/issues/6434#issuecomment-546423937) since
         //      this allows 1.0.0-pre to be satisfied!
-        //      The workaround is to use 1.0.0-0 as the upper bound... BUT beware: nuget.org forbids the -0 suffix :).
+        //      The workaround is to use 1.0.0-0 as the upper bound... (nuget.org used to forbid the -0 suffix but this has been fixed).
         //      To overcome this, if CSemVer is used (or the first prerelease always used is a[lpha]), one can use 1.0.0-a as the upper bound.
         //
         //      Here we consider that the answer IS to lock parts...
@@ -380,7 +404,7 @@ namespace CSemVer.Tests
         [TestCase( "[1.2.3,1.2.4)", "1.2.3[LockPatch,CI]", "" )]
         [TestCase( "[1.2.3,2)", "1.2.3[LockMajor,CI]", "" )]
 
-        //       To be consistent, if the upper bound is a -0 (oar -a) prerelease, we do the same (and, at least for -0,
+        //       To be consistent, if the upper bound is a -0 (or -a) prerelease, we do the same (and, at least for -0,
         //       this is perfect projection).
         [TestCase( "[1.2.3,1.2.4-0)", "1.2.3[LockPatch,CI]", "" )]
         [TestCase( "[1.2.3,2.0.0-a)", "1.2.3[LockMajor,CI]", "" )]
@@ -413,6 +437,29 @@ namespace CSemVer.Tests
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().Be( approximate == "Approx" );
             r.Result.Base.FourthPart.Should().Be( -1 );
+
+            CheckRoundTrippableToStringParse( r.Result );
+        }
+
+        // Wildcard patterns: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#floating-version-resolutions
+        // The "*" is for Stable only.
+        [TestCase( "*", "0.0.0[Stable]", "" )]
+        // The "*-*" is all versions.
+        [TestCase( "*-*", "0.0.0-0", "" )]
+        [TestCase( "1.*", "1.0.0[LockMajor,Stable]", "" )]
+        [TestCase( "1.*-*", "1.0.0[LockMajor,CI]", "" )]
+        [TestCase( "1.1.*", "1.1.0[LockMinor,Stable]", "" )]
+        [TestCase( "1.1.*-*", "1.1.0[LockMinor,CI]", "" )]
+        [TestCase( "1.2.3-*", "1.2.3[LockPatch,CI]", "" )]
+        public void parse_nuget_syntax_with_wildcard( string p, string expected, string approximate )
+        {
+            var r = SVersionBound.NugetTryParse( p );
+            r.Error.Should().BeNull();
+            r.Result.ToString().Should().Be( expected );
+            r.IsApproximated.Should().Be( approximate == "Approx" );
+            r.Result.Base.FourthPart.Should().Be( -1 );
+
+            CheckRoundTrippableToStringParse( r.Result );
         }
 
         // (1.0) is invalid
@@ -429,6 +476,8 @@ namespace CSemVer.Tests
             var r = SVersionBound.NugetTryParse( p );
             r.IsValid.Should().BeFalse();
             r.Error.Should().NotBeNull();
+
+            CheckRoundTrippableToStringParse( r.Result );
         }
 
 
@@ -442,6 +491,8 @@ namespace CSemVer.Tests
             r.Result.ToString().Should().Be( expected );
             r.IsApproximated.Should().BeFalse();
             r.Result.Base.FourthPart.Should().BeGreaterThanOrEqualTo( 0 );
+
+            CheckRoundTrippableToStringParse( r.Result );
         }
 
         [TestCase( "v1.0.0-mmm", "1.0.0-mmm" )]
@@ -450,13 +501,15 @@ namespace CSemVer.Tests
         [TestCase( "v1.2.3-xx [ LockMinor ] ", "1.2.3-xx[LockMinor,CI]" )]
         [TestCase( " v1.2.3 [ Stable , LockMajor ] ", "1.2.3[LockMajor,Stable]" )]
         [TestCase( " v1.2.3-xxx [ Preview , LockMajor ] ", "1.2.3-xxx[LockMajor,Preview]" )]
-        [TestCase( " v1.2.3-AAA [ Preview , Lock ] ", "1.2.3-AAA[Lock]" )]
+        [TestCase( " v1.2.3-AAA [ Preview , Lock ] ", "1.2.3-AAA[Lock,Preview]" )]
         [TestCase( " v1.2.3-AAA [ None , Locked ] ", "1.2.3-AAA[Lock]" )]
         [TestCase( " v1.2.3-AAA [ None , None ] ", "1.2.3-AAA" )]
         public void parse_SVersionBound( string p, string expected )
         {
             SVersionBound.TryParse( p, out var b ).Should().BeTrue();
             b.ToString().Should().Be( expected );
+
+            CheckRoundTrippableToStringParse( b );
         }
 
         [TestCase( "v1.0.0-mmm", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
@@ -474,6 +527,123 @@ namespace CSemVer.Tests
         {
             SVersionBound.TryParse( p, out var b, defL, defQ ).Should().BeTrue();
             b.ToString().Should().Be( expected );
+        }
+
+        [TestCase( "*", "0.0.0[Stable]" )]
+        [TestCase( "*-*", "0.0.0-0" )]
+        [TestCase( "5.*", "5.0.0[LockMajor,Stable]" )]
+        [TestCase( "5.*-*", "5.0.0[LockMajor,CI]" )]
+        [TestCase( "5.2.*", "5.2.0[LockMinor,Stable]" )]
+        [TestCase( "5.2.*-*", "5.2.0[LockMinor,CI]" )]
+        [TestCase( "5.2.1", "5.2.1" )]
+        [TestCase( "5.2.1-*", "5.2.1[LockPatch,CI]" )]
+        public void roundtripable_nuget_versions( string nuget, string bound )
+        {
+
+            var rNuGet = SVersionBound.NugetTryParse( nuget );
+            rNuGet.IsValid.Should().BeTrue();
+            SVersionBound.TryParse( bound, out var vBound );
+            rNuGet.Result.Should().Be( vBound );
+            vBound.ToNuGetString().Should().Be( nuget );
+
+            CheckRoundTrippableToStringParse( vBound );
+        }
+
+        [TestCase( "=1.2.3", "1.2.3[Lock]" )]
+        [TestCase( "=0.0.0", "0.0.0[Lock]" )]
+        [TestCase( "=0.0.1", "0.0.1[Lock]" )]
+        [TestCase( "=0.1.0", "0.1.0[Lock]" )]
+        [TestCase( "^0.0.0-0", "0.0.0-0[LockPatch,CI]" )]
+        [TestCase( "^0.1.0-dev", "0.1.0-dev[LockMinor,CI]" )]
+        [TestCase( ">=1.2.3", "1.2.3" )]
+        [TestCase( ">=0.0.0", "0.0.0" )]
+        [TestCase( ">=0.0.1", "0.0.1" )]
+        [TestCase( ">=0.1.0", "0.1.0" )]
+        [TestCase( "^1.2.3-beta.2", "1.2.3-beta.2[LockMajor,CI]" )]
+        [TestCase( "~0.2.3", "0.2.3[LockMinor,CI]" )]
+        [TestCase( "^1.2.3", "1.2.3[LockMajor,CI]" )]
+        public void roundtripable_npm_versions( string npm, string bound )
+        {
+
+            var rNpm = SVersionBound.NpmTryParse( npm, includePrerelease: true );
+            rNpm.IsValid.Should().BeTrue();
+            SVersionBound.TryParse( bound, out var vBound );
+            rNpm.Result.Should().Be( vBound );
+            vBound.ToNpmString().Should().Be( npm );
+
+            CheckRoundTrippableToStringParse( vBound );
+        }
+
+        //
+        // This test shows that the SVersionBound respects basic npm version range definitions.
+        // Luckily ;-), these are the ones used in practice.
+        //
+        [TestCase( "1.2.3", "=1.2.3" )]
+        [TestCase( ">=1.2.3", ">=1.2.3" )]
+        [TestCase( "^1.2.3", "^1.2.3" )]
+        [TestCase( "^0.0.3", "=0.0.3" )]
+        // Try these on https://semver.npmjs.com/ for node (there's a lot of versions).
+        [TestCase( "~12.16", "~12.16" )]
+        [TestCase( "^0.2.3", "~0.2.3" )]
+        [TestCase( "^0.1.93", "~0.1.93" )]
+        [TestCase( "^12", "^12" )]
+        [TestCase( "^12.8", "^12.8" )]
+        [TestCase( "^12.8.1", "^12.8.1" )]
+        [TestCase( "~0.1", "~0.1" )]
+        [TestCase( "~0.1.15", "~0.1.15" )]
+        [TestCase( "~12", "^12" )] // => Equivalent projection.
+        [TestCase( "~12.16", "~12.16" )]
+        [TestCase( "~12.16.2", "~12.16.2" )]
+        public void npm_versions_projections( string initial, string projected )
+        {
+            var parseResult = SVersionBound.NpmTryParse( initial, includePrerelease: false );
+            parseResult.IsValid.Should().BeTrue();
+            parseResult.Result.ToNpmString().Should().Be( projected );
+
+            CheckRoundTrippableToStringParse( parseResult.Result );
+        }
+
+        static void CheckRoundTrippableToStringParse( params SVersionBound[] bounds )
+        {
+            foreach( var b in bounds )
+            {
+                // SVersionBound
+                var s = b.ToString();
+                if( !SVersionBound.TryParse( s, out var vBound ) )
+                {
+                    throw new Exception( $"Unable to parse '{s}'." );
+                }
+                if( b != vBound )
+                {
+                    throw new Exception( $"Failed to parse back '{s}'. Expected: {b}, got '{vBound}'." );
+                }
+                // NuGet
+                s = b.ToNuGetString();
+                var parseResult = SVersionBound.NugetTryParse( s );
+                if( !parseResult.IsValid )
+                {
+                    throw new Exception( $"Unable to NUGET parse '{s}'. Invalid ParseResult." );
+                }
+                var sAgain = parseResult.Result.ToNuGetString();
+                var parseResultAgain = SVersionBound.NugetTryParse( sAgain );
+                if( parseResultAgain.Result != parseResult.Result )
+                {
+                    throw new Exception( $"Failed to NUGET parse back '{sAgain}': Expected: '{parseResult.Result}', got '{parseResultAgain.Result}'." );
+                }
+                // Npm
+                s = b.ToNpmString();
+                parseResult = SVersionBound.NpmTryParse( s );
+                if( !parseResult.IsValid )
+                {
+                    throw new Exception( $"Unable to NPM parse '{s}'. Invalid ParseResult." );
+                }
+                sAgain = parseResult.Result.ToNpmString();
+                parseResultAgain = SVersionBound.NpmTryParse( sAgain );
+                if( parseResultAgain.Result != parseResult.Result )
+                {
+                    throw new Exception( $"Failed to NPM parse back '{sAgain}': Expected: '{parseResult.Result}', got '{parseResultAgain.Result}'." );
+                }
+            }
         }
 
     }

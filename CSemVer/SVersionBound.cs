@@ -67,19 +67,30 @@ namespace CSemVer
         /// <summary>
         /// Initializes a new version range on a valid <see cref="Base"/> version.
         /// </summary>
-        /// <param name="version">The base version that must be valid.</param>
-        /// <param name="r">The lock to apply.</param>
+        /// <param name="version">The base version that must be valid (defaults to <see cref="SVersion.ZeroVersion"/>).</param>
+        /// <param name="lock">The lock to apply.</param>
         /// <param name="minQuality">The minimal quality to accept.</param>
-        public SVersionBound( SVersion? version = null, SVersionLock r = SVersionLock.None, PackageQuality minQuality = PackageQuality.None )
+        public SVersionBound( SVersion? version = null,
+                              SVersionLock @lock = SVersionLock.None,
+                              PackageQuality minQuality = PackageQuality.None )
         {
             _base = version ?? SVersion.ZeroVersion;
             if( !_base.IsValid ) throw new ArgumentException( "Must be valid. Error: " + _base.ErrorMessage, nameof( version ) );
-            if( minQuality == PackageQuality.Stable && r == SVersionLock.LockPatch )
+            if( minQuality == PackageQuality.Stable )
             {
-                r = SVersionLock.Lock;
+                // LockPatch on Stable is Lock.
+                if( @lock == SVersionLock.LockPatch )
+                {
+                    @lock = SVersionLock.Lock;
+                }
+                // Get rid of any prerelease if we are on a Stable quality.
+                if( _base.IsPrerelease )
+                {
+                    _base = SVersion.Create( _base.Major, _base.Minor, _base.Patch );
+                }
             }
             _minQuality = minQuality;
-            Lock = r;
+            Lock = @lock;
         }
 
         /// <summary>
@@ -90,11 +101,17 @@ namespace CSemVer
         public SVersionBound SetLock( SVersionLock r ) => r != Lock ? new SVersionBound( Base, r, MinQuality ) : this;
 
         /// <summary>
-        /// Sets a lock by returning this or a new <see cref="SVersionBound"/>.
+        /// Sets a minimal quality by returning this or a new <see cref="SVersionBound"/>.
         /// </summary>
-        /// <param name="min">The lock to set.</param>
+        /// <param name="min">The minimal quality to set. <see cref="PackageQuality.None"/> is considered to be <see cref="PackageQuality.CI"/>.</param>
         /// <returns>This or a new range.</returns>
-        public SVersionBound SetMinQuality( PackageQuality min ) => MinQuality != min ? new SVersionBound( Base, Lock, min ) : this;
+        public SVersionBound SetMinQuality( PackageQuality min )
+        {
+            if( min == PackageQuality.None ) min = PackageQuality.CI;
+            return min == MinQuality
+                    ? this
+                    : new SVersionBound( Base, Lock, min );
+        }
 
         /// <summary>
         /// Merges this version bound with another one: weakest quality wins, weakest lock wins and weakest <see cref="Base"/> version wins.
@@ -220,12 +237,130 @@ namespace CSemVer
             }
             else
             {
-                if( Lock == SVersionLock.Lock )
+                if( Lock == SVersionLock.Lock && MinQuality == PackageQuality.CI )
                 {
                     return $"{Base}[{Lock}]";
                 }
                 return $"{Base}[{Lock},{MinQuality}]";
             }
+        }
+
+        /// <summary>
+        /// [Highly perfectible!] Returns the best possible NuGet version range for this bound.
+        /// <para>
+        /// What we can guaranty here is that if the initial parse result gives us a <see cref="SVersionBound"/>,
+        /// its <see cref="ToNpmString()"/> parsed back provides the exact same SVersionBound... but no more.
+        /// </para>
+        /// <list type="bullet">
+        ///     <item><see cref="SVersionLock.Lock"/> is expressed in brackets: [5.1.2].</item>
+        ///     <item>
+        ///     <see cref="SVersionLock.LockMajor"/> is "5.*" when <see cref="PackageQuality.Stable"/>
+        ///     and "5.*-*" for all other qualities.
+        ///     </item>
+        ///     <item>
+        ///     <see cref="SVersionLock.LockMinor"/> is "5.3.*" when <see cref="PackageQuality.Stable"/>
+        ///     and "5.3.*-*" for all other qualities.
+        ///     </item>
+        ///     <item>
+        ///     <see cref="SVersionLock.LockPatch"/> is "5.3.1-*" because LockPatch can only be not stable
+        ///     (the [LockPatch,Stable] combination is normalized as [Lock]).
+        ///     </item>
+        ///     <item>
+        ///     The "0.0.0" version when Stable is expressed as "*".
+        ///     </item>
+        ///     <item>
+        ///     The "0.0.0-0" version when NOT Stable is expressed as "*-*".
+        ///     </item>
+        /// </list>
+        /// All other versions are simply the <see cref="Base"/> version: this uses the NuGet "min version inclusive" range.
+        /// </summary>
+        /// <returns>The NuGet version range.</returns>
+        public string ToNuGetString()
+        {
+            if( Lock == SVersionLock.Lock )
+            {
+                return $"[{Base}]";
+            }
+            if( Lock == SVersionLock.LockMajor )
+            {
+                var suffix = MinQuality == PackageQuality.Stable ? "" : "-*";
+                return $"{Base.Major}.*{suffix}";
+
+            }
+            if( Lock == SVersionLock.LockMinor )
+            {
+                var suffix = MinQuality == PackageQuality.Stable ? "" : "-*";
+                return $"{Base.Major}.{Base.Minor}.*{suffix}";
+            }
+            if( Lock == SVersionLock.LockPatch )
+            {
+                Debug.Assert( MinQuality != PackageQuality.Stable, "Normalized in ctor." );
+                return $"{Base.Major}.{Base.Minor}.{Base.Patch}-*";
+            }
+            // There is no Lock. There is unfortunately no way to express
+            // the quality. The "min version inclusive" is the only way except
+            // for the special case "0.0.0" when Stable that is "*" and the
+            // ZeroVersion "0.0.0-0" when NOT stable that is "*-*".
+            if( Base.IsZeroVersion && MinQuality != PackageQuality.Stable ) return "*-*";
+            if( MinQuality == PackageQuality.Stable
+                && Base.Major == 0
+                && Base.Minor == 0
+                && Base.Patch == 0
+                && !Base.IsPrerelease )
+            {
+                return "*";
+            }
+            return Base.ToString();
+        }
+
+        /// <summary>
+        /// [Highly perfectible!] Returns an approximation as a npm version range.
+        /// <para>
+        /// What we can guaranty here is that if the initial parse result gives us a <see cref="SVersionBound"/>,
+        /// its <see cref="ToNpmString()"/> parsed back provides the exact same SVersionBound... but no more.
+        /// </para>
+        /// </summary>
+        /// <returns>An approximated npm version range (but round-trippable).</returns>
+        public string ToNpmString()
+        {
+            // If we have a prerealease tag and accept CI, we can use the "not includePreRelease" default
+            // behavior: see https://github.com/npm/node-semver?tab=readme-ov-file#caret-ranges-123-025-004
+            // This is very loose... But since prerelease tags are not use in the npm ecosystem (IMO because
+            // it is unusable), we don't really care...
+            if( Base.IsPrerelease && MinQuality != PackageQuality.Stable )
+            {
+                return $"^{Base}";
+            }
+            // If we are locked, use the "=".
+            if( Lock == SVersionLock.Lock )
+            {
+                return $"={Base}";
+            }
+            if( Lock == SVersionLock.LockMajor )
+            {
+                if( Base.Patch == 0 )
+                {
+                    if( Base.Minor == 0 )
+                    {
+                        return $"^{Base.Major}";
+                    }
+                    return $"^{Base.Major}.{Base.Minor}";
+                }
+                return $"^{Base.Major}.{Base.Minor}.{Base.Patch}";
+            }
+            if( Lock == SVersionLock.LockMinor )
+            {
+                if( Base.Patch == 0 )
+                {
+                    if( Base.Minor == 0 )
+                    {
+                        return $"~{Base.Major}";
+                    }
+                    return $"~{Base.Major}.{Base.Minor}";
+                }
+                return $"~{Base.Major}.{Base.Minor}.{Base.Patch}";
+            }
+            return $">={Base}";
         }
     }
 
