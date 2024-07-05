@@ -84,47 +84,47 @@ namespace CSemVer
         {
             q = PackageQuality.None;
             if( head.Length == 0 ) return false;
-            if( head.StartsWith( nameof( PackageQuality.None ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.None ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.None ).Length == 4 );
                 head = head.Slice( 4 );
                 return true;
             }
-            if( head.StartsWith( nameof( PackageQuality.CI ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.CI ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.CI ).Length == 2 );
                 q = PackageQuality.CI;
                 head = head.Slice( 2 );
                 return true;
             }
-            if( head.StartsWith( nameof( PackageQuality.Exploratory ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.Exploratory ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.Exploratory ).Length == 11 );
                 head = head.Slice( 11 );
                 q = PackageQuality.Exploratory;
                 return true;
             }
-            if( head.StartsWith( nameof( PackageQuality.Preview ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.Preview ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.Preview ).Length == 7 );
                 head = head.Slice( 7 );
                 q = PackageQuality.Preview;
                 return true;
             }
-            if( head.StartsWith( nameof( PackageQuality.ReleaseCandidate ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.ReleaseCandidate ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.ReleaseCandidate ).Length == 16 );
                 head = head.Slice( 16 );
                 q = PackageQuality.ReleaseCandidate;
                 return true;
             }
-            if( head.StartsWith( "rc", StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( "rc".AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 head = head.Slice( 2 );
                 q = PackageQuality.ReleaseCandidate;
                 return true;
             }
-            if( head.StartsWith( nameof( PackageQuality.Stable ), StringComparison.OrdinalIgnoreCase ) )
+            if( head.StartsWith( nameof( PackageQuality.Stable ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.Stable ).Length == 6 );
                 head = head.Slice( 6 );

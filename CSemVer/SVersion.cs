@@ -13,6 +13,8 @@ namespace CSemVer
     /// </summary>
     public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
     {
+        // GeneratedRegex is unfortunately not possible here (NetStandard): see  https://github.com/Sergio0694/PolySharp/issues/95.
+
         // This checks a SVersion.
         static readonly Regex _regExSVersion =
             new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?((?!-)|(\-(?<5>[0-9A-Za-z\-\.]+)))(\+(?<6>[0-9A-Za-z\-\.]+))?",
@@ -164,7 +166,8 @@ namespace CSemVer
         /// <summary>
         /// Gets whether this <see cref="SVersion"/> has a null <see cref="ErrorMessage"/>.
         /// </summary>
-        // [MemberNotNullWhen( false, nameof( ErrorMessage ) )]
+        [MemberNotNullWhen( false, nameof( ErrorMessage ) )]
+        [MemberNotNullWhen( true, nameof( NormalizedText ) )]
         public bool IsValid => ErrorMessage == null;
 
         /// <summary>
@@ -253,7 +256,7 @@ namespace CSemVer
         /// <returns>The version.</returns>
         public SVersion WithBuildMetaData( string? buildMetaData )
         {
-            if( buildMetaData == null ) buildMetaData = String.Empty;
+            buildMetaData ??= String.Empty;
             return buildMetaData == BuildMetaData ? this : DoWithBuildMetaData( buildMetaData );
         }
 
@@ -533,7 +536,7 @@ namespace CSemVer
             r = Patch - other.Patch;
             if( r != 0 ) return r;
 
-            return ComparePreRelease( Prerelease, other.Prerelease );
+            return ComparePreRelease( Prerelease.AsSpan(), other.Prerelease.AsSpan() );
         }
 
         /// <summary>
@@ -739,15 +742,7 @@ namespace CSemVer
         /// <param name="x">First tag.</param>
         /// <param name="y">Second tag.</param>
         /// <returns>True if they are equal.</returns>
-        static public bool operator ==( SVersion? x, SVersion? y )
-        {
-            if( ReferenceEquals( x, y ) ) return true;
-            if( x is object )
-            {
-                return x.Equals( y );
-            }
-            return false;
-        }
+        static public bool operator ==( SVersion? x, SVersion? y ) => ReferenceEquals( x, y ) || (x is not null && x.Equals( y ));
 
         /// <summary>
         /// Implements &gt; operator.
@@ -757,8 +752,7 @@ namespace CSemVer
         /// <returns>True if x is greater than y.</returns>
         static public bool operator >( SVersion? x, SVersion? y )
         {
-            if( ReferenceEquals( x, y ) ) return false;
-            if( x is object )
+            if( !ReferenceEquals( x, y ) && x is not null )
             {
                 if( y is null ) return true;
                 return x.CompareTo( y ) > 0;
@@ -775,7 +769,7 @@ namespace CSemVer
         static public bool operator >=( SVersion? x, SVersion? y )
         {
             if( ReferenceEquals( x, y ) ) return true;
-            if( x is object )
+            if( x is not null )
             {
                 if( y is null ) return true;
                 return x.CompareTo( y ) >= 0;

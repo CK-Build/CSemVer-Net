@@ -3,11 +3,13 @@
 
 This package (netstandard2.1, no dependencies) implements https://csemver.org/
 that defines a subset of https://semver.org/ (v2.0.0).
+It offers parsing an model of regular semver versions and of CSemVer versions, a model of a
+unified "version range" and handles Npm and NuGet syntax.
 
 ## About versioning
-TODO
-https://iscinumpy.dev/post/bound-version-constraints/
-
+Versions are useless without Version Ranges. Nothing is simple in this domain: see 
+https://iscinumpy.dev/post/bound-version-constraints/ for a very good overview of
+the numerous aspects and complexities of managing versions.
 
 ## Questions and answers
 ### Why working on a subset?

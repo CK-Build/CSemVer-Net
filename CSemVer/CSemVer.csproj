@@ -1,9 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <Description>Implements SVersion to handle strict SemVer 2.0 versions (the whole specification is implemented), a CSVersion class that handles all aspects of a CSemVer (http://csemver.org) version.
 This also implements InformationalVersion to help generating and parsing CSemVer standardized InformationalVersionAttribute value, PackageQuality support and SVersionBound that is a sound (and simple) way to express constraints on versions.</Description>
     <PackageTags>Versioning, SemVer, NuGet, CSemVer, InformationalVersion</PackageTags>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CSemVer
 {
@@ -120,6 +121,12 @@ namespace CSemVer
             public readonly bool IsApproximated;
 
             /// <summary>
+            /// Gets whether this is valid (<see cref="Error"/> is null).
+            /// </summary>
+            [MemberNotNullWhen( false, nameof(Error) )]
+            public bool IsValid => Error == null;
+
+            /// <summary>
             /// Initializes a new valid <see cref="ParseResult"/>.
             /// </summary>
             /// <param name="result">The version bound.</param>
@@ -141,11 +148,6 @@ namespace CSemVer
                 IsApproximated = false;
                 Error = error ?? throw new ArgumentNullException( nameof( error ) );
             }
-
-            /// <summary>
-            /// Gets whether this is valid (<see cref="Error"/> is null).
-            /// </summary>
-            public bool IsValid => Error == null;
 
             /// <summary>
             /// Ensures that this result's <see cref="IsApproximated"/> is true if <paramref name="setApproximated"/> is true
