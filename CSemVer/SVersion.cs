@@ -172,12 +172,13 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the <see cref="PackageQuality"/> associated to this version.
+        /// When <see cref="IsValid"/> is false, this is <see cref="PackageQuality.CI"/>.
         /// </summary>
         public PackageQuality PackageQuality
         {
             get
             {
-                if( !IsValid ) return PackageQuality.None;
+                if( !IsValid ) return PackageQuality.CI;
                 if( Prerelease.Length > 0 )
                 {
                     if( _csVersion != null )

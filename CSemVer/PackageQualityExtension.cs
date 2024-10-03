@@ -11,16 +11,14 @@ namespace CSemVer
     /// </summary>
     public static class PackageQualityExtension
     {
-
-        static readonly PackageQuality[][] _map = new PackageQuality[][]
-        {
-                    Array.Empty<PackageQuality>(),
-                    new PackageQuality[]{ PackageQuality.CI },
-                    new PackageQuality[]{ PackageQuality.Exploratory, PackageQuality.CI },
-                    new PackageQuality[]{ PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI },
-                    new PackageQuality[]{ PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI },
-                    new PackageQuality[]{ PackageQuality.Stable, PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI }
-        };
+        static readonly PackageQuality[][] _map =
+        [
+            [PackageQuality.CI],
+            [PackageQuality.Exploratory, PackageQuality.CI],
+            [PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI],
+            [PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI],
+            [PackageQuality.Stable, PackageQuality.ReleaseCandidate, PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI]
+        ];
 
         /// <summary>
         /// Merges this quality with another one: the weakest wins, merging <see cref="PackageQuality.CI"/> and <see cref="PackageQuality.Stable"/>
@@ -52,44 +50,28 @@ namespace CSemVer
         /// </summary>
         /// <param name="this">This quality.</param>
         /// <returns>This quality followed by its lowest ones.</returns>
-        public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this )
-            => _map[@this switch
-                {
-                    PackageQuality.CI => 1,
-                    PackageQuality.Exploratory => 2,
-                    PackageQuality.Preview => 3,
-                    PackageQuality.ReleaseCandidate => 4,
-                    PackageQuality.Stable => 5,
-                    _ => 0
-                }];
+        public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this ) => _map[(int)@this];
 
         /// <summary>
         /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
         /// Note that match is case insensitive and that "rc" is a synonym of <see cref="PackageQuality.ReleaseCandidate"/>.
         /// </summary>
         /// <param name="head">The string to parse.</param>
-        /// <param name="q">The read quality.</param>
+        /// <param name="q">The read quality. On error, the value is unchanged.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryMatch( ReadOnlySpan<char> head, out PackageQuality q ) => TryMatch( ref head, out q );
+        public static bool TryMatch( ReadOnlySpan<char> head, ref PackageQuality q ) => TryMatch( ref head, ref q );
 
         /// <summary>
         /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
         /// Note that match is case insensitive and that "rc" is a synonym of <see cref="PackageQuality.ReleaseCandidate"/>.
-        /// The head is forwarded right after the match: on success, the head may be on any kind of character.
+        /// On success, the head is forwarded right after the match: on success, the head may be on any kind of character.
         /// </summary>
         /// <param name="head">The string to parse.</param>
-        /// <param name="q">The read quality.</param>
+        /// <param name="q">The read quality. On error, the value is unchanged.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryMatch( ref ReadOnlySpan<char> head, out PackageQuality q )
+        public static bool TryMatch( ref ReadOnlySpan<char> head, ref PackageQuality q )
         {
-            q = PackageQuality.None;
             if( head.Length == 0 ) return false;
-            if( head.StartsWith( nameof( PackageQuality.None ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
-            {
-                Debug.Assert( nameof( PackageQuality.None ).Length == 4 );
-                head = head.Slice( 4 );
-                return true;
-            }
             if( head.StartsWith( nameof( PackageQuality.CI ).AsSpan(), StringComparison.OrdinalIgnoreCase ) )
             {
                 Debug.Assert( nameof( PackageQuality.CI ).Length == 2 );

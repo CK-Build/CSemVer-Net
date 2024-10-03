@@ -185,7 +185,7 @@ namespace CSemVer
                            && TryMatchXStarInt( ref s, out var _ );
 
                 var minQuality = TryMatch( ref s, '-' ) && TryMatch( ref s, '*' )
-                                    ? PackageQuality.None
+                                    ? PackageQuality.CI
                                     : PackageQuality.Stable;
                 var bound = new SVersionBound( SVersion.Create( major, 0, 0 ), SVersionLock.LockMajor, minQuality );
                 return new ParseResult( bound, false );
@@ -205,7 +205,7 @@ namespace CSemVer
             if( (hasNextPart = TryMatchXStarInt( ref s, out var patch )) && patch == -1 )
             {
                 var minQuality = TryMatch( ref s, '-' ) && TryMatch( ref s, '*' )
-                                 ? PackageQuality.None
+                                 ? PackageQuality.CI
                                  : PackageQuality.Stable;
                 var bound = new SVersionBound( SVersion.Create( major, minor, 0 ), SVersionLock.LockMinor, minQuality );
                 return new ParseResult( bound, false );

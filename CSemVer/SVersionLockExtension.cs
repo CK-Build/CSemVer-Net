@@ -35,26 +35,33 @@ namespace CSemVer
         /// Note that match is case insensitive and that all "Lock" wan be written as "Locked".
         /// </summary>
         /// <param name="head">The string to parse.</param>
-        /// <param name="l">The read lock.</param>
+        /// <param name="l">The read lock. On error, the value is unchanged.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryMatch( ReadOnlySpan<char> head, out SVersionLock l ) => TryMatch( ref head, out l );
+        public static bool TryMatch( ReadOnlySpan<char> head, ref SVersionLock l ) => TryMatch( ref head, ref l );
 
         /// <summary>
         /// Tries to parse one of the <see cref="SVersionLock"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
         /// Note that match is case insensitive and that all "Lock" wan be written as "Locked".
-        /// The <paramref name="head"/> is forwarded right after the match: the head may be on any kind of character.
+        /// On success, the <paramref name="head"/> is forwarded right after the match: the head may be on any kind of character.
         /// </summary>
         /// <param name="head">The string to parse.</param>
-        /// <param name="l">The read lock.</param>
+        /// <param name="l">The read lock. On error, the value is unchanged.</param>
         /// <returns>True on success, false otherwise.</returns>
-        public static bool TryMatch( ref ReadOnlySpan<char> head, out SVersionLock l )
+        public static bool TryMatch( ref ReadOnlySpan<char> head, ref SVersionLock l )
         {
-            l = SVersionLock.None;
             if( head.Length == 0 ) return false;
             if( !head.StartsWith( nameof( SVersionLock.Lock ), StringComparison.OrdinalIgnoreCase ) )
             {
-                if( head.StartsWith( nameof( SVersionLock.None ), StringComparison.OrdinalIgnoreCase ) )
+                if( head.StartsWith( nameof( SVersionLock.NoLock ), StringComparison.OrdinalIgnoreCase ) )
                 {
+                    l = SVersionLock.NoLock;
+                    head = head.Slice( 6 );
+                    return true;
+                }
+                // Allow previous "None" name.
+                if( head.StartsWith( "none", StringComparison.OrdinalIgnoreCase ) )
+                {
+                    l = SVersionLock.NoLock;
                     head = head.Slice( 4 );
                     return true;
                 }

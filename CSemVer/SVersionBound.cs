@@ -60,9 +60,9 @@ namespace CSemVer
 
         /// <summary>
         /// Gets the minimal package quality that must be used.
-        /// This is never <see cref="PackageQuality.None"/> (that denotes invalid packages), the minimum is <see cref="PackageQuality.CI"/>.
+        /// <see cref="PackageQuality.CI"/> is the minimum.
         /// </summary>
-        public PackageQuality MinQuality => _minQuality != PackageQuality.None ? _minQuality : PackageQuality.CI;
+        public PackageQuality MinQuality => _minQuality;
 
         /// <summary>
         /// Initializes a new version range on a valid <see cref="Base"/> version.
@@ -71,8 +71,8 @@ namespace CSemVer
         /// <param name="lock">The lock to apply.</param>
         /// <param name="minQuality">The minimal quality to accept.</param>
         public SVersionBound( SVersion? version = null,
-                              SVersionLock @lock = SVersionLock.None,
-                              PackageQuality minQuality = PackageQuality.None )
+                              SVersionLock @lock = SVersionLock.NoLock,
+                              PackageQuality minQuality = PackageQuality.CI )
         {
             _base = version ?? SVersion.ZeroVersion;
             if( !_base.IsValid ) throw new ArgumentException( "Must be valid. Error: " + _base.ErrorMessage, nameof( version ) );
@@ -103,11 +103,10 @@ namespace CSemVer
         /// <summary>
         /// Sets a minimal quality by returning this or a new <see cref="SVersionBound"/>.
         /// </summary>
-        /// <param name="min">The minimal quality to set. <see cref="PackageQuality.None"/> is considered to be <see cref="PackageQuality.CI"/>.</param>
+        /// <param name="min">The minimal quality to set.</param>
         /// <returns>This or a new range.</returns>
         public SVersionBound SetMinQuality( PackageQuality min )
         {
-            if( min == PackageQuality.None ) min = PackageQuality.CI;
             return min == MinQuality
                     ? this
                     : new SVersionBound( Base, Lock, min );
@@ -160,6 +159,21 @@ namespace CSemVer
                     if( v.Major != Base.Major ) return false; break;
             }
             return MinQuality <= v.PackageQuality;
+        }
+
+        /// <summary>
+        /// Returns <see cref="SVersionBound.All"/> if this bound is the "*" or "" of npm.
+        /// <para>
+        /// For npm, "*" and "" are ">=0.0.0[Stable]" when the "includePrerelease" is not used and this is the default.
+        /// In such case, this will return the <see cref="All"/> bound that is ">=0.0.0-0".
+        /// </para>
+        /// </summary>
+        /// <returns>This bound or the <see cref="All"/>.</returns>
+        public SVersionBound NormalizeNpmVersionBoundAll()
+        {
+            return _base == _000Version && Lock == SVersionLock.NoLock && _minQuality == PackageQuality.Stable
+                    ? All
+                    : this;
         }
 
         /// <summary>
@@ -231,7 +245,7 @@ namespace CSemVer
         /// <returns>A readable string.</returns>
         public override string ToString()
         {
-            if( Lock == SVersionLock.None )
+            if( Lock == SVersionLock.NoLock )
             {
                 return MinQuality != PackageQuality.CI ? $"{Base}[{MinQuality}]" : Base.ToString();
             }
@@ -327,8 +341,13 @@ namespace CSemVer
             // behavior: see https://github.com/npm/node-semver?tab=readme-ov-file#caret-ranges-123-025-004
             // This is very loose... But since prerelease tags are not use in the npm ecosystem (IMO because
             // it is unusable), we don't really care...
+            // But we make an exception for SVersionBound.All...
             if( Base.IsPrerelease && MinQuality != PackageQuality.Stable )
             {
+                if( Base == SVersion.ZeroVersion )
+                {
+                    return ">=0.0.0-0";
+                }
                 return $"^{Base}";
             }
             // If we are locked, use the "=".

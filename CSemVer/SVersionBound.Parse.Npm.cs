@@ -21,8 +21,8 @@ namespace CSemVer
                 // potential extra parts and prerelease.
                 return (version, 0, 0, null);
             }
-            int major, minor = -1;
-            if( TryMatchXStarInt( ref s, out major ) )
+            int minor = -1;
+            if( TryMatchXStarInt( ref s, out int major ) )
             {
                 if( major >= 0 )
                 {
@@ -55,7 +55,7 @@ namespace CSemVer
             var r = TryMatchFloatingVersion( ref s );
             if( r.Error != null ) return (new ParseResult( r.Error ), false);
 
-            PackageQuality quality = includePrerelease ? PackageQuality.None : PackageQuality.Stable;
+            PackageQuality quality = includePrerelease ? PackageQuality.CI : PackageQuality.Stable;
             if( r.Version != null )
             {
                 // As soon as a prerelease appears, this can only be an approximation (with one exception - see below) since for npm:
@@ -73,7 +73,7 @@ namespace CSemVer
                 bool isApproximated = !includePrerelease;
                 if( r.Version.IsPrerelease )
                 {
-                    quality = PackageQuality.None;
+                    quality = PackageQuality.CI;
                     if( defaultBound == SVersionLock.LockMinor )
                     {
                         defaultBound = SVersionLock.LockPatch;
@@ -82,7 +82,7 @@ namespace CSemVer
                 }
                 return (new ParseResult( new SVersionBound( r.Version, defaultBound, quality ), isApproximated ), false );
             }
-            if( r.FMajor < 0 ) return (new ParseResult( new SVersionBound( _000Version, SVersionLock.None, quality ), isApproximated: !includePrerelease), false );
+            if( r.FMajor < 0 ) return (NpmVersionBoundAll( includePrerelease ), false);
             if( r.FMinor < 0 ) return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, 0, 0 ), SVersionLock.LockMajor, quality ), isApproximated: !includePrerelease), true );
             return (new ParseResult( new SVersionBound( SVersion.Create( r.FMajor, r.FMinor, 0 ), SVersionLock.LockMinor, quality ), isApproximated: !includePrerelease ), false );
         }
@@ -90,12 +90,15 @@ namespace CSemVer
         static ParseResult TryMatchHeadRange( ref ReadOnlySpan<char> s, bool includePrerelease )
         {
             // Handling the marvelous "" (empty string), that is like '*'.
-            if( s.Length == 0 ) return new ParseResult( new SVersionBound( _000Version, SVersionLock.None, includePrerelease ? PackageQuality.None : PackageQuality.Stable ), isApproximated: !includePrerelease );
+            if( s.Length == 0 )
+            {
+                return NpmVersionBoundAll( includePrerelease );
+            }
 
             if( TryMatch( ref s, '>' ) )
             {
                 bool isApproximated = !TryMatch( ref s, '=' );
-                return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePrerelease ).Result.EnsureIsApproximated( isApproximated );
+                return TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.NoLock, includePrerelease ).Result.EnsureIsApproximated( isApproximated );
             }
             if( TryMatch( ref s, '<' ) )
             {
@@ -108,7 +111,7 @@ namespace CSemVer
                 // Is '<' alone valid? We don't want to consider it as '<0.0.0'.
                 Trim( ref s );
                 if( s.Length == 0 ) return new ParseResult( "Invalid '<' range" );
-                var forget = TryMatchRangeAlone( ref s, SVersionLock.None, includePrerelease ).Result;
+                var forget = TryMatchRangeAlone( ref s, SVersionLock.NoLock, includePrerelease ).Result;
                 return forget.IsValid
                         ? new ParseResult( All.SetMinQuality( includePrerelease ? PackageQuality.CI : PackageQuality.Stable ), true )
                         : forget;
@@ -119,14 +122,14 @@ namespace CSemVer
             }
             if( TryMatch( ref s, '^' ) )
             {
-                var r = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockMajor, includePrerelease );
-                if( r.Result.Error == null )
+                var (result, isFloatingMinor) = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.LockMajor, includePrerelease );
+                if( result.Error == null )
                 {
                     bool noMoreApproximation = false;
-                    SVersionBound v = r.Result.Result;
+                    SVersionBound v = result.Result;
                     if( v.Base.Major == 0 )
                     {
-                        if( v.Lock == SVersionLock.LockMajor && !r.IsFloatingMinor )
+                        if( v.Lock == SVersionLock.LockMajor && !isFloatingMinor )
                         {
                             v = v.SetLock( SVersionLock.LockMinor );
                             if( v.Base.Minor == 0 && v.Lock == SVersionLock.LockMinor )
@@ -144,14 +147,21 @@ namespace CSemVer
                             v = v.SetLock( SVersionLock.LockMajor );
                         }
                     }
-                    r.Result = r.Result.SetResult( v );
-                    if( noMoreApproximation ) r.Result = r.Result.ClearApproximated();
+                    result = result.SetResult( v );
+                    if( noMoreApproximation ) result = result.ClearApproximated();
                 }
-                return r.Result;
+                return result;
             }
             // '=' prefix is optional.
             if( TryMatch( ref s, '=' ) ) Trim( ref s );
             return TryMatchRangeAlone( ref s, SVersionLock.Lock, includePrerelease ).Result;
+        }
+
+        static ParseResult NpmVersionBoundAll( bool includePrerelease )
+        {
+            return includePrerelease
+                    ? new ParseResult( SVersionBound.All, isApproximated: false )
+                    : new ParseResult( new SVersionBound( _000Version, SVersionLock.NoLock, PackageQuality.Stable ), isApproximated: true );
         }
 
         static ParseResult TryMatchRange( ref ReadOnlySpan<char> s, bool includePrerelease )
@@ -162,7 +172,7 @@ namespace CSemVer
             {
                 // https://semver.npmjs.com/ forbids this "1.0.0 -2": there must be a space after the dash.
                 // Here, we don't care: we skip any whitespace.
-                var up = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.None, includePrerelease ).Result;
+                var up = TryMatchRangeAlone( ref Trim( ref s ), SVersionLock.NoLock, includePrerelease ).Result;
                 if( !up.IsValid )
                 {
                     // Propagate error.
@@ -183,7 +193,7 @@ namespace CSemVer
                         }
                         else
                         {
-                            r = r.SetResult( r.Result.SetLock( SVersionLock.None ) );
+                            r = r.SetResult( r.Result.SetLock( SVersionLock.NoLock ) );
                         }
                     }
                 }
@@ -222,13 +232,20 @@ namespace CSemVer
         /// <param name="s">The span to parse.</param>
         /// <param name="includePrerelease">
         /// See https://github.com/npm/node-semver#prerelease-tags: setting this to true "treats all prerelease versions
-        /// as if they were normal versions, for the purpose of range matching". For us, this is the default.
+        /// as if they were normal versions, for the purpose of range matching".
+        /// <para>
+        /// The fact that the true flag value must be specified for each and every command/action in the npm ecosystem makes it unusable
+        /// in practice. De facto, the npm ecosystem doesn't use prerelease versions...
+        /// </para>
+        /// <para>
+        /// We default it to false (since the v12.0.0) to stay inline with the npm ecosystem.
+        /// </para>
         /// </param>
         /// <returns>The result of the parse that can be invalid.</returns>
-        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = true ) => NpmTryParse( ref s, includePrerelease );
+        public static ParseResult NpmTryParse( ReadOnlySpan<char> s, bool includePrerelease = false ) => NpmTryParse( ref s, includePrerelease );
 
         /// <inheritdoc cref="NpmTryParse(ReadOnlySpan{char}, bool)"/>>
-        public static ParseResult NpmTryParse( ref ReadOnlySpan<char> s, bool includePrerelease = true )
+        public static ParseResult NpmTryParse( ref ReadOnlySpan<char> s, bool includePrerelease = false )
         {
             // Parsing syntactically invalid version is not common: we analyze existing stuff that are supposed
             // to have already been parsed.
