@@ -1,17 +1,13 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSemVer.Tests
 {
     [TestFixture]
     public class PackageQualityTests
     {
-        [TestCase( "Not a version", PackageQuality.None )]
+        [TestCase( "Not a version", PackageQuality.CI )]
         [TestCase( "0.0.0-0", PackageQuality.CI )]
         [TestCase( "1.2.3-not-a-CSemVer", PackageQuality.CI )]
         [TestCase( "9999999.2.3", PackageQuality.Stable )]
@@ -72,7 +68,6 @@ namespace CSemVer.Tests
         [Test]
         public void PackageQuality_GetAllQualities()
         {
-            PackageQuality.None.GetAllQualities().Should().BeEquivalentTo( Array.Empty<PackageQuality>() );
             PackageQuality.CI.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.CI } );
             PackageQuality.Exploratory.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.Exploratory, PackageQuality.CI } );
             PackageQuality.Preview.GetAllQualities().Should().BeEquivalentTo( new[] { PackageQuality.Preview, PackageQuality.Exploratory, PackageQuality.CI } );

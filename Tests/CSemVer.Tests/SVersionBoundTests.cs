@@ -29,8 +29,8 @@ namespace CSemVer.Tests
             SVersionBound.None.Union( SVersionBound.All ).Should().Be( SVersionBound.All );
             SVersionBound.All.Union( SVersionBound.None ).Should().Be( SVersionBound.All );
 
-            var b1 = new SVersionBound( CSVersion.VeryFirstVersion, SVersionLock.None, PackageQuality.None );
-            var b2 = new SVersionBound( CSVersion.VeryLastVersion, SVersionLock.None, PackageQuality.None );
+            var b1 = new SVersionBound( CSVersion.VeryFirstVersion, SVersionLock.NoLock, PackageQuality.CI );
+            var b2 = new SVersionBound( CSVersion.VeryLastVersion, SVersionLock.NoLock, PackageQuality.CI );
 
             SVersionBound.None.Union( b1 ).Should().Be( b1 );
             b1.Union( SVersionBound.None ).Should().Be( b1 );
@@ -54,8 +54,8 @@ namespace CSemVer.Tests
             SVersionBound.None.Intersect( SVersionBound.All ).Should().Be( SVersionBound.None );
             SVersionBound.All.Intersect( SVersionBound.None ).Should().Be( SVersionBound.None );
 
-            var b1 = new SVersionBound( CSVersion.VeryFirstVersion, SVersionLock.None, PackageQuality.None );
-            var b2 = new SVersionBound( CSVersion.VeryLastVersion, SVersionLock.None, PackageQuality.None );
+            var b1 = new SVersionBound( CSVersion.VeryFirstVersion, SVersionLock.NoLock, PackageQuality.CI );
+            var b2 = new SVersionBound( CSVersion.VeryLastVersion, SVersionLock.NoLock, PackageQuality.CI );
 
             b1.Intersect( b1 ).Should().Be( b1 );
             SVersionBound.None.Intersect( b1 ).Should().Be( SVersionBound.None );
@@ -78,8 +78,8 @@ namespace CSemVer.Tests
         [Test]
         public void partial_ordering_only()
         {
-            var b1 = new SVersionBound( V100, SVersionLock.None, PackageQuality.Preview );
-            var b11 = new SVersionBound( V110, SVersionLock.None, PackageQuality.None );
+            var b1 = new SVersionBound( V100, SVersionLock.NoLock, PackageQuality.Preview );
+            var b11 = new SVersionBound( V110, SVersionLock.NoLock, PackageQuality.CI );
 
             b1.Contains( b11 ).Should().BeFalse( "b1 only accepts preview and b11 accepts everything." );
             b11.Contains( b1 ).Should().BeFalse( "b11.Base version is greater than b1.Base version." );
@@ -101,13 +101,13 @@ namespace CSemVer.Tests
         [Test]
         public void SVersionLock_tests()
         {
-            var b1LockMinor = new SVersionBound( V100, SVersionLock.LockMinor, PackageQuality.None );
+            var b1LockMinor = new SVersionBound( V100, SVersionLock.LockMinor, PackageQuality.CI );
             b1LockMinor.Satisfy( V100 ).Should().BeTrue( "Same as the base version." );
             b1LockMinor.Satisfy( V101 ).Should().BeTrue( "The patch can increase." );
             b1LockMinor.Satisfy( V110 ).Should().BeFalse( "The minor is locked." );
             b1LockMinor.Satisfy( V200 ).Should().BeFalse( "Major is of course also locked." );
 
-            var b11 = new SVersionBound( V110, SVersionLock.LockMajor, PackageQuality.None );
+            var b11 = new SVersionBound( V110, SVersionLock.LockMajor, PackageQuality.CI );
             b11.Satisfy( V100 ).Should().BeFalse( "Cannot downgrade minor." );
             b11.Satisfy( V110 ).Should().BeTrue();
             b11.Satisfy( V111 ).Should().BeTrue();
@@ -117,7 +117,7 @@ namespace CSemVer.Tests
             b1LockMajor.Contains( b1LockMinor ).Should().BeTrue();
             b1LockMajor.Contains( b11 ).Should().BeTrue( "Same major is locked." );
 
-            var b2 = new SVersionBound( V200, SVersionLock.Lock, PackageQuality.None );
+            var b2 = new SVersionBound( V200, SVersionLock.Lock, PackageQuality.CI );
             b1LockMinor.Contains( b2 ).Should().BeFalse();
             b1LockMajor.Contains( b2 ).Should().BeFalse();
 
@@ -127,7 +127,7 @@ namespace CSemVer.Tests
         [Test]
         public void union_with_lock_and_MinQuality()
         {
-            var b10 = new SVersionBound( V100, SVersionLock.LockMinor, PackageQuality.None );
+            var b10 = new SVersionBound( V100, SVersionLock.LockMinor, PackageQuality.CI );
             var b11 = new SVersionBound( V110, SVersionLock.LockMajor, PackageQuality.Stable );
 
             b10.Contains( b11 ).Should().BeFalse( "The 1.0 minor is locked." );
@@ -165,7 +165,8 @@ namespace CSemVer.Tests
         // Syntax: "*" or "" is >=0.0.0 (Any version satisfies). 
         //         No approximation here (when includePrerelease is true). 
         [TestCase( "*", "", "0.0.0[Stable]", "Approx" )]
-        [TestCase( "", "includePrerelease", "0.0.0", "" )]
+        [TestCase( "", "includePrerelease", "0.0.0-0", "" )]
+        [TestCase( "*", "includePrerelease", "0.0.0-0", "" )]
 
         // Syntax: "1.x" is ">=1.0.0 <2.0.0-0" (Matching major version).
         //         No approximation here (when includePrerelease is true). 
@@ -328,7 +329,7 @@ namespace CSemVer.Tests
             r.Result.Should().Be( SVersionBound.None );
         }
 
-        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4", 4 )]
+        [TestCase( "1.2.3.4 - 2.0.0-0", "1.2.3.4[Stable]", 4 )]
         [TestCase( "1.2.3.4-alpha - 3", "1.2.3.4-alpha", 4 )]
         [TestCase( "9.8.7.6-alpha || 5.0", "5.0.0[LockMinor,CI]", -1 )]
         public void parse_npm_with_fourth_part_skips_parts_and_prerelease( string p, string expected, int fourthPartExpected )
@@ -502,31 +503,15 @@ namespace CSemVer.Tests
         [TestCase( " v1.2.3 [ Stable , LockMajor ] ", "1.2.3[LockMajor,Stable]" )]
         [TestCase( " v1.2.3-xxx [ Preview , LockMajor ] ", "1.2.3-xxx[LockMajor,Preview]" )]
         [TestCase( " v1.2.3-AAA [ Preview , Lock ] ", "1.2.3-AAA[Lock,Preview]" )]
-        [TestCase( " v1.2.3-AAA [ None , Locked ] ", "1.2.3-AAA[Lock]" )]
-        [TestCase( " v1.2.3-AAA [ None , None ] ", "1.2.3-AAA" )]
+        [TestCase( " v1.2.3-AAA [ CI , Locked ] ", "1.2.3-AAA[Lock]" )]
+        [TestCase( " v1.2.3-AAA [ NoLock ] ", "1.2.3-AAA" )]
+        [TestCase( " v1.2.3-AAA [ CI ] ", "1.2.3-AAA" )]
         public void parse_SVersionBound( string p, string expected )
         {
             SVersionBound.TryParse( p, out var b ).Should().BeTrue();
             b.ToString().Should().Be( expected );
 
             CheckRoundTrippableToStringParse( b );
-        }
-
-        [TestCase( "v1.0.0-mmm", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[None]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[None,None]", "1.0.0-mmm[LockMinor,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[None,CI]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[CI]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[CI,None]", "1.0.0-mmm[LockMinor,CI]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[LockPatch]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[LockPatch,Exploratory]", "1.0.0-mmm[LockPatch,Exploratory]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[LockPatch,None]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        [TestCase( "v1.0.0-mmm[None,LockPatch]", "1.0.0-mmm[LockPatch,Preview]", SVersionLock.LockMinor, PackageQuality.Preview )]
-        public void parse_SVersionBound_with_defaults( string p, string expected, SVersionLock defL, PackageQuality defQ )
-        {
-            SVersionBound.TryParse( p, out var b, defL, defQ ).Should().BeTrue();
-            b.ToString().Should().Be( expected );
         }
 
         [TestCase( "*", "0.0.0[Stable]" )]
@@ -542,7 +527,7 @@ namespace CSemVer.Tests
 
             var rNuGet = SVersionBound.NugetTryParse( nuget );
             rNuGet.IsValid.Should().BeTrue();
-            SVersionBound.TryParse( bound, out var vBound );
+            SVersionBound.TryParse( bound, out var vBound ).Should().BeTrue();
             rNuGet.Result.Should().Be( vBound );
             vBound.ToNuGetString().Should().Be( nuget );
 
@@ -553,21 +538,20 @@ namespace CSemVer.Tests
         [TestCase( "=0.0.0", "0.0.0[Lock]" )]
         [TestCase( "=0.0.1", "0.0.1[Lock]" )]
         [TestCase( "=0.1.0", "0.1.0[Lock]" )]
-        [TestCase( "^0.0.0-0", "0.0.0-0[LockPatch,CI]" )]
         [TestCase( "^0.1.0-dev", "0.1.0-dev[LockMinor,CI]" )]
         [TestCase( ">=1.2.3", "1.2.3" )]
-        [TestCase( ">=0.0.0", "0.0.0" )]
+        [TestCase( ">=0.0.0-0", "0.0.0-0" )]
         [TestCase( ">=0.0.1", "0.0.1" )]
         [TestCase( ">=0.1.0", "0.1.0" )]
         [TestCase( "^1.2.3-beta.2", "1.2.3-beta.2[LockMajor,CI]" )]
         [TestCase( "~0.2.3", "0.2.3[LockMinor,CI]" )]
         [TestCase( "^1.2.3", "1.2.3[LockMajor,CI]" )]
-        public void roundtripable_npm_versions( string npm, string bound )
+        public void roundtripable_npm_versions_with_includePrerelease_true( string npm, string bound )
         {
 
             var rNpm = SVersionBound.NpmTryParse( npm, includePrerelease: true );
             rNpm.IsValid.Should().BeTrue();
-            SVersionBound.TryParse( bound, out var vBound );
+            SVersionBound.TryParse( bound, out var vBound ).Should().BeTrue();
             rNpm.Result.Should().Be( vBound );
             vBound.ToNpmString().Should().Be( npm );
 
@@ -594,9 +578,38 @@ namespace CSemVer.Tests
         [TestCase( "~12", "^12" )] // => Equivalent projection.
         [TestCase( "~12.16", "~12.16" )]
         [TestCase( "~12.16.2", "~12.16.2" )]
-        public void npm_versions_projections( string initial, string projected )
+        [TestCase( "*", ">=0.0.0" )] // NOT the SVersionBound.All (since we don't include the prerelease).
+        [TestCase( "", ">=0.0.0" )] // NOT the SVersionBound.All (since we don't include the prerelease).
+        public void npm_versions_projections_with_includePrerelease_false( string initial, string projected )
         {
             var parseResult = SVersionBound.NpmTryParse( initial, includePrerelease: false );
+            parseResult.IsValid.Should().BeTrue();
+            parseResult.Result.ToNpmString().Should().Be( projected );
+
+            CheckRoundTrippableToStringParse( parseResult.Result );
+        }
+
+        [TestCase( "1.2.3", "=1.2.3" )]
+        [TestCase( ">=1.2.3", ">=1.2.3" )]
+        [TestCase( "^1.2.3", "^1.2.3" )]
+        [TestCase( "^0.0.3", ">=0.0.3" )] // With (non standard) includePrerelease, we forget the [LockMajor
+        // Try these on https://semver.npmjs.com/ for node (there's a lot of versions).
+        [TestCase( "~12.16", "~12.16" )]
+        [TestCase( "^0.2.3", "~0.2.3" )]
+        [TestCase( "^0.1.93", "~0.1.93" )]
+        [TestCase( "^12", "^12" )]
+        [TestCase( "^12.8", "^12.8" )]
+        [TestCase( "^12.8.1", "^12.8.1" )]
+        [TestCase( "~0.1", "~0.1" )]
+        [TestCase( "~0.1.15", "~0.1.15" )]
+        [TestCase( "~12", "^12" )] // => Equivalent projection.
+        [TestCase( "~12.16", "~12.16" )]
+        [TestCase( "~12.16.2", "~12.16.2" )]
+        [TestCase( "*", ">=0.0.0-0" )] // SVersionBound.All.
+        [TestCase( "", ">=0.0.0-0" )] // SVersionBound.All.
+        public void npm_versions_projections_with_includePrerelease_true( string initial, string projected )
+        {
+            var parseResult = SVersionBound.NpmTryParse( initial, includePrerelease: true );
             parseResult.IsValid.Should().BeTrue();
             parseResult.Result.ToNpmString().Should().Be( projected );
 

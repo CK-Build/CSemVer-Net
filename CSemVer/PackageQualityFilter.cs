@@ -6,8 +6,6 @@ namespace CSemVer
 {
     /// <summary>
     /// Defines a "Min-Max" (this is the string representation) filter of <see cref="PackageQuality"/>.
-    /// By default, this filter accepts everything (<see cref="PackageQuality.None"/> is the same as <see cref="PackageQuality.CI"/> for <see cref="Min"/>
-    /// and the same as <see cref="PackageQuality.Stable"/> for <see cref="Max"/>).
     /// The <c>default</c> is "CI-CI".
     /// </summary>
     public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
@@ -16,34 +14,21 @@ namespace CSemVer
         readonly PackageQuality _max; 
 
         /// <summary>
-        /// Gets the minimal package quality. Never <see cref="PackageQuality.None"/>: <see cref="PackageQuality.CI"/> is the default.
+        /// Gets the minimal package quality.
         /// </summary>
-        public PackageQuality Min => _min == PackageQuality.None ? PackageQuality.CI : _min;
+        public PackageQuality Min => _min;
 
         /// <summary>
-        /// Gets the maximal package quality. Never <see cref="PackageQuality.None"/>: <see cref="PackageQuality.Stable"/> is the default.
+        /// Gets the maximal package quality.
         /// </summary>
-        public PackageQuality Max => _max == PackageQuality.None ? PackageQuality.Stable : _max;
-
-        /// <summary>
-        /// Gets whether <see cref="Min"/> is relevant (not <see cref="PackageQuality.CI"/>).
-        /// </summary>
-        public bool HasMin => _min > PackageQuality.CI;
-
-        /// <summary>
-        /// Gets whether <see cref="Max"/> is relevant (not <see cref="PackageQuality.Stable"/>).
-        /// </summary>
-        public bool HasMax => _max < PackageQuality.Stable;
+        public PackageQuality Max => _max;
 
         /// <summary>
         /// Gets whether this filter allows the specified quality.
-        /// Note that <see cref="PackageQuality.None"/> is never accepted.
         /// </summary>
-        /// <param name="q">The quality to challenge. <see cref="PackageQuality.None"/> is never accepted.</param>
+        /// <param name="q">The quality to challenge.</param>
         /// <returns>Whether <paramref name="q"/> is accepted or not.</returns>
-        public bool Accepts( PackageQuality q ) => q != PackageQuality.None
-                                                    && (!HasMin || q >= Min)
-                                                    && (!HasMax || q <= Max);
+        public bool Accepts( PackageQuality q ) => q >= _min && q <= _max;
 
         /// <summary>
         /// Initializes a new filter. Min must be lower or equal to max otherwise an <see cref="ArgumentException"/> is thrown.
@@ -92,47 +77,32 @@ namespace CSemVer
         /// <returns>True on success, false on error.</returns>
         public static bool TryParse( ReadOnlySpan<char> head, out PackageQualityFilter filter ) => TryParse( ref head, out filter );
 
-        /// <summary>
-        /// Attempts to parse a string as a <see cref="PackageQualityFilter"/>.
-        /// Note that the parse is case insensitive, that white spaces are silently ignored and min/max can be reversed.
-        /// The <paramref name="head"/> is forwarded right after the match: the head may be on any kind of character.
-        /// <para>
-        /// Examples:
-        /// "Stable" (is the same as "Stable-Stable"): only <see cref="PackageQuality.Stable"/> is accepted
-        /// "CI-Stable" (is the same as "-Stable" or "CI-" or ""): everything is accepted.
-        /// "-ReleaseCandidate" (same as "CI-RC" or "CI-ReleaseCandidate"): everything except Stable.
-        /// "Exploratory-Preview": No CI, ReleaseCandidate, nor Stable.
-        /// </para>
-        /// </summary>
-        /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
-        /// <param name="filter">The result.</param>
-        /// <returns>True on success, false on error.</returns>
+        /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, out PackageQualityFilter)"/>
         public static bool TryParse( ref ReadOnlySpan<char> head, out PackageQualityFilter filter )
         {
             var start = head;
+            var min = PackageQuality.CI;
+            var max = PackageQuality.Stable;
             head = head.TrimStart();
-            bool hasMin = PackageQualityExtension.TryMatch( ref head, out var min );
+            bool hasMin = PackageQualityExtension.TryMatch( ref head, ref min );
             bool hasMax = false;
-            PackageQuality max = PackageQuality.Stable;
             var sHead = head;
             if( (head = head.TrimStart()).Length > 0 && head[0] == '-' )
             {
                 if( !hasMin ) sHead = head;
                 head = head.Slice( 1 ).TrimStart();
-                hasMax = PackageQualityExtension.TryMatch( ref head, out max );
+                hasMax = PackageQualityExtension.TryMatch( ref head, ref max );
                 if( !hasMax ) head = sHead;
             }
             else head = sHead;
             if( hasMin || hasMax )
             {
-                if( max == PackageQuality.None ) max = PackageQuality.Stable;
+                if( max == PackageQuality.CI ) max = PackageQuality.Stable;
                 if( min > max )
                 {
-                    var t = max;
-                    max = min;
-                    min = t;
+                    (min, max) = (max, min);
                 }
-                filter = new PackageQualityFilter( min, max == PackageQuality.None ? PackageQuality.Stable : max );
+                filter = new PackageQualityFilter( min, max );
                 return true;
             }
             filter = new PackageQualityFilter();
@@ -145,9 +115,7 @@ namespace CSemVer
         /// </summary>
         /// <param name="other">Other filter.</param>
         /// <returns>True on success, false if other is different than this one.</returns>
-        public bool Equals( PackageQualityFilter other ) => ((!HasMin && !other.HasMin) || Min == other.Min)
-                                                            &&
-                                                            ((!HasMax && !other.HasMax) || Max == other.Max);
+        public bool Equals( PackageQualityFilter other ) => _min == other._min && _max == other._max;
 
         /// <summary>
         /// Overridden to call <see cref="Equals(PackageQualityFilter)"/>.
@@ -160,6 +128,6 @@ namespace CSemVer
         /// Overridden to match <see cref="Equals(PackageQualityFilter)"/>.
         /// </summary>
         /// <returns>The hash code.</returns>
-        public override int GetHashCode() => (HasMin ? ((int)Min << 8) : 0) | (HasMax ? (int)Max : 0);
+        public override int GetHashCode() => (int)_min << 8 | (int)_max;
     }
 }

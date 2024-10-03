@@ -19,7 +19,7 @@ namespace CSemVer
         /// For NuGet, this corresponds to a naked version (Minimum version, inclusive): "1.2.3" is like the npm's ">=1.2.3".
         /// </para>
         /// </summary>
-        None = 0,
+        NoLock = 0,
 
         /// <summary>
         /// Allows Minor and/or Patch-level changes.
