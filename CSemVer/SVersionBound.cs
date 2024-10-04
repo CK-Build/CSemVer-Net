@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 
 namespace CSemVer;
 
@@ -28,13 +29,16 @@ namespace CSemVer;
 public readonly partial struct SVersionBound : IEquatable<SVersionBound>
 {
     readonly SVersion? _base;
+    readonly SVersionLock _lock;
     readonly PackageQuality _minQuality;
 
     /// <summary>
     /// All bound with no restriction: <see cref="Base"/> is <see cref="SVersion.ZeroVersion"/> and there is
     /// no restriction: <see cref="Satisfy(in SVersion)"/> is true for any valid version.
+    /// <para>
     /// This bound is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the neutral element
     /// of the <see cref="Intersect(in SVersionBound)"/>.
+    /// </para>
     /// This is the <c>default</c> of this <see cref="SVersionBound"/> value type.
     /// </summary>
     public static readonly SVersionBound All = new SVersionBound();
@@ -56,7 +60,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <summary>
     /// Gets whether only the same Major, Minor, Patch (or the exact version) of <see cref="Base"/> must be considered.
     /// </summary>
-    public SVersionLock Lock { get; }
+    public SVersionLock Lock => _lock;
 
     /// <summary>
     /// Gets the minimal package quality that must be used.
@@ -94,7 +98,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
             }
         }
         _minQuality = minQuality;
-        Lock = @lock;
+        _lock = @lock;
     }
 
     /// <summary>
@@ -102,7 +106,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// </summary>
     /// <param name="r">The lock to set.</param>
     /// <returns>This or a new range.</returns>
-    public SVersionBound SetLock( SVersionLock r ) => r != Lock ? new SVersionBound( Base, r, MinQuality ) : this;
+    public SVersionBound SetLock( SVersionLock r ) => r != _lock ? new SVersionBound( _base, r, _minQuality ) : this;
 
     /// <summary>
     /// Sets a minimal quality by returning this or a new <see cref="SVersionBound"/>.
@@ -111,9 +115,9 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>This or a new range.</returns>
     public SVersionBound SetMinQuality( PackageQuality min )
     {
-        return min == MinQuality
+        return min == _minQuality
                 ? this
-                : new SVersionBound( Base, Lock, min );
+                : new SVersionBound( _base, _lock, min );
     }
 
     /// <summary>
@@ -123,8 +127,8 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>The union of this and the other.</returns>
     public SVersionBound Union( in SVersionBound other )
     {
-        var minBase = Base > other.Base ? other : this;
-        return minBase.SetLock( Lock.Union( other.Lock ) ).SetMinQuality( MinQuality.Union( other.MinQuality ) );
+        var minBase = _base > other._base ? other : this;
+        return minBase.SetLock( _lock.Union( other._lock ) ).SetMinQuality( _minQuality.Union( other._minQuality ) );
     }
 
     /// <summary>
@@ -134,8 +138,8 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>The intersection of this and the other.</returns>
     public SVersionBound Intersect( in SVersionBound other )
     {
-        var minBase = Base > other.Base ? this : other;
-        return minBase.SetLock( Lock.Intersect( other.Lock ) ).SetMinQuality( MinQuality.Intersect( other.MinQuality ) );
+        var minBase = _base > other._base ? this : other;
+        return minBase.SetLock( _lock.Intersect( other._lock ) ).SetMinQuality( _minQuality.Intersect( other._minQuality ) );
     }
 
     /// <summary>
@@ -149,24 +153,25 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>True if this version fits in this bound, false otherwise.</returns>
     public bool Satisfy( in SVersion v, bool useCSemVerComparison = true )
     {
-        int cmp = useCSemVerComparison ? Base.CSemVerCompareTo( v ) : Base.CompareTo( v );
+        if( _base == null ) return true;
+        int cmp = useCSemVerComparison ? _base.CSemVerCompareTo( v ) : _base.CompareTo( v );
         // If v is lower than this Base, it's over.
         if( cmp > 0 ) return false;
         // If v is the Base, it's trivially okay. 
         if( cmp == 0 ) return true;
         // Is the greater v "reachable"?
         Debug.Assert( v.IsValid, "Since v is greater than this Base and this Base is valid." );
-        switch( Lock )
+        switch( _lock )
         {
             case SVersionLock.Lock: return false;
             case SVersionLock.LockPatch:
-                if( v.Major != Base.Major || v.Minor != Base.Minor || v.Patch != Base.Patch ) return false; break;
+                if( v.Major != _base.Major || v.Minor != _base.Minor || v.Patch != _base.Patch ) return false; break;
             case SVersionLock.LockMinor:
-                if( v.Major != Base.Major || v.Minor != Base.Minor ) return false; break;
+                if( v.Major != _base.Major || v.Minor != _base.Minor ) return false; break;
             case SVersionLock.LockMajor:
-                if( v.Major != Base.Major ) return false; break;
+                if( v.Major != _base.Major ) return false; break;
         }
-        return MinQuality <= v.PackageQuality;
+        return _minQuality <= v.PackageQuality;
     }
 
     /// <summary>
@@ -179,7 +184,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>This bound or the <see cref="All"/>.</returns>
     public SVersionBound NormalizeNpmVersionBoundAll()
     {
-        return _base == _000Version && Lock == SVersionLock.NoLock && _minQuality == PackageQuality.Stable
+        return _base == _000Version && _lock == SVersionLock.NoLock && _minQuality == PackageQuality.Stable
                 ? All
                 : this;
     }
@@ -195,11 +200,11 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
         if( !Satisfy( other.Base ) ) return false;
         // But this is not enough: the versions that the other satisfy must all be satisfied by this bound.
         // If the other allows lowest quality, it's over.
-        if( MinQuality > other.MinQuality ) return false;
+        if( _minQuality > other._minQuality ) return false;
         // Trivial case for locks: this Lock is stronger than the other one: it's over (for
         // instance, this locks the Minor and the other one only locks the Major: it will allow
         // versions that this one disallows).
-        if( Lock > other.Lock ) return false;
+        if( _lock > other._lock ) return false;
         // When the other Lock is stronger than this one, since the other.Base satisfies this Base,
         // the other cannot be more restrictive than this... I know it may not be obvious, but it's true.
         // To "see" this consider that Base versions "starts" with the "locked" part and "ends free". The
@@ -216,7 +221,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// </summary>
     /// <param name="other">The other range.</param>
     /// <returns>True if they are the same version and restrictions.</returns>
-    public bool Equals( SVersionBound other ) => Base == other.Base && MinQuality == other.MinQuality && Lock == other.Lock;
+    public bool Equals( SVersionBound other ) => Base == other.Base && _minQuality == other._minQuality && _lock == other._lock;
 
     /// <summary>
     /// Equality is based on <see cref="Base"/>, <see cref="MinQuality"/> and <see cref="Lock"/>.
@@ -229,7 +234,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// Equality is based on <see cref="Base"/>, <see cref="MinQuality"/> and <see cref="Lock"/>.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => Base.GetHashCode() ^ ((int)MinQuality << 13) ^ ((int)Lock << 26);
+    public override int GetHashCode() => Base.GetHashCode() ^ ((int)_minQuality << 13) ^ ((int)_lock << 26);
 
     /// <summary>
     /// Support == operator.
@@ -268,17 +273,17 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>A readable string.</returns>
     public override string ToString()
     {
-        if( Lock == SVersionLock.NoLock )
+        if( _lock == SVersionLock.NoLock )
         {
-            return MinQuality != PackageQuality.CI ? $"{Base}[{MinQuality}]" : Base.ToString();
+            return _minQuality != PackageQuality.CI ? $"{Base}[{_minQuality}]" : Base.ToString();
         }
         else
         {
-            if( Lock == SVersionLock.Lock && MinQuality == PackageQuality.CI )
+            if( _lock == SVersionLock.Lock && _minQuality == PackageQuality.CI )
             {
-                return $"{Base}[{Lock}]";
+                return $"{Base}[{_lock}]";
             }
-            return $"{Base}[{Lock},{MinQuality}]";
+            return $"{Base}[{_lock},{_minQuality}]";
         }
     }
 
@@ -314,40 +319,41 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// <returns>The NuGet version range.</returns>
     public string ToNuGetString()
     {
-        if( Lock == SVersionLock.Lock )
+        if( _lock == SVersionLock.Lock )
         {
             return $"[{Base}]";
         }
-        if( Lock == SVersionLock.LockMajor )
+        if( _lock == SVersionLock.LockMajor )
         {
-            var suffix = MinQuality == PackageQuality.Stable ? "" : "-*";
+            var suffix = _minQuality == PackageQuality.Stable ? "" : "-*";
             return $"{Base.Major}.*{suffix}";
 
         }
-        if( Lock == SVersionLock.LockMinor )
+        var b = Base;
+        if( _lock == SVersionLock.LockMinor )
         {
-            var suffix = MinQuality == PackageQuality.Stable ? "" : "-*";
-            return $"{Base.Major}.{Base.Minor}.*{suffix}";
+            var suffix = _minQuality == PackageQuality.Stable ? "" : "-*";
+            return $"{b.Major}.{b.Minor}.*{suffix}";
         }
         if( Lock == SVersionLock.LockPatch )
         {
-            Debug.Assert( MinQuality != PackageQuality.Stable, "Normalized in ctor." );
-            return $"{Base.Major}.{Base.Minor}.{Base.Patch}-*";
+            Debug.Assert( _minQuality != PackageQuality.Stable, "Normalized in ctor." );
+            return $"{b.Major}.{b.Minor}.{b.Patch}-*";
         }
         // There is no Lock. There is unfortunately no way to express
         // the quality. The "min version inclusive" is the only way except
         // for the special case "0.0.0" when Stable that is "*" and the
         // ZeroVersion "0.0.0-0" when NOT stable that is "*-*".
-        if( Base.IsZeroVersion && MinQuality != PackageQuality.Stable ) return "*-*";
-        if( MinQuality == PackageQuality.Stable
-            && Base.Major == 0
-            && Base.Minor == 0
-            && Base.Patch == 0
-            && !Base.IsPrerelease )
+        if( b.IsZeroVersion && _minQuality != PackageQuality.Stable ) return "*-*";
+        if( _minQuality == PackageQuality.Stable
+            && b.Major == 0
+            && b.Minor == 0
+            && b.Patch == 0
+            && !b.IsPrerelease )
         {
             return "*";
         }
-        return Base.ToString();
+        return b.ToString();
     }
 
     /// <summary>
@@ -364,42 +370,55 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
         // behavior: see https://github.com/npm/node-semver?tab=readme-ov-file#caret-ranges-123-025-004
         // This is very loose... But since prerelease tags are not use in the npm ecosystem (IMO because
         // it is unusable), we don't really care...
-        // We could have make an exception for the 0.0.0 version (considering it to be >=0.0.0 or even >=0.0.0-0 - like if includePrerelease was true)
-        // but it is safer avoid exceptions (the npm ecosystem uses the 0 major a lot).
-        // This Zero issue is better handled by using the NormalizeNpmVersionBoundAll helper.
-        if( Base.IsPrerelease && MinQuality != PackageQuality.Stable )
+        //
+        // There is a single exception to this...
+        // Whatever the includePrerelease is, when we parse ">=0.0.0-0" we obtain the SVersionBound.All
+        // (whereas "*" or "" give "^0.0.0" with the default false includePrerelease).
+        // When this is the All (0.0.0-0[NoLock,CI]) then we return the ">=0.0.0-0": the SVersionBound.All expressed as
+        // ">=0.0.0-0" is roundtripable and this is important.
+        // 
+        // We could have also extended the exception to more "0.0.0" version but it is safer avoid exceptions
+        // (the npm ecosystem uses the 0 major a lot). This Zero issue is better handled by using
+        // the NormalizeNpmVersionBoundAll() helper.
+        //
+        var b = Base;
+        if( b.IsPrerelease && _minQuality != PackageQuality.Stable )
         {
-            return $"^{Base}";
+            if( b.IsZeroVersion && _lock == SVersionLock.NoLock && _minQuality == PackageQuality.CI )
+            {
+                return ">=0.0.0-0";
+            }
+            return $"^{b}";
         }
         // If we are locked, use the "=".
-        if( Lock == SVersionLock.Lock )
+        if( _lock == SVersionLock.Lock )
         {
-            return $"={Base}";
+            return $"={b}";
         }
-        if( Lock == SVersionLock.LockMajor )
+        if( _lock == SVersionLock.LockMajor )
         {
-            if( Base.Patch == 0 )
+            if( b.Patch == 0 )
             {
-                if( Base.Minor == 0 )
+                if( b.Minor == 0 )
                 {
-                    return $"^{Base.Major}";
+                    return $"^{b.Major}";
                 }
-                return $"^{Base.Major}.{Base.Minor}";
+                return $"^{b.Major}.{b.Minor}";
             }
-            return $"^{Base.Major}.{Base.Minor}.{Base.Patch}";
+            return $"^{b.Major}.{b.Minor}.{b.Patch}";
         }
         if( Lock == SVersionLock.LockMinor )
         {
-            if( Base.Patch == 0 )
+            if( b.Patch == 0 )
             {
-                if( Base.Minor == 0 )
+                if( b.Minor == 0 )
                 {
-                    return $"~{Base.Major}";
+                    return $"~{b.Major}";
                 }
-                return $"~{Base.Major}.{Base.Minor}";
+                return $"~{b.Major}.{b.Minor}";
             }
-            return $"~{Base.Major}.{Base.Minor}.{Base.Patch}";
+            return $"~{b.Major}.{b.Minor}.{b.Patch}";
         }
-        return $">={Base}";
+        return $">={b}";
     }
 }

@@ -541,9 +541,34 @@ public class SVersionBoundTests
     [TestCase( "~0.2.3", "0.2.3[LockMinor,CI]" )]
     [TestCase( "^1.2.3", "1.2.3[LockMajor,CI]" )]
     [TestCase( "^0.0.0-0", "0.0.0-0[LockPatch,CI]" )]
+    [TestCase( ">=0.0.0-0", "0.0.0-0" )]
     public void roundtripable_npm_versions_with_includePrerelease_true( string npm, string bound )
     {
         var rNpm = SVersionBound.NpmTryParse( npm, includePrerelease: true );
+        rNpm.IsValid.Should().BeTrue();
+        SVersionBound.TryParse( bound, out var vBound ).Should().BeTrue();
+        rNpm.Result.Should().Be( vBound );
+        vBound.ToNpmString().Should().Be( npm );
+
+        CheckRoundTrippableToStringParse( vBound );
+    }
+
+    [TestCase( "=1.2.3", "1.2.3[Lock,Stable]" )]
+    [TestCase( "=0.0.0", "0.0.0[Lock,Stable]" )]
+    [TestCase( "=0.0.1", "0.0.1[Lock,Stable]" )]
+    [TestCase( "=0.1.0", "0.1.0[Lock,Stable]" )]
+    [TestCase( "^0.1.0-dev", "0.1.0-dev[LockMinor,CI]" )]
+    [TestCase( ">=1.2.3", "1.2.3[Stable]" )]
+    [TestCase( ">=0.0.1", "0.0.1[Stable]" )]
+    [TestCase( ">=0.1.0", "0.1.0[Stable]" )]
+    [TestCase( "^1.2.3-beta.2", "1.2.3-beta.2[LockMajor,CI]" )]
+    [TestCase( "~0.2.3", "0.2.3[LockMinor,Stable]" )]
+    [TestCase( "^1.2.3", "1.2.3[LockMajor,Stable]" )]
+    [TestCase( "^0.0.0-0", "0.0.0-0[LockPatch,CI]" )]
+    [TestCase( ">=0.0.0-0", "0.0.0-0" )]
+    public void roundtripable_npm_versions_with_includePrerelease_false( string npm, string bound )
+    {
+        var rNpm = SVersionBound.NpmTryParse( npm, includePrerelease: false );
         rNpm.IsValid.Should().BeTrue();
         SVersionBound.TryParse( bound, out var vBound ).Should().BeTrue();
         rNpm.Result.Should().Be( vBound );
@@ -579,7 +604,7 @@ public class SVersionBoundTests
     [TestCase( "~12", "^12", "12.0.0[LockMajor,Stable]" )] // => Equivalent projection.
     [TestCase( "~12.16", "~12.16", "12.16.0[LockMinor,Stable]" )]
     [TestCase( "~12.16.2", "~12.16.2", "12.16.2[LockMinor,Stable]" )]
-    [TestCase( ">=0.0.0-0", "^0.0.0-0", "0.0.0-0" )] // SVersionBound.All. 
+    [TestCase( ">=0.0.0-0", ">=0.0.0-0", "0.0.0-0" )] // SVersionBound.All. 
     [TestCase( "*", ">=0.0.0", "0.0.0[Stable]" )] // NOT the SVersionBound.All (since we don't include the prerelease).
     [TestCase( "", ">=0.0.0", "0.0.0[Stable]" )] // NOT the SVersionBound.All (since we don't include the prerelease).
     public void npm_versions_projections_with_includePrerelease_false( string initial, string projected, string bound )
@@ -610,9 +635,9 @@ public class SVersionBoundTests
     [TestCase( "~12", "^12", "12.0.0[LockMajor,CI]" )] // => Equivalent projection.
     [TestCase( "~12.16", "~12.16", "12.16.0[LockMinor,CI]" )]
     [TestCase( "~12.16.2", "~12.16.2", "12.16.2[LockMinor,CI]" )]
-    [TestCase( ">=0.0.0-0", "^0.0.0-0", "0.0.0-0" )] // SVersionBound.All. 
-    [TestCase( "*", "^0.0.0-0", "0.0.0-0" )] // SVersionBound.All
-    [TestCase( "", "^0.0.0-0", "0.0.0-0" )] // SVersionBound.All
+    [TestCase( ">=0.0.0-0", ">=0.0.0-0", "0.0.0-0" )] // SVersionBound.All. 
+    [TestCase( "*", ">=0.0.0-0", "0.0.0-0" )] // SVersionBound.All
+    [TestCase( "", ">=0.0.0-0", "0.0.0-0" )] // SVersionBound.All
     public void npm_versions_projections_with_includePrerelease_true( string initial, string projected, string bound )
     {
         var rNpm = SVersionBound.NpmTryParse( initial, includePrerelease: true );
