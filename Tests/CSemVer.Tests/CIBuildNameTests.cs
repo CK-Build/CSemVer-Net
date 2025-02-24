@@ -1,6 +1,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CSemVer.Tests;
@@ -58,11 +59,12 @@ public class CIBuildNameTests
         var tPrev = CSVersion.Create( t.OrderedVersion - 1 );
         var vPrev = tPrev.ToLongForm();
 
-        void CheckLower( SVersion v1, SVersion v2 )
+        static void CheckLower( SVersion v1, SVersion v2 )
         {
             Assert.That( v1 < v2, "{0} < {1}", v1, v2 );
             Assert.That( v2 > v1, "{0} > {1}", v2, v1 );
 
+            Debug.Assert( v1.NormalizedText != null && v2.NormalizedText != null );
             SVersion v1low = SVersion.Parse( v1.NormalizedText.ToLowerInvariant() );
             SVersion v2low = SVersion.Parse( v2.NormalizedText.ToLowerInvariant() );
             Assert.That( v1low < v2low, "{0} < {1} (lowercase)", v1low, v2low );

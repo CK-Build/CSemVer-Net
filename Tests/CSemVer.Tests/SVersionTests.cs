@@ -85,8 +85,8 @@ public class SVersionTests
     [TestCase( "1.2.3-beta", '>', "1.2.3-baa" )]
     public void CSemVerSafeCompare_in_action( string left, char op, string right )
     {
-        SVersion vL = left != null ? SVersion.TryParse( left ) : null;
-        SVersion vR = right != null ? SVersion.TryParse( right ) : null;
+        SVersion? vL = left != null ? SVersion.TryParse( left ) : null;
+        SVersion? vR = right != null ? SVersion.TryParse( right ) : null;
         switch( op )
         {
             case '>':
@@ -101,7 +101,7 @@ public class SVersionTests
                 SVersion.CSemVerSafeCompare( vL, vR ).Should().Be( 0 );
                 SVersion.CSemVerSafeCompare( vR, vL ).Should().Be( 0 );
                 break;
-            default: throw new ArgumentException( nameof( op ) );
+            default: throw new ArgumentException( "Unsupported operator.", nameof( op ) );
         }
     }
 

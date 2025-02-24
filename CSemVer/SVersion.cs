@@ -412,7 +412,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
     /// </param>
     /// <param name="checkBuildMetaDataSyntax">False to opt-out of strict <see cref="BuildMetaData"/> compliance.</param>
     /// <returns>The SVersion object.</returns>
-    public static SVersion Parse( string s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
+    public static SVersion Parse( string? s, bool handleCSVersion = true, bool checkBuildMetaDataSyntax = true )
     {
         var v = TryParse( s, handleCSVersion, checkBuildMetaDataSyntax );
         if( !v.IsValid ) throw new ArgumentException( v.ErrorMessage, nameof( s ) );

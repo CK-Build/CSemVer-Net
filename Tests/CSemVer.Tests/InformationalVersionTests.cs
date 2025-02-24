@@ -1,6 +1,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Diagnostics;
 
 namespace CSemVer.Tests;
 
@@ -49,6 +50,7 @@ public class InformationalVersionTests
         var i = new InformationalVersion( v );
         i.IsValidSyntax.Should().BeTrue( i.ParseErrorMessage );
         i.ParseErrorMessage.Should().BeNull();
+        Debug.Assert( i.Version?.AsCSVersion != null );
         i.Version.AsCSVersion.IsLongForm.Should().BeFalse();
         InformationalVersion.Parse( v );
     }
@@ -63,7 +65,7 @@ public class InformationalVersionTests
     [Test]
     public void InformationalVersion_ReadFromAssembly_only_throws_if_assembly_is_null()
     {
-        Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromAssembly( null ) );
+        Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromAssembly( null! ) );
         var info = InformationalVersion.ReadFromAssembly( typeof( string ).Assembly );
         info.IsValidSyntax.Should().BeFalse();
         info.ParseErrorMessage.Should().NotBeNull();
@@ -81,7 +83,7 @@ public class InformationalVersionTests
     [Test]
     public void InformationalVersion_ReadFromFile_only_throws_if_path_is_null_or_empty()
     {
-        Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( null ) );
+        Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( null! ) );
         Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( "" ) );
         Assert.Throws<ArgumentNullException>( () => InformationalVersion.ReadFromFile( " \t " ) );
         {
