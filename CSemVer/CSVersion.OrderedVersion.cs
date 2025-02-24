@@ -182,7 +182,8 @@ public sealed partial class CSVersion
     }
 
     /// <summary>
-    /// Gets the ordered version number.
+    /// Gets the ordered version number. 0 is invalid, 1 is the <see cref="VeryFirstVersion"/>,
+    /// 4000050000000000000 is the greatest value (<see cref="VeryLastVersion"/>).
     /// </summary>
     public long OrderedVersion => _orderedVersion.Number;
 

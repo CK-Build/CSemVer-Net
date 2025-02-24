@@ -1,6 +1,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CSemVer.Tests;
@@ -35,16 +36,17 @@ public class CSVersionTests
         CSVersion t = CSVersion.TryParse( v );
         var succ = t.GetDirectSuccessors( false );
 
-        Console.WriteLine( " -> - found {0} successors for '{1}' (Ordered Version = {2}, File = {3}):",
-                            succ.Count(),
-                            t,
-                            t.OrderedVersion,
-                            t.ToStringFileVersion( false ) );
-        Console.WriteLine( "      " + string.Join( ", ", succ.Select( s => s.ToString() ) ) );
+        Console.WriteLine( $"""
+                                -> - found {succ.Count()} successors for '{t}' (Ordered Version = {t.OrderedVersion}, File = {t.ToStringFileVersion( false )}):
+                                     {string.Join( ", ", succ.Select( s => s.ToString() ) )}
+
+                            """ );
 
         var closest = t.GetDirectSuccessors( true ).Select( s => s.ToString() ).ToList();
-        Console.WriteLine( "    - {0} next fixes:", closest.Count, t );
-        Console.WriteLine( "      " + string.Join( ", ", closest ) );
+        Console.WriteLine( $"""
+                                - {closest.Count} next fixes:
+                                  {string.Join( ", ", closest )}
+                            """ );
     }
 
     [Test]
@@ -340,7 +342,7 @@ public class CSVersionTests
                                 .Where( v => v.Length > 0 )
                                 .ToArray();
         var rStart = CSVersion.TryParse( start );
-        Assert.That( rStart != null && rStart.IsValid );
+        Debug.Assert( rStart != null && rStart.IsValid );
         // Checks successors (and that they are ordered).
         var cNext = rStart.GetDirectSuccessors( true ).Select( v => v.ToString() ).ToArray();
         CollectionAssert.AreEqual( next, cNext, start + " => " + string.Join( ", ", cNext ) );
@@ -393,9 +395,9 @@ public class CSVersionTests
         while( --count > 0 )
         {
             long start = (long)decimal.Ceiling( r.NextDecimal() * (CSVersion.VeryLastVersion.OrderedVersion + 1) + 1 );
-            CSVersion rStart = CheckMapping( start );
+            CSVersion? rStart = CheckMapping( start );
             Assert.That( rStart, Is.Not.Null );
-            CSVersion rCurrent;
+            CSVersion? rCurrent;
             for( int i = 1; i < span; ++i )
             {
                 rCurrent = CheckMapping( start + i );
@@ -414,7 +416,7 @@ public class CSVersionTests
 
     //static int _greatersuccessorCount = 0;
 
-    CSVersion CheckMapping( long v )
+    static CSVersion? CheckMapping( long v )
     {
         if( v < 0 || v > CSVersion.VeryLastVersion.OrderedVersion )
         {
@@ -425,6 +427,7 @@ public class CSVersionTests
         Assert.That( (v == 0) == !t.IsValid );
         Assert.That( t.OrderedVersion, Is.EqualTo( v ) );
         var sSemVer = t.NormalizedText;
+        Debug.Assert( sSemVer != null );
         var tSemVer = CSVersion.TryParse( sSemVer );
         var tNormalized = CSVersion.TryParse( t.ToString( CSVersionFormat.Normalized ) );
         Assert.That( tSemVer.OrderedVersion, Is.EqualTo( v ) );
@@ -444,6 +447,7 @@ public class CSVersionTests
         {
             ++count;
             Assert.That( succ.IsDirectPredecessor( t ) );
+            Debug.Assert( succ.NormalizedText != null );
             var vSemVerSucc = SVersion.Parse( succ.NormalizedText );
             Assert.That( vSemVer < vSemVerSucc, "{0} < {1}", vSemVer, vSemVerSucc );
         }
@@ -480,8 +484,8 @@ public class CSVersionTests
     public void operators_overloads()
     {
         // Two variables to avoid Compiler Warning (level 3) CS1718
-        CSVersion null2 = null;
-        CSVersion null1 = null;
+        CSVersion? null2 = null;
+        CSVersion? null1 = null;
 
         Assert.That( null1 == null2 );
         Assert.That( null1 >= null2 );

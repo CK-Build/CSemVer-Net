@@ -18,7 +18,7 @@ namespace CSemVer;
 /// </para>
 /// <para>
 /// The text format (<see cref="ToString"/> method) is the "Base" version alone or "Base[Lock]", "Base[MinQuality]" or "Base[Lock,MinQuality]":
-/// "13.0.2", "1.2.3[Stable]", "1.0.0[LockMinor]", "15.0.5[LockMajor,Preview]". <see cref="TryParse(ReadOnlySpan{char}, out SVersionBound, SVersionLock, PackageQuality)"/>
+/// "13.0.2", "1.2.3[Stable]", "1.0.0[LockMinor]", "15.0.5[LockMajor,Preview]". <see cref="TryParse(ReadOnlySpan{char}, out CSemVer.SVersionBound)"/>
 /// methods parse them back.
 /// </para>
 /// <para>
@@ -34,7 +34,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
 
     /// <summary>
     /// All bound with no restriction: <see cref="Base"/> is <see cref="SVersion.ZeroVersion"/> and there is
-    /// no restriction: <see cref="Satisfy(in SVersion)"/> is true for any valid version.
+    /// no restriction: <see cref="Satisfy(in SVersion, bool)"/> is true for any valid version.
     /// <para>
     /// This bound is the absorbing element of the <see cref="Union(in SVersionBound)"/> operation and the neutral element
     /// of the <see cref="Intersect(in SVersionBound)"/>.
@@ -45,7 +45,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
 
     /// <summary>
     /// None bound: <see cref="Base"/> is <see cref="SVersion.LastVersion"/>, <see cref="Lock"/> and <see cref="MinQuality"/> are
-    /// the strongest possible (<see cref="SVersionLock.Lock"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion)"/> is
+    /// the strongest possible (<see cref="SVersionLock.Lock"/> and <see cref="PackageQuality.Stable"/>): <see cref="Satisfy(in SVersion, bool)"/> is
     /// true only for the last version.
     /// This bound is the identity element of the <see cref="Union(in SVersionBound)"/> operation and the absorbing element of the <see cref="Intersect(in SVersionBound)"/>.
     /// </summary>

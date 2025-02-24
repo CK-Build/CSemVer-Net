@@ -7,14 +7,14 @@ public readonly partial struct SVersionBound
 {
     /// <summary>
     /// Tries to parse a version bound: it is a <see cref="SVersion.TryParse(ref ReadOnlySpan{char}, bool, bool, bool)"/> that may be
-    /// followed by an optional bracketed "[<see cref="TryParseLockAndMinQuality"/>]".
+    /// followed by an optional bracketed "[Lock,Quality]".
     /// </summary>
     /// <param name="head">The string to parse (leading and internal white spaces between tokens are skipped).</param>
     /// <param name="bound">The result. This is <see cref="SVersionBound.None"/> on error.</param>
     /// <returns>True on success, false otherwise.</returns>
     public static bool TryParse( ReadOnlySpan<char> head, out SVersionBound bound ) => TryParse( ref head, out bound );
 
-    /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, out SVersionBound, SVersionLock, PackageQuality)"/>
+    /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, out SVersionBound)"/>
     public static bool TryParse( ref ReadOnlySpan<char> head, out SVersionBound bound )
     {
         var sHead = head;
@@ -38,8 +38,8 @@ public readonly partial struct SVersionBound
         return true;
 
         static bool TryParseConstraints( ref ReadOnlySpan<char> head,
-                                               ref SVersionLock l,
-                                               ref PackageQuality q )
+                                         ref SVersionLock l,
+                                         ref PackageQuality q )
         {
             if( SVersionLockExtension.TryMatch( ref head, ref l ) )
             {
