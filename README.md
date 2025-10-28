@@ -1,10 +1,15 @@
 # CSemVer
 ![Nuget](https://img.shields.io/nuget/v/CSemVer?logo=nuget)
 
-This package (netstandard2.1, no dependencies) implements https://csemver.org/
+This package (`netstandard2.0`, `net8.0`) implements https://csemver.org/
 that defines a subset of https://semver.org/ (v2.0.0).
+
 It offers parsing an model of regular semver versions and of CSemVer versions, a model of a
 unified "version range" and handles Npm and NuGet syntax.
+
+:warning: The `netstandard2.0` is intended to be used in a MSBuild context and doesn't
+currently contains the parsing functions available in the regular package that use
+`ReadOnlySpan<char>` instead of string.
 
 ## About versioning
 Versions are useless without Version Ranges. Nothing is simple in this domain: see 

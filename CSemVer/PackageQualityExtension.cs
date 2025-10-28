@@ -50,6 +50,7 @@ public static class PackageQualityExtension
     /// <returns>This quality followed by its lowest ones.</returns>
     public static IReadOnlyList<PackageQuality> GetAllQualities( this PackageQuality @this ) => _map[(int)@this];
 
+#if !NETSTANDARD
     /// <summary>
     /// Tries to match one of the <see cref="PackageQuality"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
     /// Note that match is case insensitive and that "rc" is a synonym of <see cref="PackageQuality.ReleaseCandidate"/>.
@@ -113,5 +114,6 @@ public static class PackageQualityExtension
         }
         return false;
     }
+#endif
 
 }

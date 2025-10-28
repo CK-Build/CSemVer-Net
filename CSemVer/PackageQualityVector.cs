@@ -80,7 +80,7 @@ public readonly struct PackageQualityVector : IEnumerable<SVersion>
 
     PackageQualityVector( PackageQualityVector q, SVersion v )
     {
-        Debug.Assert( v?.IsValid ?? false, "v must be not null and valid." );
+        Debug.Assert( v != null && v.IsValid, "v must be not null and valid." );
         _ci = q.CI;
         _exp = q.Exploratory;
         _pre = q.Preview;

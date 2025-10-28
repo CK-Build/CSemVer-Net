@@ -30,6 +30,9 @@ public static class SVersionLockExtension
     {
         return @this > other ? @this : other;
     }
+
+#if !NETSTANDARD
+
     /// <summary>
     /// Tries to parse one of the <see cref="SVersionLock"/> terms (the <paramref name="head"/> must be at the start, no trimming is done).
     /// Note that match is case insensitive and that all "Lock" wan be written as "Locked".
@@ -90,5 +93,7 @@ public static class SVersionLockExtension
         l = SVersionLock.Lock;
         return true;
     }
+
+#endif
 
 }

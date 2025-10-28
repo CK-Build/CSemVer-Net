@@ -22,9 +22,19 @@ namespace CSemVer;
 /// of the NuGet version and it has yet to be done.
 /// </para>
 /// </summary>
-public class InformationalVersion
+public partial class InformationalVersion
 {
+#if NETSTANDARD
+
     static readonly Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
+    private static Regex ParseRegEx() => _rV7;
+
+#else
+
+    [GeneratedRegex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.CultureInvariant )]
+    private static partial Regex ParseRegEx();
+
+#endif
 
     /// <summary>
     /// The zero <see cref="InformationalVersion"/>.
@@ -79,7 +89,7 @@ public class InformationalVersion
         {
             Debug.Assert( informationalVersion != null );
 
-            Match m = _rV7.Match( informationalVersion );
+            Match m = ParseRegEx().Match( informationalVersion );
             if( m.Success )
             {
                 RawVersion = m.Groups[2].Value;
@@ -250,5 +260,4 @@ public class InformationalVersion
     }
 
     static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-
 }

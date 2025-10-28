@@ -2,10 +2,10 @@ using System;
 
 namespace CSemVer;
 
+#if !NETSTANDARD
+
 public readonly partial struct SVersionBound
 {
-    static readonly SVersion _000Version = SVersion.Create( 0, 0, 0 );
-
     static (SVersion? Version, int FMajor, int FMinor, string? Error) TryMatchFloatingVersion( ref ReadOnlySpan<char> s )
     {
         // Handling the marvelous "" (empty string), that is like '*'.
@@ -267,3 +267,5 @@ public readonly partial struct SVersionBound
 
     }
 }
+
+#endif

@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
 
+#if !NETSTANDARD
+
 namespace CSemVer;
 
 public readonly partial struct SVersionBound
@@ -247,3 +249,5 @@ public readonly partial struct SVersionBound
     }
 
 }
+
+#endif
