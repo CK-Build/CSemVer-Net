@@ -24,9 +24,6 @@ namespace CSemVer;
 /// </summary>
 public class InformationalVersion
 {
-    static readonly Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
-    // v6 format was ambiguous with build meta data: using / instead of + fix the issue.
-    static readonly Regex _rV6 = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
     static readonly Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
 
     /// <summary>
@@ -80,9 +77,9 @@ public class InformationalVersion
     {
         if( (OriginalInformationalVersion = informationalVersion) != null )
         {
+            Debug.Assert( informationalVersion != null );
+
             Match m = _rV7.Match( informationalVersion );
-            if( !m.Success ) m = _rV6.Match( informationalVersion );
-            if( !m.Success ) m = _rOld.Match( informationalVersion );
             if( m.Success )
             {
                 RawVersion = m.Groups[2].Value;
@@ -225,7 +222,7 @@ public class InformationalVersion
         if( a == null ) throw new ArgumentNullException( nameof( a ) );
         try
         {
-            var attr = (AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute( a, typeof( AssemblyInformationalVersionAttribute ) );
+            var attr = (AssemblyInformationalVersionAttribute?)Attribute.GetCustomAttribute( a, typeof( AssemblyInformationalVersionAttribute ) );
             return attr != null
                     ? new InformationalVersion( attr.InformationalVersion )
                     : new InformationalVersion( "Unable to find AssemblyInformationalVersionAttribute.", true );

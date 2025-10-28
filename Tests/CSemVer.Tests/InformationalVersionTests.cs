@@ -29,32 +29,6 @@ public class InformationalVersionTests
         Assert.Throws<ArgumentException>( () => InformationalVersion.Parse( v ) );
     }
 
-    [TestCase( "1.2.3-p (1.2.3-a) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
-    [TestCase( "Even.Not.A.Version (0.2.0-0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 0001-01-01 00:00:00Z" )]
-    [TestCase( "99.0.2 (1.0.0) - SHA1: 0000000000000000000000000000000000000000 - CommitDate: 2017-06-27 08:27:35Z" )]
-    public void the_long_form_is_now_ignored_when_old_format_is_used( string v )
-    {
-        var i = new InformationalVersion( v );
-        i.IsValidSyntax.Should().BeTrue();
-        i.ParseErrorMessage.Should().BeNull();
-        InformationalVersion.Parse( v );
-    }
-
-    [TestCase( "99.0.2-alpha+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
-    [TestCase( "2.0.2-beta.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
-    [TestCase( "2.0.2-b.1.2+0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
-    // v7 now authorizes build meta data in version.
-    [TestCase( "2.0.2-b.1.2+metadata/0000000000000000000000000000000000000000/2017-06-27 08:27:35Z" )]
-    public void parsing_new_format_normalized_the_version( string v )
-    {
-        var i = new InformationalVersion( v );
-        i.IsValidSyntax.Should().BeTrue( i.ParseErrorMessage );
-        i.ParseErrorMessage.Should().BeNull();
-        Debug.Assert( i.Version?.AsCSVersion != null );
-        i.Version.AsCSVersion.IsLongForm.Should().BeFalse();
-        InformationalVersion.Parse( v );
-    }
-
     [Test]
     public void this_assembly_has_a_valid_AssemblyInformationalVersionAttribute()
     {
