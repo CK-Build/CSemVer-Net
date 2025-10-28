@@ -40,6 +40,7 @@ public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
         _max = max;
     }
 
+#if !NETSTANDARD
     /// <summary>
     /// Initializes a new filter from a string.
     /// Throws an <see cref="ArgumentException"/> on invalid syntax.
@@ -53,11 +54,6 @@ public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
         _max = p._max;
     }
 
-    /// <summary>
-    /// Overridden to return "<see cref="Min"/>-<see cref="Max"/>".
-    /// </summary>
-    /// <returns>The "Min-Max" string.</returns>
-    public override string ToString() => Min.ToString() + '-' + Max.ToString();
 
     /// <summary>
     /// Attempts to parse a string as a <see cref="PackageQualityFilter"/>.
@@ -107,6 +103,7 @@ public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
         head = start;
         return false;
     }
+#endif
 
     /// <summary>
     /// Implements equality operator.
@@ -120,11 +117,18 @@ public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
     /// </summary>
     /// <param name="obj">The other object.</param>
     /// <returns>True on success, false if other is not a filter or is different than this one.</returns>
-    public override bool Equals( object obj ) => obj is PackageQualityFilter f && Equals( f );
+    public override bool Equals( object? obj ) => obj is PackageQualityFilter f && Equals( f );
 
     /// <summary>
     /// Overridden to match <see cref="Equals(PackageQualityFilter)"/>.
     /// </summary>
     /// <returns>The hash code.</returns>
     public override int GetHashCode() => (int)_min << 8 | (int)_max;
+
+    /// <summary>
+    /// Overridden to return "<see cref="Min"/>-<see cref="Max"/>".
+    /// </summary>
+    /// <returns>The "Min-Max" string.</returns>
+    public override string ToString() => Min.ToString() + '-' + Max.ToString();
+
 }

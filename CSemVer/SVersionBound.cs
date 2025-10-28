@@ -28,6 +28,8 @@ namespace CSemVer;
 /// </summary>
 public readonly partial struct SVersionBound : IEquatable<SVersionBound>
 {
+    static readonly SVersion _000Version = SVersion.Create( 0, 0, 0 );
+
     readonly SVersion? _base;
     readonly SVersionLock _lock;
     readonly PackageQuality _minQuality;
@@ -228,7 +230,7 @@ public readonly partial struct SVersionBound : IEquatable<SVersionBound>
     /// </summary>
     /// <param name="obj">The object to compare.</param>
     /// <returns>True if the specified object is equal to this instance; otherwise, false.</returns>
-    public override bool Equals( object obj ) => obj is SVersionBound r && Equals( r );
+    public override bool Equals( object? obj ) => obj is SVersionBound r && Equals( r );
 
     /// <summary>
     /// Equality is based on <see cref="Base"/>, <see cref="MinQuality"/> and <see cref="Lock"/>.

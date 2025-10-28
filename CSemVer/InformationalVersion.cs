@@ -22,12 +22,19 @@ namespace CSemVer;
 /// of the NuGet version and it has yet to be done.
 /// </para>
 /// </summary>
-public class InformationalVersion
+public partial class InformationalVersion
 {
-    static readonly Regex _rOld = new Regex( @"^(?<1>.*?) \((?<2>.*?)\) - SHA1: (?<3>.*?) - CommitDate: (?<4>.*?)$" );
-    // v6 format was ambiguous with build meta data: using / instead of + fix the issue.
-    static readonly Regex _rV6 = new Regex( @"^(?<2>.*?)\+(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
+#if NETSTANDARD
+
     static readonly Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
+    private static Regex ParseRegEx() => _rV7;
+
+#else
+
+    [GeneratedRegex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.CultureInvariant )]
+    private static partial Regex ParseRegEx();
+
+#endif
 
     /// <summary>
     /// The zero <see cref="InformationalVersion"/>.
@@ -80,9 +87,9 @@ public class InformationalVersion
     {
         if( (OriginalInformationalVersion = informationalVersion) != null )
         {
-            Match m = _rV7.Match( informationalVersion );
-            if( !m.Success ) m = _rV6.Match( informationalVersion );
-            if( !m.Success ) m = _rOld.Match( informationalVersion );
+            Debug.Assert( informationalVersion != null );
+
+            Match m = ParseRegEx().Match( informationalVersion );
             if( m.Success )
             {
                 RawVersion = m.Groups[2].Value;
@@ -225,7 +232,7 @@ public class InformationalVersion
         if( a == null ) throw new ArgumentNullException( nameof( a ) );
         try
         {
-            var attr = (AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute( a, typeof( AssemblyInformationalVersionAttribute ) );
+            var attr = (AssemblyInformationalVersionAttribute?)Attribute.GetCustomAttribute( a, typeof( AssemblyInformationalVersionAttribute ) );
             return attr != null
                     ? new InformationalVersion( attr.InformationalVersion )
                     : new InformationalVersion( "Unable to find AssemblyInformationalVersionAttribute.", true );
@@ -253,5 +260,4 @@ public class InformationalVersion
     }
 
     static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-
 }

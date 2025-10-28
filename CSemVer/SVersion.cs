@@ -11,19 +11,32 @@ namespace CSemVer;
 /// Strictly conforms to http://semver.org/ v2.0.0 (with a capture of the <see cref="ErrorMessage"/>
 /// when <see cref="IsValid"/> is false) except that the 'v' prefix is allowed and handled transparently.
 /// </summary>
-public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
+public partial class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
 {
-    // GeneratedRegex is unfortunately not possible here (NetStandard): see  https://github.com/Sergio0694/PolySharp/issues/95.
 
-    // This checks a SVersion.
-    static readonly Regex _regExSVersion =
+#if NETSTANDARD
+    static Regex _regExSVersion =
         new Regex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?((?!-)|(\-(?<5>[0-9A-Za-z\-\.]+)))(\+(?<6>[0-9A-Za-z\-\.]+))?",
         RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
 
-    // This applies to PreRelease and BuildMetaData.
     static readonly Regex _regexDottedPart =
         new Regex( @"^(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+)(\.(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+))*$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.ExplicitCapture );
+
+    static Regex SVersionRegEx() => _regExSVersion;
+
+    static Regex DottedPartRegEx() => _regexDottedPart;
+#else
+
+    // This checks a SVersion.
+    [GeneratedRegex( @"^v?(?<1>0|[1-9][0-9]*)\.(?<2>0|[1-9][0-9]*)\.(?<3>0|[1-9][0-9]*)(\.(?<4>0|[1-9][0-9]*))?((?!-)|(\-(?<5>[0-9A-Za-z\-\.]+)))(\+(?<6>[0-9A-Za-z\-\.]+))?", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant )]
+    private static partial Regex SVersionRegEx();
+
+    // This applies to PreRelease and BuildMetaData.
+    [GeneratedRegex( @"^(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+)(\.(?<1>0|[1-9][0-9]*|[0-9A-Za-z\-]+))*$", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant )]
+    private static partial Regex DottedPartRegEx();
+
+#endif
 
     readonly CSVersion? _csVersion;
 
@@ -305,6 +318,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         return DoCreate( parsedText, major, minor, patch, fourthPart, prerelease ?? String.Empty, buildMetaData ?? String.Empty, handleCSVersion, checkBuildMetaDataSyntax );
     }
 
+#if !NETSTANDARD
     /// <summary>
     /// Forwards a head if a semantic version is found and returns a <see cref="SVersion"/> that 
     /// may not be <see cref="IsValid"/>. When the returned version is not valid, the head is not forwarded.
@@ -335,6 +349,8 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         return r;
     }
 
+#endif
+
     /// <summary>
     /// Parses the specified string to a semantic version and returns a <see cref="SVersion"/> that 
     /// may not be <see cref="IsValid"/>.
@@ -356,7 +372,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
 
     static SVersion DoTryParse( string s, bool handleCSVersion, bool checkBuildMetaDataSyntax, bool allowPrefixParse )
     {
-        Match m = _regExSVersion.Match( s );
+        Match m = SVersionRegEx().Match( s );
         // On success, the actual parsed length is the length of the parsed text.
         bool isLonger;
         if( !m.Success || ((isLonger = s.Length > m.Length) && !allowPrefixParse) ) return new SVersion( m.Success ? "Unexpected characters after version." : "Pattern not matched.", s );
@@ -456,7 +472,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
 
     static string? ValidateDottedIdentifiers( string s, string partName )
     {
-        Match m = _regexDottedPart.Match( s );
+        Match m = DottedPartRegEx().Match( s );
         if( !m.Success ) return "Invalid " + partName;
         else
         {
@@ -537,7 +553,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         r = Patch - other.Patch;
         if( r != 0 ) return r;
 
-        return ComparePreRelease( Prerelease.AsSpan(), other.Prerelease.AsSpan() );
+        return ComparePreRelease( Prerelease, other.Prerelease );
     }
 
     /// <summary>
@@ -619,6 +635,50 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         return x.CSemVerCompareTo( y, useShortForm );
     }
 
+#if NETSTANDARD
+        static int ComparePreRelease( string x, string y )
+        {
+            if( x.Length == 0 ) return y.Length == 0 ? 0 : 1;
+            if( y.Length == 0 ) return -1;
+
+            var xParts = x.Split( '.' );
+            var yParts = y.Split( '.' );
+
+            int commonParts = xParts.Length;
+            int ultimateResult = -1;
+            if( yParts.Length < xParts.Length )
+            {
+                commonParts = yParts.Length;
+                ultimateResult = 1;
+            }
+            else if( yParts.Length == xParts.Length )
+            {
+                ultimateResult = 0;
+            }
+            for( int i = 0; i < commonParts; i++ )
+            {
+                var xP = xParts[i];
+                var yP = yParts[i];
+                int xN, yN, r;
+                if( int.TryParse( xP, out xN ) )
+                {
+                    if( int.TryParse( yP, out yN ) )
+                    {
+                        r = xN - yN;
+                        if( r != 0 ) return r;
+                    }
+                    else return -1;
+                }
+                else
+                {
+                    if( int.TryParse( yP, out yN ) ) return 1;
+                    r = StringComparer.OrdinalIgnoreCase.Compare( xP, yP );
+                    if( r != 0 ) return r;
+                }
+            }
+            return ultimateResult;
+        }
+#else
     // Fun with Span and allocation-free string parsing.
     // Using this https://github.com/dotnet/runtime/pull/295 (not yet available)
     // would require to change the algorithm since we need to know the number of
@@ -690,6 +750,7 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         }
         return ultimateResult;
     }
+#endif
 
     /// <summary>
     /// Equality ignore this <see cref="BuildMetaData"/>.
@@ -801,5 +862,6 @@ public class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
     /// <param name="y">Second version.</param>
     /// <returns>True if x is lower than y.</returns>
     static public bool operator <( SVersion? x, SVersion? y ) => !(x >= y);
+
 }
 
