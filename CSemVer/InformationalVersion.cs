@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -40,7 +41,7 @@ public partial class InformationalVersion
     /// The zero <see cref="InformationalVersion"/>.
     /// See <see cref="ZeroInformationalVersion"/>.
     /// </summary>
-    static public InformationalVersion Zero = new InformationalVersion();
+    static public readonly InformationalVersion Zero = new InformationalVersion();
 
     /// <summary>
     /// The zero assembly version is "0.0.0".
@@ -132,6 +133,7 @@ public partial class InformationalVersion
     /// <see cref="Version"/> is syntactically valid, the <see cref="CommitSha"/> is a 40 hexadecimal string
     /// and <see cref="CommitDate"/> has been successfully parsed.
     /// </summary>
+    [MemberNotNullWhen( true, nameof( Version ), nameof( CommitSha ) )]
     public bool IsValidSyntax { get; }
 
     /// <summary>
@@ -253,7 +255,7 @@ public partial class InformationalVersion
     /// <returns>The informational version.</returns>
     static public string BuildInformationalVersion( SVersion version, string commitSha, DateTime commitDateUtc )
     {
-        if( version == null || !version.IsValid ) throw new ArgumentException( nameof( version ) );
+        if( version == null || !version.IsValid ) throw new ArgumentException( "Must be a valid version.", nameof( version ) );
         if( commitSha == null || commitSha.Length != 40 || !commitSha.All( IsHexDigit ) ) throw new ArgumentException( "Must be a 40 hex digits string.", nameof( commitSha ) );
         if( commitDateUtc.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Must be a UTC date.", nameof( commitDateUtc ) );
         return $"{version.ToNormalizedString()}/{commitSha}/{commitDateUtc:u}";
