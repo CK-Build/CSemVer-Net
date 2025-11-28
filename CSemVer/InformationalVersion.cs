@@ -11,7 +11,7 @@ namespace CSemVer;
 
 /// <summary>
 /// Defines standard informational version (usually stored in the <see cref="FileVersionInfo.ProductVersion"/>):
-/// the two <see cref="SVersion"/> (the short and long forms), the <see cref="CommitSha"/> and the <see cref="CommitDate"/>.
+/// the <see cref="SVersion"/> (the short form), the <see cref="CommitSha"/> and the <see cref="CommitDate"/>.
 /// <para>
 /// The constructor can be used directly on any string, or <see cref="Parse"/> can be called (and throws an
 /// <see cref="ArgumentException"/> if the result is not <see cref="IsValidSyntax"/>), or the informational version
@@ -30,10 +30,14 @@ public partial class InformationalVersion
     static readonly Regex _rV7 = new Regex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant );
     private static Regex ParseRegEx() => _rV7;
 
+    static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+
 #else
 
     [GeneratedRegex( @"^(?<2>.*?)/(?<3>.*?)/(?<4>.*?)$", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.CultureInvariant )]
     private static partial Regex ParseRegEx();
+
+    static bool IsHexDigit( char c ) => char.IsAsciiHexDigit( c );
 
 #endif
 
@@ -69,7 +73,7 @@ public partial class InformationalVersion
     /// These default values may be set in a csproj:
     /// <code>
     ///     &lt;Version&gt;0.0.0-0&lt;/Version&gt;
-    ///     &lt;AssemblyVersion&gt;0.0.0&lt;/AssemblyVersion&gt;
+    ///     &lt;AssemblyVersion&gt;0.0&lt;/AssemblyVersion&gt;
     ///     &lt;FileVersion&gt;0.0.0.0&lt;/FileVersion&gt;
     ///     &lt;InformationalVersion&gt;0.0.0-0/0000000000000000000000000000000000000000/0001-01-01 00:00:00Z&lt;/InformationalVersion&gt;
     /// </code>
@@ -112,7 +116,8 @@ public partial class InformationalVersion
         else ParseErrorMessage = "String to parse is null.";
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage( "Style", "IDE0060:Remove unused parameter", Justification = "This makes the role of this fake parameter explicit." )]
+    [SuppressMessage( "Style", "IDE0060:Remove unused parameter",
+                       Justification = "This makes the role of this fake parameter explicit." )]
     InformationalVersion( string parseErrorMessage, bool forPrivateError )
     {
         ParseErrorMessage = parseErrorMessage;
@@ -260,6 +265,4 @@ public partial class InformationalVersion
         if( commitDateUtc.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Must be a UTC date.", nameof( commitDateUtc ) );
         return $"{version.ToNormalizedString()}/{commitSha}/{commitDateUtc:u}";
     }
-
-    static bool IsHexDigit( char c ) => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
