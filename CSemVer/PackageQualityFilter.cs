@@ -4,7 +4,7 @@ namespace CSemVer;
 
 /// <summary>
 /// Defines a "Min-Max" (this is the string representation) filter of <see cref="PackageQuality"/>.
-/// The <c>default</c> is "CI-CI".
+/// The <c>default</c> is "CI-CI" (only CI quality is accepted).
 /// </summary>
 public readonly struct PackageQualityFilter : IEquatable<PackageQualityFilter>
 {

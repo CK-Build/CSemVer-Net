@@ -690,25 +690,11 @@ public partial class SVersion : IEquatable<SVersion?>, IComparable<SVersion?>
         if( x.Length == 0 ) return y.Length == 0 ? 0 : 1;
         if( y.Length == 0 ) return -1;
 
-        static Span<Range> StackSplit( ReadOnlySpan<char> x, Span<Range> store )
-        {
-            int count = 0, offset = 0, index = 0;
-            do
-            {
-                var next = x.Slice( offset );
-                var nextIdx = next.IndexOf( '.' );
-                index = nextIdx != -1 ? nextIdx : next.Length;
-                store[count++] = new Range( offset, offset += index++ );
-            }
-            while( ++offset < x.Length );
-            return store.Slice( 0, count );
-        }
+        Span<Range> xStore = stackalloc Range[1 + x.Length >> 1];
+        var xParts = xStore.Slice( 0, x.Split( xStore, '.' ) );
 
-        // var xParts = x.Split( '.' );
-        // var yParts = y.Split( '.' );
-        // ==> StackSplit replaces the string.Split() method.
-        var xParts = StackSplit( x, stackalloc Range[1 + x.Length >> 1] );
-        var yParts = StackSplit( y, stackalloc Range[1 + y.Length >> 1] );
+        Span<Range> yStore = stackalloc Range[1 + y.Length >> 1];
+        var yParts = yStore.Slice( 0, y.Split( yStore, '.' ) );
 
         int commonParts = xParts.Length;
         int ultimateResult = -1;
